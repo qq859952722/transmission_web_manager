@@ -1,0 +1,181 @@
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+html.light {
+    color-scheme: light;
+}
+
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.twc-toolbar,
+.twc-sidebar,
+.twc-statusbar,
+.twc-detail-panel,
+.twc-filter-bar {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.twc-btn {
+    transition: all 0.2s ease;
+}
+
+.twc-btn:active {
+    transform: scale(0.96);
+}
+
+.twc-modal-overlay {
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.twc-modal {
+    transition: transform 0.2s ease;
+}
+
+.twc-toast {
+    transition: opacity 0.3s ease;
+}
+
+.twc-progress-fill {
+    transition: width 0.5s ease;
+}
+
+.twc-progress-fill.bg-yellow-500 {
+    animation: verifyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes verifyPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.twc-sidebar-item {
+    transition: all 0.15s ease;
+}
+
+.twc-detail-tab {
+    transition: all 0.15s ease;
+}
+
+.twc-toggle .twc-toggle-track {
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.twc-toggle .twc-toggle-thumb {
+    transition: transform 0.2s ease;
+}
+
+.twc-context-menu {
+    transition: opacity 0.15s ease;
+}
+
+.twc-torrent-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.twc-input,
+.twc-select {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb {
+    transition: background 0.15s ease;
+}
+
+.twc-badge {
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.twc-config-tab {
+    transition: all 0.15s ease;
+}
+
+.twc-file-item {
+    transition: background 0.15s ease;
+}
+
+.twc-country-flag {
+    transition: opacity 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.twc-loading-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.twc-toolbar .btn-shortcut {
+    font-size: 9px;
+    opacity: 0.5;
+    background: var(--border-secondary);
+    padding: 1px 3px;
+    border-radius: 2px;
+    margin-left: 4px;
+    font-family: var(--font-mono);
+}
+
+.dark .twc-toolbar .btn-shortcut {
+    opacity: 0.35;
+}
+
+@media (max-width: 768px) {
+    .twc-toolbar .btn-shortcut {
+        display: none;
+    }
+    .twc-toolbar .btn-label {
+        display: none;
+    }
+}
+
+.stat-conn-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    animation: connPulse 2s ease-in-out infinite;
+}
+
+@keyframes connPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.stat-port-open {
+    color: var(--color-success-500);
+}
+
+.stat-port-closed {
+    color: var(--color-danger-500);
+}
+
+.stat-port-unknown {
+    color: var(--text-muted);
+}
+
+.stat-alt-speed-on {
+    color: var(--color-warning-500);
+}
+
+.stat-alt-speed-off {
+    color: var(--text-muted);
+}

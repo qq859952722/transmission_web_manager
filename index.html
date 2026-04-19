@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transmission Web Control</title>
+    <link rel="stylesheet" href="css/tailwind.css" />
+    <link rel="stylesheet" href="css/theme.css" />
+    <style>
+        .twc-loading-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+        .dark .twc-loading-screen {
+            background: #1e1e2e;
+        }
+        .twc-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #dde1e8;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .twc-loading-text {
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .dark .twc-loading-text {
+            color: #a0a0b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="twc-loading-screen" id="loading-screen">
+        <div class="twc-loading-spinner"></div>
+        <div class="twc-loading-text">正在连接 Transmission...</div>
+    </div>
+
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/rpc.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/torrent.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/geoip.js"></script>
+    <script src="js/ui-layout.js"></script>
+    <script src="js/ui-torrent-list.js"></script>
+    <script src="js/ui-detail.js"></script>
+    <script src="js/ui-detail-extras.js"></script>
+    <script src="js/ui-dialog.js"></script>
+    <script src="js/ui-dialog-config.js"></script>
+    <script src="js/ui-stats.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+    (function() {
+        var rpcUrl = '/transmission/rpc';
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('rpc')) {
+            rpcUrl = urlParams.get('rpc');
+        }
+
+        TWC.rpc.setConfig(rpcUrl);
+
+        TWC.geoip.init(function(geoipOk) {
+            if (!geoipOk) console.warn('GeoIP: 数据库加载失败，国家信息不可用');
+        });
+
+        TWC.theme.init();
+
+        TWC.rpc.testConnection(function(success, data) {
+            if (success) {
+                TWC.config.loadSession(function(sessionSuccess) {
+                    if (sessionSuccess) {
+                        $('#loading-screen').fadeOut(200, function() { $(this).remove(); });
+                        TWC.torrent.init();
+                        TWC.uiList.init();
+                        TWC.ui.init();
+                    } else {
+                        _showLogin();
+                    }
+                });
+            } else {
+                _showLogin();
+            }
+        });
+
+        function _showLogin() {
+            $('#loading-screen').remove();
+            var html = '<div class="twc-login-overlay" id="login-overlay">' +
+                '<div class="twc-login-box">' +
+                '<div class="twc-login-logo">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' +
+                '</div>' +
+                '<h2>Transmission Web Control</h2>' +
+                '<p class="twc-login-subtitle">连接到 Transmission RPC 服务</p>' +
+                '<div class="twc-login-form">' +
+                '<div class="twc-form-group">' +
+                '<label>RPC 地址</label>' +
+                '<input type="text" id="login-url" value="' + TWC.utils.escapeHtml(rpcUrl) + '" placeholder="/transmission/rpc" />' +
+                '<div class="twc-form-hint">常见地址: /transmission/rpc 或 http://IP:9091/transmission/rpc</div>' +
+                '</div>' +
+                '<div class="twc-form-group">' +
+                '<label>用户名</label>' +
+                '<input type="text" id="login-username" placeholder="可选" autocomplete="username" />' +
+                '</div>' +
+                '<div class="twc-form-group">' +
+                '<label>密码</label>' +
+                '<input type="password" id="login-password" placeholder="可选" autocomplete="current-password" />' +
+                '</div>' +
+                '<div id="login-error" class="twc-login-error" style="display:none"></div>' +
+                '<button class="twc-btn primary twc-login-btn" id="login-submit">连接</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            $('body').append(html);
+
+            $('#login-submit').on('click', function() {
+                var url = $('#login-url').val().trim();
+                var username = $('#login-username').val().trim();
+                var password = $('#login-password').val();
+
+                if (!url) {
+                    $('#login-error').text('请输入 RPC 地址').show();
+                    return;
+                }
+
+                TWC.rpc.setConfig(url, username, password);
+                $('#login-error').hide();
+                $('#login-submit').prop('disabled', true).text('连接中...');
+
+                TWC.rpc.testConnection(function(success2) {
+                    $('#login-submit').prop('disabled', false).text('连接');
+                    if (success2) {
+                        TWC.config.loadSession(function(sessionSuccess) {
+                            if (sessionSuccess) {
+                                $('#login-overlay').fadeOut(200, function() { $(this).remove(); });
+                                TWC.torrent.init();
+                                TWC.uiList.init();
+                                TWC.ui.init();
+                            } else {
+                                $('#login-error').text('加载会话信息失败').show();
+                            }
+                        });
+                    } else {
+                        $('#login-error').text('连接失败，请检查地址和认证信息').show();
+                    }
+                });
+            });
+
+            $('#login-password').on('keydown', function(e) {
+                if (e.key === 'Enter') $('#login-submit').click();
+            });
+            $('#login-url').on('keydown', function(e) {
+                if (e.key === 'Enter') $('#login-submit').click();
+            });
+        }
+    })();
+    </script>
+</body>
+</html>
