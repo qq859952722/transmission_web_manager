@@ -125,6 +125,55 @@ TWC.utils = (function() {
         return map[status] || 'bg-gray-400';
     }
 
+    var SUPPORTED_TRACKER_SCHEMES = ['http://', 'https://', 'udp://'];
+
+    function isValidTrackerUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        var trimmed = url.trim();
+        if (!trimmed) return false;
+        var schemeMatch = false;
+        for (var i = 0; i < SUPPORTED_TRACKER_SCHEMES.length; i++) {
+            if (trimmed.substring(0, SUPPORTED_TRACKER_SCHEMES[i].length).toLowerCase() === SUPPORTED_TRACKER_SCHEMES[i]) {
+                schemeMatch = true;
+                break;
+            }
+        }
+        if (!schemeMatch) return false;
+        var rest = trimmed.replace(/^(https?|udp):\/\//i, '');
+        if (!rest || rest.length < 3) return false;
+        var hostPort = rest.split('/')[0].split('?')[0];
+        if (!hostPort) return false;
+        return true;
+    }
+
+    function validateTrackerList(text) {
+        if (!text || !text.trim()) return { valid: true, urls: [], warnings: [], errors: [] };
+        var lines = text.split('\n');
+        var urls = [];
+        var warnings = [];
+        var errors = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            if (isValidTrackerUrl(line)) {
+                urls.push(line);
+            } else {
+                var lowerLine = line.toLowerCase();
+                if (lowerLine.substring(0, 5) === 'ws://' || lowerLine.substring(0, 6) === 'wss://') {
+                    errors.push('第 ' + (i + 1) + ' 行: WebSocket 协议 (' + line.substring(0, line.indexOf(':') + 2) + ') 不受 Transmission 支持，请移除');
+                } else if (lowerLine.substring(0, 6) === 'tcp://') {
+                    errors.push('第 ' + (i + 1) + ' 行: tcp:// 不是有效的 Tracker 协议，请使用 http://、https:// 或 udp://');
+                } else if (lowerLine.indexOf('://') > 0) {
+                    var scheme = line.substring(0, line.indexOf('://') + 3);
+                    errors.push('第 ' + (i + 1) + ' 行: 不支持的协议 ' + scheme + '，仅支持 http://、https://、udp://');
+                } else {
+                    errors.push('第 ' + (i + 1) + ' 行: 无效的 Tracker URL，必须以 http://、https:// 或 udp:// 开头');
+                }
+            }
+        }
+        return { valid: errors.length === 0, urls: urls, warnings: warnings, errors: errors };
+    }
+
     function getTrackerDomain(announceUrl) {
         if (!announceUrl) return '';
         try {
@@ -187,6 +236,17 @@ TWC.utils = (function() {
             TWC.ui.showToast('复制失败', 'error');
         }
         document.body.removeChild(textarea);
+    }
+
+    function arrayBufferToBase64(buffer) {
+        var bytes = new Uint8Array(buffer);
+        var binary = '';
+        var chunkSize = 8192;
+        for (var i = 0; i < bytes.length; i += chunkSize) {
+            var chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+        return btoa(binary);
     }
 
     function formatDuration(seconds) {
@@ -343,6 +403,8 @@ TWC.utils = (function() {
         getStatusColor: getStatusColor,
         getProgressBarClass: getProgressBarClass,
         getTrackerDomain: getTrackerDomain,
+        isValidTrackerUrl: isValidTrackerUrl,
+        validateTrackerList: validateTrackerList,
         debounce: debounce,
         throttle: throttle,
         copyToClipboard: copyToClipboard,
@@ -362,6 +424,7 @@ TWC.utils = (function() {
         getPriorityText: getPriorityText,
         getFilePriorityText: getFilePriorityText,
         getSeedRatioModeText: getSeedRatioModeText,
-        getSeedIdleModeText: getSeedIdleModeText
+        getSeedIdleModeText: getSeedIdleModeText,
+        arrayBufferToBase64: arrayBufferToBase64
     };
 })();

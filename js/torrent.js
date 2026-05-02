@@ -23,19 +23,102 @@ TWC.torrent = (function() {
     }
 
     function updateData(torrents, removedIds) {
+        var needsFullRebuild = false;
+
+        if (removedIds && removedIds.length > 0) {
+            var needsIdRebuild = false;
+            for (var j = 0; j < removedIds.length; j++) {
+                var rid = removedIds[j];
+                if (_torrents[rid]) {
+                    _removeFromIndex(_torrents[rid], rid);
+                    delete _torrents[rid];
+                    needsIdRebuild = true;
+                }
+            }
+            if (needsIdRebuild) needsFullRebuild = true;
+        }
+
         if (torrents && torrents.length > 0) {
             for (var i = 0; i < torrents.length; i++) {
                 var t = torrents[i];
+                var isNew = !_torrents[t.id];
+                var oldTorrent = _torrents[t.id];
+
+                if (oldTorrent) {
+                    _removeFromIndex(oldTorrent, t.id);
+                }
+
                 _torrents[t.id] = t;
+                _addToIndex(t);
+
+                if (isNew) {
+                    needsFullRebuild = true;
+                }
             }
         }
-        if (removedIds && removedIds.length > 0) {
-            for (var j = 0; j < removedIds.length; j++) {
-                delete _torrents[removedIds[j]];
-            }
+
+        if (needsFullRebuild) {
+            _torrentIds = Object.keys(_torrents).map(function(id) { return parseInt(id, 10); });
         }
-        _rebuildIndex();
+
         _notifyListeners('data-updated');
+    }
+
+    function _removeFromIndex(t, id) {
+        _statusCounts.all--;
+        if (isDownloading(t)) _statusCounts.downloading--;
+        if (isSeeding(t)) _statusCounts.seeding--;
+        if (isStopped(t)) _statusCounts.stopped--;
+        if (isChecking(t)) _statusCounts.checking--;
+        if (isActive(t)) _statusCounts.active--;
+        if (isError(t)) _statusCounts.error--;
+        if (isQueued(t)) _statusCounts.queued--;
+
+        if (t.trackerStats) {
+            for (var i = 0; i < t.trackerStats.length; i++) {
+                var domain = TWC.utils.getTrackerDomain(t.trackerStats[i].announce);
+                if (domain && _trackerGroups[domain]) {
+                    var idx = _trackerGroups[domain].indexOf(id);
+                    if (idx !== -1) _trackerGroups[domain].splice(idx, 1);
+                    if (_trackerGroups[domain].length === 0) delete _trackerGroups[domain];
+                }
+            }
+        }
+
+        if (t.downloadDir && _dirGroups[t.downloadDir]) {
+            var dirIdx = _dirGroups[t.downloadDir].indexOf(id);
+            if (dirIdx !== -1) _dirGroups[t.downloadDir].splice(dirIdx, 1);
+            if (_dirGroups[t.downloadDir].length === 0) delete _dirGroups[t.downloadDir];
+        }
+
+        if (t.labels && t.labels.length > 0) {
+            for (var j = 0; j < t.labels.length; j++) {
+                if (_labelGroups[t.labels[j]]) {
+                    var labelIdx = _labelGroups[t.labels[j]].indexOf(id);
+                    if (labelIdx !== -1) _labelGroups[t.labels[j]].splice(labelIdx, 1);
+                    if (_labelGroups[t.labels[j]].length === 0) delete _labelGroups[t.labels[j]];
+                }
+            }
+        } else if (_labelGroups['未标签']) {
+            var noLabelIdx = _labelGroups['未标签'].indexOf(id);
+            if (noLabelIdx !== -1) _labelGroups['未标签'].splice(noLabelIdx, 1);
+            if (_labelGroups['未标签'].length === 0) delete _labelGroups['未标签'];
+        }
+    }
+
+    function _addToIndex(t) {
+        _statusCounts.all++;
+        if (isDownloading(t)) _statusCounts.downloading++;
+        if (isSeeding(t)) _statusCounts.seeding++;
+        if (isStopped(t)) _statusCounts.stopped++;
+        if (isChecking(t)) _statusCounts.checking++;
+        if (isActive(t)) _statusCounts.active++;
+        if (isError(t)) _statusCounts.error++;
+        if (isQueued(t)) _statusCounts.queued++;
+
+        _indexTracker(t);
+        _indexDir(t);
+        _indexLabel(t);
     }
 
     function _rebuildIndex() {
@@ -85,7 +168,9 @@ TWC.torrent = (function() {
         if (!_dirGroups[dir]) {
             _dirGroups[dir] = [];
         }
-        _dirGroups[dir].push(t.id);
+        if (_dirGroups[dir].indexOf(t.id) === -1) {
+            _dirGroups[dir].push(t.id);
+        }
     }
 
     function _indexLabel(t) {
@@ -93,7 +178,9 @@ TWC.torrent = (function() {
             if (!_labelGroups['未标签']) {
                 _labelGroups['未标签'] = [];
             }
-            _labelGroups['未标签'].push(t.id);
+            if (_labelGroups['未标签'].indexOf(t.id) === -1) {
+                _labelGroups['未标签'].push(t.id);
+            }
             return;
         }
         for (var i = 0; i < t.labels.length; i++) {
@@ -101,16 +188,18 @@ TWC.torrent = (function() {
             if (!_labelGroups[label]) {
                 _labelGroups[label] = [];
             }
-            _labelGroups[label].push(t.id);
+            if (_labelGroups[label].indexOf(t.id) === -1) {
+                _labelGroups[label].push(t.id);
+            }
         }
     }
 
     function isDownloading(t) {
-        return t.status === 4 || t.status === 3;
+        return t.status === 4;
     }
 
     function isSeeding(t) {
-        return t.status === 6 || t.status === 5;
+        return t.status === 6;
     }
 
     function isStopped(t) {
@@ -134,7 +223,7 @@ TWC.torrent = (function() {
     }
 
     function isSequential(t) {
-        return t['sequential-download'] === true;
+        return t.sequential_download === true;
     }
 
     function getFilteredTorrents() {

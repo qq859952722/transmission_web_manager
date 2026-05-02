@@ -578,6 +578,21 @@ a:hover {
     flex-shrink: 0;
     gap: 0;
 }
+.twc-detail-collapse-btn {
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity var(--transition-fast);
+}
+.twc-detail-collapse-btn:hover {
+    opacity: 1;
+}
+.twc-detail-collapse-btn svg {
+    width: 16px;
+    height: 16px;
+}
 .twc-detail-tab {
     padding: 6px 12px;
     font-size: 12px;
@@ -766,6 +781,26 @@ a:hover {
 }
 .twc-input.mono {
     font-family: var(--font-mono);
+}
+
+.twc-readonly-input {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-primary) !important;
+    cursor: default !important;
+    pointer-events: none;
+    user-select: text;
+}
+
+.twc-readonly-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-primary);
+    line-height: 1.5;
+    word-break: break-all;
 }
 
 .twc-select {

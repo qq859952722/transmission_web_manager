@@ -162,9 +162,9 @@ TWC.uiDetail = (function() {
             if (torrentIds.length > 0) {
                 var props = {};
                 if (checked) {
-                    props['files-wanted'] = [idx];
+                    props.filesWanted = [idx];
                 } else {
-                    props['files-unwanted'] = [idx];
+                    props.filesUnwanted = [idx];
                 }
                 TWC.rpc.setTorrent(torrentIds, props, function(success) {
                     if (success) TWC.ui.refreshData(true);
@@ -195,15 +195,15 @@ TWC.uiDetail = (function() {
         var nextWanted, nextPriority;
 
         if (!wanted) {
-            props['files-wanted'] = [fileIndex];
-            props['priority-low'] = [fileIndex];
+            props.filesWanted = [fileIndex];
+            props.priorityLow = [fileIndex];
             nextWanted = true;
             nextPriority = -1;
         } else {
             var next = current === -1 ? 0 : (current === 0 ? 1 : -1);
-            if (next === 1) props['priority-high'] = [fileIndex];
-            else if (next === 0) props['priority-normal'] = [fileIndex];
-            else props['priority-low'] = [fileIndex];
+            if (next === 1) props.priorityHigh = [fileIndex];
+            else if (next === 0) props.priorityNormal = [fileIndex];
+            else props.priorityLow = [fileIndex];
             nextWanted = true;
             nextPriority = next;
         }
@@ -234,19 +234,19 @@ TWC.uiDetail = (function() {
         var props = {};
         var localPriority;
         if (priority === -1) {
-            props['files-unwanted'] = indices;
+            props.filesUnwanted = indices;
             localPriority = -2;
         } else if (priority === 2) {
-            props['files-wanted'] = indices;
-            props['priority-high'] = indices;
+            props.filesWanted = indices;
+            props.priorityHigh = indices;
             localPriority = 1;
         } else if (priority === 1) {
-            props['files-wanted'] = indices;
-            props['priority-normal'] = indices;
+            props.filesWanted = indices;
+            props.priorityNormal = indices;
             localPriority = 0;
         } else {
-            props['files-wanted'] = indices;
-            props['priority-low'] = indices;
+            props.filesWanted = indices;
+            props.priorityLow = indices;
             localPriority = -1;
         }
 

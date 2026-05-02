@@ -117,6 +117,8 @@ TWC.uiList = (function() {
                 '暂无种子' +
                 '</div>' +
                 '</td></tr>';
+            html += '</tbody></table></div></div>';
+            $container.html(html);
         } else if (_virtualScrollEnabled) {
             html += '</tbody></table></div></div>';
             $container.html(html);
@@ -425,9 +427,6 @@ TWC.uiList = (function() {
             }
             if (maxSeeders >= 0) return maxSeeders;
         }
-        if (t.peersSendingToUs !== undefined && t.peersSendingToUs > 0) {
-            return t.peersSendingToUs;
-        }
         return -1;
     }
 
@@ -441,9 +440,6 @@ TWC.uiList = (function() {
                 }
             }
             if (maxLeechers >= 0) return maxLeechers;
-        }
-        if (t.peersGettingFromUs !== undefined && t.peersGettingFromUs > 0) {
-            return t.peersGettingFromUs;
         }
         return -1;
     }

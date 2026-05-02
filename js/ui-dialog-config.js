@@ -33,6 +33,14 @@ TWC.uiDialogConfig = (function() {
         });
 
         $('#config-save-btn').on('click', function() {
+            var defaultTrackers = $('[data-config-key="default-trackers"]').val();
+            if (defaultTrackers && defaultTrackers.trim()) {
+                var trackerResult = TWC.utils.validateTrackerList(defaultTrackers);
+                if (!trackerResult.valid) {
+                    TWC.ui.showToast('默认 Tracker 列表存在无效 URL，请修正后再保存', 'warning');
+                    return;
+                }
+            }
             var props = _collectValues(items);
             TWC.config.saveSession(props, function(success, error) {
                 if (success) {
@@ -97,9 +105,10 @@ TWC.uiDialogConfig = (function() {
                         html += '<input type="text" class="twc-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(val || '') + '" />';
                         break;
                     case 'select':
+                        var selectVal = (Array.isArray(val)) ? val.join(',') : val;
                         html += '<select class="twc-select" data-config-key="' + item.key + '">';
                         for (var o = 0; o < item.options.length; o++) {
-                            html += '<option value="' + item.options[o].value + '"' + (val === item.options[o].value ? ' selected' : '') + '>' + item.options[o].label + '</option>';
+                            html += '<option value="' + item.options[o].value + '"' + (selectVal === item.options[o].value ? ' selected' : '') + '>' + item.options[o].label + '</option>';
                         }
                         html += '</select>';
                         break;
@@ -113,9 +122,20 @@ TWC.uiDialogConfig = (function() {
                         break;
                     case 'textarea':
                         html += '<textarea class="twc-input" data-config-key="' + item.key + '" rows="6" style="height:auto;resize:vertical;font-family:var(--font-mono)">' + TWC.utils.escapeHtml(val || '') + '</textarea>';
+                        if (item.key === 'default-trackers') {
+                            html += '<div class="twc-tracker-validation" data-tracker-validation="' + item.key + '" style="display:none;font-size:12px;color:var(--color-danger-500);margin-top:4px"></div>';
+                        }
                         break;
                     case 'readonly':
-                        html += '<input type="text" class="twc-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(String(val || '-')) + '" readonly style="opacity:0.7" />';
+                        html += '<input type="text" class="twc-input twc-readonly-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(String(val !== undefined && val !== null ? val : '-')) + '" readonly tabindex="-1" />';
+                        break;
+                    case 'readonly-text':
+                        html += '<div class="twc-readonly-text" data-config-key="' + item.key + '">' + TWC.utils.escapeHtml(item.value || '') + '</div>';
+                        break;
+                    case 'readonly-bytes':
+                        var bytesVal = val || 0;
+                        var bytesStr = TWC.utils.formatBytes(bytesVal);
+                        html += '<input type="text" class="twc-input twc-readonly-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(bytesStr) + '" readonly tabindex="-1" />';
                         break;
                     case 'label-manager':
                         html += _renderLabelManager();
@@ -142,6 +162,18 @@ TWC.uiDialogConfig = (function() {
 
         $('.twc-toggle[data-config-key]').on('click', function() {
             $(this).toggleClass('active');
+        });
+
+        $('[data-config-key="default-trackers"]').on('input', function() {
+            var val = $(this).val().trim();
+            var $validation = $('[data-tracker-validation="default-trackers"]');
+            if (!val) { $validation.hide().text(''); return; }
+            var result = TWC.utils.validateTrackerList(val);
+            if (!result.valid) {
+                $validation.html(result.errors.join('<br/>')).show();
+            } else {
+                $validation.hide().text('');
+            }
         });
 
         if (tabId === 'blocklist') {
@@ -259,7 +291,8 @@ TWC.uiDialogConfig = (function() {
                 var group = tabItems[g];
                 for (var i = 0; i < group.items.length; i++) {
                     var item = group.items[i];
-                    if (item.type === 'readonly') continue;
+                    if (item.type === 'readonly' || item.type === 'readonly-text' || item.type === 'readonly-bytes' || item.type === 'label-manager') continue;
+                    if (item.key && item.key.charAt(0) === '_') continue;
 
                     var $el = $('[data-config-key="' + item.key + '"]');
                     if ($el.length === 0) continue;
@@ -278,6 +311,8 @@ TWC.uiDialogConfig = (function() {
                     } else if (item.type === 'password') {
                         var pwd = $el.val();
                         if (pwd) props[item.key] = pwd;
+                    } else if (item.valueType === 'array') {
+                        props[item.key] = $el.val() ? $el.val().split(',') : [];
                     } else {
                         props[item.key] = $el.val();
                     }

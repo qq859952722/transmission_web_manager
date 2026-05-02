@@ -45,7 +45,56 @@ TWC.rpc = (function() {
         'haveValid', 'haveUnchecked',
         'metadataPercentComplete',
         'group', 'source', 'primary-mime-type',
-        'percentComplete', 'manualAnnounceTime'
+        'percentComplete', 'manualAnnounceTime',
+        'sequential_download'
+    ];
+
+    var LIST_FIELDS = [
+        'id', 'name', 'status', 'hashString', 'totalSize',
+        'percentDone', 'leftUntilDone',
+        'eta', 'etaIdle',
+        'rateDownload', 'rateUpload',
+        'downloadedEver', 'uploadedEver', 'uploadRatio',
+        'peersConnected', 'peersSendingToUs', 'peersGettingFromUs',
+        'addedDate', 'doneDate', 'activityDate',
+        'error', 'errorString',
+        'isStalled', 'isFinished',
+        'labels', 'downloadDir',
+        'recheckProgress',
+        'queuePosition',
+        'downloadLimited', 'downloadLimit',
+        'uploadLimited', 'uploadLimit',
+        'bandwidthPriority',
+        'group', 'sizeWhenDone', 'haveValid',
+        'metadataPercentComplete', 'percentComplete',
+        'trackerStats',
+        'seedRatioLimit', 'seedRatioMode',
+        'seedIdleLimit', 'seedIdleMode',
+        'honorsSessionLimits',
+        'manualAnnounceTime'
+    ];
+
+    var DETAIL_FIELDS = [
+        'id', 'trackers', 'trackerStats',
+        'files', 'fileStats',
+        'peers', 'peersFrom',
+        'comment', 'creator', 'dateCreated',
+        'isPrivate', 'pieceCount', 'pieceSize',
+        'hashString', 'magnetLink',
+        'webseeds', 'webseedsSendingToUs',
+        'maxConnectedPeers',
+        'corruptEver', 'secondsDownloading', 'secondsSeeding',
+        'startDate', 'editDate', 'source', 'primary-mime-type',
+        'desiredAvailable', 'haveUnchecked', 'remaining',
+        'downloadLimited', 'downloadLimit',
+        'uploadLimited', 'uploadLimit',
+        'bandwidthPriority',
+        'seedRatioMode', 'seedRatioLimit',
+        'seedIdleMode', 'seedIdleLimit',
+        'honorsSessionLimits',
+        'rateDownload', 'rateUpload',
+        'downloadedEver', 'uploadedEver', 'uploadRatio',
+        'downloadDir'
     ];
 
     var SESSION_FIELDS = [
@@ -78,7 +127,8 @@ TWC.rpc = (function() {
         'rpc-version', 'rpc-version-minimum', 'rpc-version-semver'
     ];
 
-    function _exec(method, arguments_, callback) {
+    function _exec(method, arguments_, callback, _409RetryCount) {
+        _409RetryCount = _409RetryCount || 0;
         var requestData = {
             method: method,
             arguments: arguments_ || {}
@@ -103,9 +153,9 @@ TWC.rpc = (function() {
                 
                 if (jqXHR.status === 409) {
                     var newSessionId = jqXHR.getResponseHeader('X-Transmission-Session-Id');
-                    if (newSessionId) {
+                    if (newSessionId && _409RetryCount < 3) {
                         _sessionId = newSessionId;
-                        _exec(method, arguments_, callback);
+                        _exec(method, arguments_, callback, _409RetryCount + 1);
                         return;
                     }
                 }
@@ -184,7 +234,7 @@ TWC.rpc = (function() {
         if (ids) args.ids = ids;
         _exec('torrent-get', args, function(data, success) {
             if (success && data && data.result === 'success') {
-                callback(data.arguments.torrents, data.arguments.removed, true);
+                callback(data.arguments.torrents, data.arguments.removed || [], true);
             } else {
                 callback([], [], false, data ? data.result : '请求失败');
             }
@@ -248,15 +298,15 @@ TWC.rpc = (function() {
         if (options['download-dir']) args['download-dir'] = options['download-dir'];
         if (options.paused !== undefined) args.paused = options.paused;
         if (options.cookies) args.cookies = options.cookies;
-        if (options['peer-limit']) args['peer-limit'] = options['peer-limit'];
-        if (options.bandwidthPriority !== undefined) args.bandwidthPriority = options.bandwidthPriority;
+        if (options['peer-limit']) args.peer_limit = options['peer-limit'];
+        if (options.bandwidthPriority !== undefined) args.bandwidth_priority = options.bandwidthPriority;
         if (options.labels) args.labels = options.labels;
         if (options.files_wanted) args['files-wanted'] = options.files_wanted;
         if (options.files_unwanted) args['files-unwanted'] = options.files_unwanted;
         if (options.priority_high) args['priority-high'] = options.priority_high;
         if (options.priority_low) args['priority-low'] = options.priority_low;
         if (options.priority_normal) args['priority-normal'] = options.priority_normal;
-        if (options.sequential_download !== undefined) args['sequential-download'] = options.sequential_download;
+        if (options.sequential_download !== undefined) args.sequential_download = options.sequential_download;
 
         _exec('torrent-add', args, function(data, success) {
             if (success && data && data.result === 'success') {
@@ -269,11 +319,36 @@ TWC.rpc = (function() {
         });
     }
 
+    var _torrentSetKeyMap = {
+        downloadLimited: 'download_limited',
+        downloadLimit: 'download_limit',
+        uploadLimited: 'upload_limited',
+        uploadLimit: 'upload_limit',
+        bandwidthPriority: 'bandwidth_priority',
+        peerLimit: 'peer_limit',
+        seedRatioMode: 'seed_ratio_mode',
+        seedRatioLimit: 'seed_ratio_limit',
+        seedIdleMode: 'seed_idle_mode',
+        seedIdleLimit: 'seed_idle_limit',
+        honorsSessionLimits: 'honors_session_limits',
+        sequential_download: 'sequential_download',
+        labels: 'labels',
+        trackerAdd: 'tracker_add',
+        trackerRemove: 'tracker_remove',
+        trackerReplace: 'tracker_replace',
+        filesWanted: 'files_wanted',
+        filesUnwanted: 'files_unwanted',
+        priorityHigh: 'priority_high',
+        priorityLow: 'priority_low',
+        priorityNormal: 'priority_normal'
+    };
+
     function setTorrent(ids, properties, callback) {
-        var args = $.extend({ids: ids}, properties);
-        if (properties.sequential_download !== undefined) {
-            args['sequential-download'] = properties.sequential_download;
-            delete args.sequential_download;
+        var args = {ids: ids};
+        for (var key in properties) {
+            if (!properties.hasOwnProperty(key)) continue;
+            var mapped = _torrentSetKeyMap[key] || key;
+            args[mapped] = properties[key];
         }
         _exec('torrent-set', args, function(data, success) {
             if (callback) callback(success && data && data.result === 'success');
@@ -281,7 +356,7 @@ TWC.rpc = (function() {
     }
 
     function setTorrentSequential(ids, sequential, callback) {
-        _exec('torrent-set', {ids: ids, 'sequential-download': !!sequential}, function(data, success) {
+        _exec('torrent-set', {ids: ids, sequential_download: !!sequential}, function(data, success) {
             if (callback) callback(success && data && data.result === 'success');
         });
     }
@@ -328,6 +403,9 @@ TWC.rpc = (function() {
 
     function getSession(fields, callback) {
         var args = {};
+        if (fields && fields.length > 0) {
+            args.fields = fields;
+        }
         _exec('session-get', args, function(data, success) {
             if (success && data && data.result === 'success') {
                 callback(data.arguments, true);
@@ -390,6 +468,11 @@ TWC.rpc = (function() {
     }
 
     function getGroups(callback) {
+        var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
+        if (rpcVersion < 17) {
+            callback([], false, '当前 Transmission 版本不支持带宽组（需要 4.0+）');
+            return;
+        }
         _exec('group-get', {}, function(data, success) {
             if (success && data && data.result === 'success') {
                 callback(data.arguments.group, true);
@@ -419,6 +502,8 @@ TWC.rpc = (function() {
 
     return {
         TORRENT_FIELDS: TORRENT_FIELDS,
+        LIST_FIELDS: LIST_FIELDS,
+        DETAIL_FIELDS: DETAIL_FIELDS,
         SESSION_FIELDS: SESSION_FIELDS,
         setConfig: setConfig,
         getRpcUrl: getRpcUrl,

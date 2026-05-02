@@ -162,14 +162,14 @@ TWC.uiDialog = (function() {
                                 }
                                 if (addedId && downloadLimit) {
                                     TWC.rpc.setTorrent([addedId], {
-                                        'download-limit': parseInt(downloadLimit, 10),
-                                        'download-limited': true
+                                        downloadLimit: parseInt(downloadLimit, 10),
+                                        downloadLimited: true
                                     });
                                 }
                                 if (addedId && uploadLimit) {
                                     TWC.rpc.setTorrent([addedId], {
-                                        'upload-limit': parseInt(uploadLimit, 10),
-                                        'upload-limited': true
+                                        uploadLimit: parseInt(uploadLimit, 10),
+                                        uploadLimited: true
                                     });
                                 }
                             } else { addCompleted(false, error || ''); }
@@ -181,7 +181,7 @@ TWC.uiDialog = (function() {
                     (function(file) {
                         var reader = new FileReader();
                         reader.onload = function(e) {
-                            var base64 = btoa(new Uint8Array(e.target.result).reduce(function(d, b) { return d + String.fromCharCode(b); }, ''));
+                            var base64 = TWC.utils.arrayBufferToBase64(e.target.result);
                             count++;
                             var fileOpts = $.extend({ metainfo: base64 }, opts);
                             TWC.rpc.addTorrent(fileOpts,
@@ -192,14 +192,14 @@ TWC.uiDialog = (function() {
                                         if (addedId) {
                                             if (downloadLimit) {
                                                 TWC.rpc.setTorrent([addedId], {
-                                                    'download-limit': parseInt(downloadLimit, 10),
-                                                    'download-limited': true
+                                                    downloadLimit: parseInt(downloadLimit, 10),
+                                                    downloadLimited: true
                                                 });
                                             }
                                             if (uploadLimit) {
                                                 TWC.rpc.setTorrent([addedId], {
-                                                    'upload-limit': parseInt(uploadLimit, 10),
-                                                    'upload-limited': true
+                                                    uploadLimit: parseInt(uploadLimit, 10),
+                                                    uploadLimited: true
                                                 });
                                             }
                                         }
@@ -238,11 +238,19 @@ TWC.uiDialog = (function() {
 
         $('#delete-confirm-btn').on('click', function() {
             var shouldDeleteData = deleteData || $('#delete-data-check').is(':checked');
-            TWC.rpc.removeTorrents(ids, shouldDeleteData, function(success) {
-                if (success) { TWC.ui.showToast('已删除 ' + ids.length + ' 个种子', 'success'); TWC.torrent.clearSelection(); TWC.ui.refreshData(true); }
+            var deletedIds = ids.slice();
+            TWC.torrent.clearSelection();
+            TWC.ui.hideModal();
+            TWC.rpc.removeTorrents(deletedIds, shouldDeleteData, function(success) {
+                if (success) {
+                    TWC.torrent.updateData([], deletedIds);
+                    TWC.ui.showToast('已删除 ' + deletedIds.length + ' 个种子', 'success');
+                    TWC.uiList.render();
+                    TWC.uiLayout.updateSidebar();
+                    TWC.ui.refreshData(true);
+                }
                 else { TWC.ui.showToast('删除失败', 'error'); }
             });
-            TWC.ui.hideModal();
         });
     }
 
@@ -375,17 +383,39 @@ TWC.uiDialog = (function() {
     }
 
     function showAddTracker(ids) {
-        var html = '<div class="twc-form-group"><label>添加 Tracker（每行一个）</label>' +
-            '<textarea class="twc-input" id="add-tracker-input" rows="5" style="height:auto;resize:vertical" placeholder="https://tracker.example.com/announce"></textarea></div>';
+        var html = '<div class="twc-form-group"><label>添加 Tracker（每行一个，空行分隔组）</label>' +
+            '<textarea class="twc-input" id="add-tracker-input" rows="5" style="height:auto;resize:vertical" placeholder="udp://tracker.example.com:1337/announce\nhttps://tracker2.example.com/announce"></textarea>' +
+            '<div id="add-tracker-error" style="color:var(--color-danger-500);font-size:12px;margin-top:4px;display:none"></div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">仅支持 http://、https://、udp:// 协议；不支持 ws://、wss://、tcp://</div></div>';
 
         var footer = '<button class="twc-btn twc-modal-cancel">取消</button><button class="twc-btn primary" id="add-tracker-submit">添加</button>';
         TWC.ui.showModal(html, { title: '添加 Tracker', size: 'md', footer: footer });
 
+        $('#add-tracker-input').on('input', function() {
+            var val = $(this).val().trim();
+            var $err = $('#add-tracker-error');
+            if (!val) { $err.hide().text(''); return; }
+            var result = TWC.utils.validateTrackerList(val);
+            if (!result.valid) {
+                $err.html(result.errors.join('<br/>')).show();
+            } else {
+                $err.hide().text('');
+            }
+        });
+
         $('#add-tracker-submit').on('click', function() {
             var trackerList = $('#add-tracker-input').val().trim();
             if (!trackerList) return;
-            var trackers = trackerList.split('\n').map(function(t) { return t.trim(); }).filter(function(t) { return t; });
-            TWC.rpc.setTorrent(ids, { trackerAdd: trackers }, function(s) {
+            var result = TWC.utils.validateTrackerList(trackerList);
+            if (!result.valid) {
+                TWC.ui.showToast(result.errors[0], 'warning');
+                return;
+            }
+            if (result.urls.length === 0) {
+                TWC.ui.showToast('请输入有效的 Tracker URL', 'warning');
+                return;
+            }
+            TWC.rpc.setTorrent(ids, { trackerAdd: result.urls }, function(s) {
                 if (s) { TWC.ui.showToast('Tracker 已添加', 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast('添加失败', 'error'); }
             });
@@ -470,15 +500,40 @@ TWC.uiDialog = (function() {
         var html = '<div class="twc-form-group"><label>旧 Tracker URL</label>' +
             '<input type="text" class="twc-input" id="replace-tracker-old" placeholder="https://old.tracker.com/announce" /></div>' +
             '<div class="twc-form-group"><label>新 Tracker URL</label>' +
-            '<input type="text" class="twc-input" id="replace-tracker-new" placeholder="https://new.tracker.com/announce" /></div>';
+            '<input type="text" class="twc-input" id="replace-tracker-new" placeholder="https://new.tracker.com/announce" />' +
+            '<div id="replace-tracker-error" style="color:var(--color-danger-500);font-size:12px;margin-top:4px;display:none"></div></div>';
 
         var footer = '<button class="twc-btn twc-modal-cancel">取消</button><button class="twc-btn primary" id="replace-tracker-submit">替换</button>';
         TWC.ui.showModal(html, { title: '替换 Tracker', size: 'md', footer: footer });
+
+        $('#replace-tracker-new').on('input', function() {
+            var val = $(this).val().trim();
+            var $err = $('#replace-tracker-error');
+            if (!val) { $err.hide().text(''); return; }
+            if (!TWC.utils.isValidTrackerUrl(val)) {
+                var lowerVal = val.toLowerCase();
+                if (lowerVal.substring(0, 5) === 'ws://' || lowerVal.substring(0, 6) === 'wss://') {
+                    $err.text('WebSocket 协议不受 Transmission 支持').show();
+                } else if (lowerVal.substring(0, 6) === 'tcp://') {
+                    $err.text('tcp:// 不是有效的 Tracker 协议').show();
+                } else if (lowerVal.indexOf('://') > 0) {
+                    $err.text('不支持的协议，仅支持 http://、https://、udp://').show();
+                } else {
+                    $err.text('无效的 Tracker URL，必须以 http://、https:// 或 udp:// 开头').show();
+                }
+            } else {
+                $err.hide().text('');
+            }
+        });
 
         $('#replace-tracker-submit').on('click', function() {
             var oldUrl = $('#replace-tracker-old').val().trim();
             var newUrl = $('#replace-tracker-new').val().trim();
             if (!oldUrl || !newUrl) { TWC.ui.showToast('请输入旧和新 Tracker URL', 'warning'); return; }
+            if (!TWC.utils.isValidTrackerUrl(newUrl)) {
+                TWC.ui.showToast('新 Tracker URL 格式无效，仅支持 http://、https://、udp://', 'warning');
+                return;
+            }
 
             var t = TWC.torrent.getTorrent(ids[0]);
             if (!t || !t.trackerStats) return;

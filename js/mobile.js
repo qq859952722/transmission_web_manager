@@ -185,8 +185,8 @@ TWC.mobile = (function() {
                         _showToast(dup ? '种子已存在' : (s ? '已添加' : '添加失败'), dup ? 'warning' : (s ? 'success' : 'error'));
                         if (s && added) {
                             var id = added.id;
-                            if (dlLimit) TWC.rpc.setTorrent([id], { 'download-limit': parseInt(dlLimit, 10), 'download-limited': true });
-                            if (ulLimit) TWC.rpc.setTorrent([id], { 'upload-limit': parseInt(ulLimit, 10), 'upload-limited': true });
+                            if (dlLimit) TWC.rpc.setTorrent([id], { downloadLimit: parseInt(dlLimit, 10), downloadLimited: true });
+                            if (ulLimit) TWC.rpc.setTorrent([id], { uploadLimit: parseInt(ulLimit, 10), uploadLimited: true });
                         }
                         _doRefresh(true);
                     });
@@ -197,7 +197,7 @@ TWC.mobile = (function() {
                 (function(file) {
                     var reader = new FileReader();
                     reader.onload = function(e) {
-                        var base64 = btoa(new Uint8Array(e.target.result).reduce(function(d, b) { return d + String.fromCharCode(b); }, ''));
+                        var base64 = TWC.utils.arrayBufferToBase64(e.target.result);
                         count++;
                         var fileOpts = $.extend({ metainfo: base64 }, opts);
                         TWC.rpc.addTorrent(fileOpts,
@@ -205,8 +205,8 @@ TWC.mobile = (function() {
                                 _showToast(s ? '已添加' : '添加失败', s ? 'success' : 'error');
                                 if (s && added) {
                                     var id = added.id;
-                                    if (dlLimit) TWC.rpc.setTorrent([id], { 'download-limit': parseInt(dlLimit, 10), 'download-limited': true });
-                                    if (ulLimit) TWC.rpc.setTorrent([id], { 'upload-limit': parseInt(ulLimit, 10), 'upload-limited': true });
+                                    if (dlLimit) TWC.rpc.setTorrent([id], { downloadLimit: parseInt(dlLimit, 10), downloadLimited: true });
+                                    if (ulLimit) TWC.rpc.setTorrent([id], { uploadLimit: parseInt(ulLimit, 10), uploadLimited: true });
                                 }
                                 _doRefresh(true);
                             });
@@ -257,23 +257,40 @@ TWC.mobile = (function() {
         if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
     }
 
+    var _mobileRefreshSeq = 0;
+
     function _doRefresh(forceFull) {
-        TWC.rpc.getTorrents(null, [
+        var seq = ++_mobileRefreshSeq;
+        var fields = [
             'id', 'name', 'status', 'totalSize', 'percentDone', 'leftUntilDone',
             'rateDownload', 'rateUpload', 'downloadedEver', 'uploadedEver', 'uploadRatio',
             'eta', 'peersConnected', 'addedDate', 'doneDate', 'downloadDir', 'labels',
             'error', 'errorString', 'haveValid', 'hashString', 'trackerStats',
             'isStalled', 'isFinished', 'downloadLimited', 'downloadLimit',
             'uploadLimited', 'uploadLimit'
-        ], function(torrents, removed, success) {
-            if (success) {
-                if (torrents) { for (var i = 0; i < torrents.length; i++) _torrents[torrents[i].id] = torrents[i]; }
-                if (removed) { for (var j = 0; j < removed.length; j++) delete _torrents[removed[j]]; }
-                _renderCurrentView();
-            }
-        });
-        TWC.rpc.getSessionStats(function(data, s) { if (s) _sessionStats = data; });
-        TWC.rpc.getSession(null, function(data, s) { if (s) _sessionData = data; });
+        ];
+
+        if (forceFull) {
+            TWC.rpc.getTorrents(null, fields, function(torrents, removed, success) {
+                if (seq !== _mobileRefreshSeq) return;
+                if (success) {
+                    if (torrents) { for (var i = 0; i < torrents.length; i++) _torrents[torrents[i].id] = torrents[i]; }
+                    if (removed) { for (var j = 0; j < removed.length; j++) delete _torrents[removed[j]]; }
+                    _renderCurrentView();
+                }
+            });
+        } else {
+            TWC.rpc.getRecentlyActiveTorrents(fields, function(torrents, removed, success) {
+                if (seq !== _mobileRefreshSeq) return;
+                if (success) {
+                    if (torrents) { for (var i = 0; i < torrents.length; i++) _torrents[torrents[i].id] = torrents[i]; }
+                    if (removed) { for (var j = 0; j < removed.length; j++) delete _torrents[removed[j]]; }
+                    _renderCurrentView();
+                }
+            });
+        }
+        TWC.rpc.getSessionStats(function(data, s) { if (s && seq === _mobileRefreshSeq) _sessionStats = data; });
+        TWC.rpc.getSession(null, function(data, s) { if (s && seq === _mobileRefreshSeq) _sessionData = data; });
     }
 
     return { init: init };

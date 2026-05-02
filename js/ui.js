@@ -9,7 +9,9 @@ TWC.ui = (function() {
     var _detailPanelVisible = true;
     var _sidebarVisible = true;
     var _lastSelectedId = null;
-    var _speedHistory = { download: [], upload: [], timestamps: [] };
+    var _speedBuffer = new Array(120);
+    var _speedBufferPos = 0;
+    var _speedBufferSize = 0;
     var _maxSpeedPoints = 120;
     var _freeSpaceTimer = null;
     var _freeSpaceLastUpdated = 0;
@@ -24,7 +26,7 @@ TWC.ui = (function() {
         _doRefresh(true);
         
         _updatePortStatus();
-        _portTestTimer = setInterval(_updatePortStatus, 60000);
+        _portTestTimer = setInterval(_updatePortStatus, 300000);
         _updateFreeSpace();
     }
 
@@ -50,6 +52,15 @@ TWC.ui = (function() {
         TWC.uiList.render();
         TWC.uiList.bindEvents();
         TWC.uiDetail.render();
+
+        if (!_detailPanelVisible) {
+            $('#detail-panel').addClass('collapsed');
+            $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
+            $('#btn-detail-collapse').attr('title', '展开详情面板');
+        }
+        if (!_sidebarVisible) {
+            $('#sidebar').addClass('collapsed');
+        }
     }
 
     function _bindEvents() {
@@ -67,6 +78,7 @@ TWC.ui = (function() {
         $('#btn-auto-refresh').off('click').on('click', _toggleAutoRefresh);
         $('#btn-sidebar-toggle').off('click').on('click', _toggleSidebar);
         $('#btn-detail-toggle').off('click').on('click', _toggleDetailPanel);
+        $('#btn-detail-collapse').off('click').on('click', _toggleDetailPanel);
         $('#btn-theme').off('click').on('click', function() { TWC.theme.toggle(); });
         $('#btn-stats').off('click').on('click', function() { TWC.uiStats.renderGlobalStats(); });
         $('#btn-settings').off('click').on('click', function() { TWC.uiDialog.showSettings(); });
@@ -193,8 +205,8 @@ TWC.ui = (function() {
                         } else {
                             showToast('已开始校验 ' + ids.length + ' 个种子', 'success');
                         }
-                        postActionRefresh();
                     }
+                    postActionRefresh();
                 });
                 break;
             case 'remove':
@@ -264,8 +276,12 @@ TWC.ui = (function() {
         _detailPanelVisible = !_detailPanelVisible;
         if (_detailPanelVisible) {
             $('#detail-panel').removeClass('collapsed');
+            $('#btn-detail-collapse svg').html('<polyline points="6 9 12 15 18 9"/>');
+            $('#btn-detail-collapse').attr('title', '折叠详情面板');
         } else {
             $('#detail-panel').addClass('collapsed');
+            $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
+            $('#btn-detail-collapse').attr('title', '展开详情面板');
         }
         TWC.utils.storageSet('twc-detail-visible', _detailPanelVisible);
     }
@@ -303,31 +319,26 @@ TWC.ui = (function() {
 
     function _updateSpeedHistory() {
         var stats = TWC.torrent.getGlobalStats();
-        _speedHistory.download.push(stats.downloadSpeed);
-        _speedHistory.upload.push(stats.uploadSpeed);
-        _speedHistory.timestamps.push(Date.now());
-        
-        while (_speedHistory.download.length > _maxSpeedPoints) {
-            _speedHistory.download.shift();
-            _speedHistory.upload.shift();
-            _speedHistory.timestamps.shift();
-        }
+        _speedBuffer[_speedBufferPos] = {
+            download: stats.downloadSpeed,
+            upload: stats.uploadSpeed,
+            timestamp: Date.now()
+        };
+        _speedBufferPos = (_speedBufferPos + 1) % _speedBuffer.length;
+        if (_speedBufferSize < _speedBuffer.length) _speedBufferSize++;
     }
 
     var _refreshing = false;
     var _pendingRefresh = null;
     var _isActionRefresh = false;
+    var _refreshTimeout = null;
 
     function _doRefresh(forceFull, skipStats, isAction) {
         if (_refreshing) {
             if (isAction) {
-            // 操作后刷新有更高优先级
-            _pendingRefresh = 'full-action';
-            return;
-            } else if (_pendingRefresh) {
-            return;
-            } else {
-            _pendingRefresh = forceFull ? 'full' : 'auto';
+                _pendingRefresh = 'full-action';
+            } else if (!_pendingRefresh || _pendingRefresh === 'auto') {
+                _pendingRefresh = forceFull ? 'full' : 'auto';
             }
             return;
         }
@@ -336,6 +347,15 @@ TWC.ui = (function() {
 
         _refreshing = true;
         _isActionRefresh = isAction;
+
+        if (_refreshTimeout) clearTimeout(_refreshTimeout);
+        _refreshTimeout = setTimeout(function() {
+            if (_refreshing) {
+                console.warn('[TWC] Refresh timeout, forcing reset');
+                _refreshing = false;
+                _pendingRefresh = null;
+            }
+        }, 10000);
 
         if (isFirst || forceFull) {
             _fullRefresh();
@@ -351,21 +371,28 @@ TWC.ui = (function() {
     }
 
     function _finishRefresh() {
+        if (_refreshTimeout) { clearTimeout(_refreshTimeout); _refreshTimeout = null; }
         _refreshing = false;
         _isActionRefresh = false;
         if (_pendingRefresh) {
             var type = _pendingRefresh;
             _pendingRefresh = null;
-            if (type === 'full-action') {
-            _doRefresh(true, true, true);
-            } else if (type === 'full') {
-            _doRefresh(true, true);
+            switch (type) {
+                case 'full-action':
+                    _doRefresh(true, true, true);
+                    break;
+                case 'full':
+                    _doRefresh(true, true);
+                    break;
+                case 'auto':
+                    _doRefresh(false);
+                    break;
             }
         }
     }
 
     function _fullRefresh() {
-        TWC.rpc.getTorrents(null, null, function(torrents, removed, success, error) {
+        TWC.rpc.getTorrents(null, TWC.rpc.LIST_FIELDS, function(torrents, removed, success, error) {
             if (success) {
                 TWC.torrent.updateData(torrents, removed);
                 TWC.torrent.setFirstLoad(false);
@@ -376,15 +403,20 @@ TWC.ui = (function() {
     }
 
     function _hybridRefresh() {
-        var selectedIds = TWC.torrent.getSelectedIds();
-        
-        TWC.rpc.getRecentlyActiveTorrents(null, function(torrents, removed, success) {
+        TWC.rpc.getRecentlyActiveTorrents(TWC.rpc.LIST_FIELDS, function(torrents, removed, success) {
             if (success) {
                 TWC.torrent.updateData(torrents, removed);
                 
-                if (selectedIds.length > 0) {
-                    TWC.rpc.getTorrents(selectedIds, null, function(selectedTorrents, removedSelected) {
-                        if (selectedTorrents) {
+                var currentSelectedIds = TWC.torrent.getSelectedIds();
+                if (currentSelectedIds.length > 0) {
+                    var allFields = TWC.rpc.LIST_FIELDS.concat(TWC.rpc.DETAIL_FIELDS);
+                    var uniqueFields = [];
+                    var seen = {};
+                    for (var i = 0; i < allFields.length; i++) {
+                        if (!seen[allFields[i]]) { seen[allFields[i]] = true; uniqueFields.push(allFields[i]); }
+                    }
+                    TWC.rpc.getTorrents(currentSelectedIds, uniqueFields, function(selectedTorrents, removedSelected, detailSuccess) {
+                        if (detailSuccess && selectedTorrents && selectedTorrents.length > 0) {
                             TWC.torrent.updateData(selectedTorrents, removedSelected);
                         }
                         _updateUI();
@@ -429,7 +461,7 @@ TWC.ui = (function() {
 
         $('#stat-peers').text(stats.totalPeers || 0);
 
-        if (stats.totalDownloaded > 0 && stats.totalDownloaded > 0) {
+        if (stats.totalDownloaded > 0 && stats.totalUploaded > 0) {
             var ratio = (stats.totalUploaded / stats.totalDownloaded).toFixed(2);
             $('#stat-global-ratio').text(ratio).css('color', ratio >= 1 ? 'var(--color-success-500)' : 'var(--color-warning-500)');
         }
@@ -614,7 +646,16 @@ TWC.ui = (function() {
     }
 
     function getSpeedHistory() {
-        return _speedHistory;
+        var download = [];
+        var upload = [];
+        var timestamps = [];
+        for (var i = 0; i < _speedBufferSize; i++) {
+            var idx = (_speedBufferPos - _speedBufferSize + i + _speedBuffer.length) % _speedBuffer.length;
+            download.push(_speedBuffer[idx].download);
+            upload.push(_speedBuffer[idx].upload);
+            timestamps.push(_speedBuffer[idx].timestamp);
+        }
+        return { download: download, upload: upload, timestamps: timestamps };
     }
 
     return {
@@ -629,7 +670,7 @@ TWC.ui = (function() {
         getSpeedHistory: getSpeedHistory,
         refreshSidebar: TWC.uiLayout.updateSidebar,
         refreshData: function(forceFull) {
-            _doRefresh(forceFull || true, true, true);
+            _doRefresh(forceFull !== false, true, true);
         },
         updateToolbarState: _updateToolbarState,
         updateAltSpeedButton: _updateAltSpeedButton,

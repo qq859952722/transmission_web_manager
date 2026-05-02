@@ -101,6 +101,10 @@ TWC.uiLayout = (function() {
             '<div class="twc-detail-tab" data-tab="peers">Peer</div>' +
             '<div class="twc-detail-tab" data-tab="speed">速度</div>' +
             '<div class="twc-detail-tab" data-tab="settings">设置</div>' +
+            '<div style="flex:1"></div>' +
+            '<button class="twc-btn twc-btn-icon twc-detail-collapse-btn" id="btn-detail-collapse" title="折叠详情面板">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' +
+            '</button>' +
             '</div>' +
             '<div class="twc-detail-content" id="detail-content"></div>' +
             '</div>';

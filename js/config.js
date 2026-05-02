@@ -89,6 +89,25 @@ TWC.config = (function() {
                         { value: 'tolerated', label: '允许明文' }
                     ]}
                 ]
+            },
+            {
+                group: '安全',
+                items: [
+                    { key: 'anti-brute-force-enabled', label: '启用防暴力破解', type: 'toggle' },
+                    { key: 'anti-brute-force-threshold', label: '失败次数阈值', type: 'number', depends: 'anti-brute-force-enabled', min: 1 }
+                ]
+            },
+            {
+                group: '传输偏好',
+                items: [
+                    { key: 'preferred_transports', label: '首选传输协议', type: 'select', valueType: 'array', options: [
+                        { value: 'utp,tcp', label: 'uTP 优先' },
+                        { value: 'tcp,utp', label: 'TCP 优先' },
+                        { value: 'utp', label: '仅 uTP' },
+                        { value: 'tcp', label: '仅 TCP' }
+                    ], hint: '4.0+ 新增，控制传输协议的优先级' },
+                    { key: 'sequential_download', label: '顺序下载', type: 'toggle', hint: '4.0+ 新增，按顺序下载分片' }
+                ]
             }
         ],
         peer: [
@@ -154,32 +173,18 @@ TWC.config = (function() {
         ],
         rpc: [
             {
-                group: 'RPC 设置',
+                group: 'RPC 信息（只读，请通过 settings.json 修改）',
                 items: [
-                    { key: 'rpc-enabled', label: '启用 RPC', type: 'toggle', hint: '修改后需重启 Transmission 才能生效' },
-                    { key: 'rpc-port', label: 'RPC 端口', type: 'number', min: 1, max: 65535, hint: '修改后需重启 Transmission 才能生效' },
-                    { key: 'rpc-url', label: 'RPC URL 路径', type: 'text', hint: '修改后需重启 Transmission 才能生效' },
-                    { key: 'rpc-bind-address', label: '绑定地址', type: 'text', hint: '修改后需重启 Transmission 才能生效' },
-                    { key: 'rpc-socket-path', label: 'Unix 域套接字路径', type: 'text', hint: '4.1.x+ 新增，修改后需重启' },
-                    { key: 'rpc-whitelist-enabled', label: '启用 IP 白名单', type: 'toggle' },
-                    { key: 'rpc-whitelist', label: 'IP 白名单', type: 'text', depends: 'rpc-whitelist-enabled' },
-                    { key: 'rpc-host-whitelist-enabled', label: '启用主机白名单', type: 'toggle' },
-                    { key: 'rpc-host-whitelist', label: '主机白名单', type: 'text', depends: 'rpc-host-whitelist-enabled' }
+                    { key: 'rpc-version', label: 'RPC 版本', type: 'readonly' },
+                    { key: 'rpc-version-semver', label: 'RPC 语义版本', type: 'readonly' },
+                    { key: 'rpc-version-minimum', label: '最低 RPC 版本', type: 'readonly' },
+                    { key: 'session-id', label: 'Session ID', type: 'readonly' }
                 ]
             },
             {
-                group: '认证',
+                group: 'RPC 设置（需通过 settings.json 修改后重启生效）',
                 items: [
-                    { key: 'rpc-authentication-required', label: '需要认证', type: 'toggle' },
-                    { key: 'rpc-username', label: '用户名', type: 'text', depends: 'rpc-authentication-required' },
-                    { key: 'rpc-password', label: '密码', type: 'password', depends: 'rpc-authentication-required', hint: '密码以哈希形式存储，输入新密码将覆盖旧密码' }
-                ]
-            },
-            {
-                group: '安全',
-                items: [
-                    { key: 'anti-brute-force-enabled', label: '启用防暴力破解', type: 'toggle' },
-                    { key: 'anti-brute-force-threshold', label: '失败次数阈值', type: 'number', depends: 'anti-brute-force-enabled', min: 1 }
+                    { key: '_rpc-notice', label: '提示', type: 'readonly-text', value: '以下 RPC 设置无法通过 RPC 接口读取，请编辑 settings.json 文件修改后重启 Transmission：rpc-enabled, rpc-port, rpc-url, rpc-bind-address, rpc-socket-path, rpc-whitelist-enabled, rpc-whitelist, rpc-host-whitelist-enabled, rpc-host-whitelist, rpc-authentication-required, rpc-username, rpc-password' }
                 ]
             }
         ],
@@ -197,23 +202,36 @@ TWC.config = (function() {
                     { key: 'script-torrent-done-enabled', label: '启用完成脚本', type: 'toggle' },
                     { key: 'script-torrent-done-filename', label: '脚本路径', type: 'file', depends: 'script-torrent-done-enabled', hint: '脚本需有执行权限' }
                 ]
+            },
+            {
+                group: '做种完成脚本',
+                items: [
+                    { key: 'script-torrent-done-seeding-enabled', label: '启用做种完成脚本', type: 'toggle' },
+                    { key: 'script-torrent-done-seeding-filename', label: '脚本路径', type: 'file', depends: 'script-torrent-done-seeding-enabled', hint: '4.0+ 新增，脚本需有执行权限' }
+                ]
             }
         ],
         advanced: [
             {
                 group: '默认 Tracker',
                 items: [
-                    { key: 'default-trackers', label: '默认 Tracker 列表', type: 'textarea', hint: '每行一个 Tracker，空行分隔组' }
+                    { key: 'default-trackers', label: '默认 Tracker 列表', type: 'textarea', hint: '每行一个 Tracker URL（仅支持 http/https/udp）；空行分隔不同组（tier）；同组内为备份关系，不同组为并行关系' }
+                ]
+            },
+            {
+                group: '缓存',
+                items: [
+                    { key: 'cache-size-mb', label: '缓存大小', type: 'number', unit: 'MB', min: 1, hint: '磁盘缓存大小' }
                 ]
             },
             {
                 group: '只读信息',
                 items: [
                     { key: 'version', label: 'Transmission 版本', type: 'readonly' },
-                    { key: 'rpc-version', label: 'RPC 版本', type: 'readonly' },
-                    { key: 'rpc-version-semver', label: 'RPC 语义版本', type: 'readonly' },
-                    { key: 'rpc-version-minimum', label: '最低 RPC 版本', type: 'readonly' },
-                    { key: 'config-dir', label: '配置目录', type: 'readonly' }
+                    { key: 'config-dir', label: '配置目录', type: 'readonly' },
+                    { key: 'download-dir-free-space', label: '下载目录可用空间', type: 'readonly-bytes' },
+                    { key: 'tcp-enabled', label: 'TCP 启用', type: 'readonly' },
+                    { key: 'reqq', label: '请求队列长度', type: 'readonly' }
                 ]
             }
         ]

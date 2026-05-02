@@ -8,6 +8,16 @@ TWC.geoip = (function() {
     var _v6Ranges = null;
     var _flagBasePath = 'assets/flags/';
     var _flagCache = {};
+    var _availableFlags = {
+        ae:1,am:1,ar:1,at:1,au:1,az:1,bd:1,be:1,bg:1,bh:1,br:1,bw:1,by:1,
+        ca:1,ch:1,ci:1,cl:1,cm:1,cn:1,co:1,cz:1,de:1,dk:1,dz:1,ee:1,eg:1,
+        es:1,et:1,fi:1,fr:1,gb:1,ge:1,gh:1,gr:1,hk:1,hr:1,hu:1,id:1,ie:1,
+        il:1,in:1,iq:1,ir:1,it:1,jo:1,jp:1,ke:1,kh:1,kr:1,kw:1,kz:1,la:1,
+        lb:1,lk:1,lt:1,lv:1,ly:1,ma:1,mg:1,mm:1,mn:1,mx:1,my:1,mz:1,na:1,
+        ng:1,nl:1,no:1,nz:1,om:1,pe:1,ph:1,pk:1,pl:1,pt:1,qa:1,ro:1,ru:1,
+        sa:1,se:1,sg:1,si:1,sk:1,sn:1,sy:1,th:1,tn:1,tr:1,tw:1,tz:1,ua:1,
+        ug:1,us:1,uz:1,vn:1,ye:1,za:1,zw:1
+    };
 
     function init(callback) {
         if (_loaded) {
@@ -219,12 +229,20 @@ TWC.geoip = (function() {
         return flagPath;
     }
 
+    function hasFlag(code) {
+        if (!code) return false;
+        return _availableFlags[code.toLowerCase()] === 1;
+    }
+
     function getCountryFlagHtml(code) {
         if (!code) return '';
         var lc = code.toLowerCase();
-        var flagPath = _flagBasePath + lc + '.svg';
-        return '<img class="twc-country-flag-img" src="' + flagPath + '" alt="' + code + '" title="' + code.toUpperCase() + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
-            '<span style="display:none;font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
+        if (_availableFlags[lc]) {
+            var flagPath = _flagBasePath + lc + '.svg';
+            return '<img class="twc-country-flag-img" src="' + flagPath + '" alt="' + code + '" title="' + code.toUpperCase() + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
+                '<span style="display:none;font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
+        }
+        return '<span style="font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
     }
 
     function isLoaded() {
@@ -283,6 +301,7 @@ TWC.geoip = (function() {
         getCountryInfo: getCountryInfo,
         getCountryFlag: getCountryFlag,
         getCountryFlagHtml: getCountryFlagHtml,
+        hasFlag: hasFlag,
         isLoaded: isLoaded,
         isPrivateIP: isPrivateIP
     };

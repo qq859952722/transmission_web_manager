@@ -281,7 +281,7 @@ TWC.uiDetailExtras = (function() {
                 uploadLimited: $('#ts-ul-limited').is(':checked'),
                 uploadLimit: parseInt($('#ts-ul-limit').val()) || 0,
                 bandwidthPriority: parseInt($('#ts-priority').val()),
-                maxConnectedPeers: parseInt($('#ts-peer-limit').val()) || 50,
+                peerLimit: parseInt($('#ts-peer-limit').val()) || 50,
                 seedRatioMode: parseInt($('#ts-ratio-mode').val()),
                 seedRatioLimit: parseFloat($('#ts-ratio-limit').val()) || 2.0,
                 seedIdleMode: parseInt($('#ts-idle-mode').val()),
