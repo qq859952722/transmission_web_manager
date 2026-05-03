@@ -16,11 +16,11 @@ TWC.uiDialogConfig = (function() {
         var contentHtml = '<div class="twc-config-content" id="config-content"></div>';
         var bodyHtml = '<div style="display:flex;height:60vh">' + tabsHtml + contentHtml + '</div>';
 
-        var footer = '<button class="twc-btn twc-modal-cancel">取消</button>' +
-            '<button class="twc-btn" id="config-reset-btn">重置</button>' +
-            '<button class="twc-btn primary" id="config-save-btn">保存</button>';
+        var footer = '<button class="twc-btn twc-modal-cancel">' + TWC.i18n.t('dialog.cancel') + '</button>' +
+            '<button class="twc-btn" id="config-reset-btn">' + TWC.i18n.t('dialog.settings.reset') + '</button>' +
+            '<button class="twc-btn primary" id="config-save-btn">' + TWC.i18n.t('dialog.settings.save') + '</button>';
 
-        TWC.ui.showModal(bodyHtml, { title: 'Transmission 设置', size: 'xl', footer: footer });
+        TWC.ui.showModal(bodyHtml, { title: TWC.i18n.t('dialog.settings.title'), size: 'xl', footer: footer });
 
         var currentTab = tabs[0].id;
         _renderTab(currentTab, items, data);
@@ -37,20 +37,20 @@ TWC.uiDialogConfig = (function() {
             if (defaultTrackers && defaultTrackers.trim()) {
                 var trackerResult = TWC.utils.validateTrackerList(defaultTrackers);
                 if (!trackerResult.valid) {
-                    TWC.ui.showToast('默认 Tracker 列表存在无效 URL，请修正后再保存', 'warning');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.tracker.invalid_warn'), 'warning');
                     return;
                 }
             }
             var props = _collectValues(items);
             TWC.config.saveSession(props, function(success, error) {
                 if (success) {
-                    TWC.ui.showToast('设置已保存', 'success');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.save_success'), 'success');
                     TWC.ui.hideModal();
                     TWC.ui.refreshData(true);
                     TWC.ui.updateAltSpeedButton();
                     TWC.ui.updateAltSpeedStatus();
                 } else {
-                    TWC.ui.showToast('保存失败: ' + (error || ''), 'error');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.save_failed') + ': ' + (error || ''), 'error');
                 }
             });
         });
@@ -61,9 +61,13 @@ TWC.uiDialogConfig = (function() {
     }
 
     function _renderTab(tabId, items, data) {
+        if (tabId === 'groups') {
+            _renderGroupsTab();
+            return;
+        }
         var tabItems = items[tabId];
         if (!tabItems) {
-            $('#config-content').html('<div class="twc-empty">无配置项</div>');
+            $('#config-content').html('<div class="twc-empty">' + TWC.i18n.t('dialog.settings.no_items') + '</div>');
             return;
         }
 
@@ -98,7 +102,7 @@ TWC.uiDialogConfig = (function() {
                         html += '<input type="text" class="twc-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(val || '') + '" />';
                         break;
                     case 'password':
-                        html += '<input type="password" class="twc-input" data-config-key="' + item.key + '" value="" placeholder="输入新密码" />';
+                        html += '<input type="password" class="twc-input" data-config-key="' + item.key + '" value="" placeholder="' + TWC.i18n.t('dialog.settings.pwd_placeholder') + '" />';
                         break;
                     case 'folder':
                     case 'file':
@@ -117,8 +121,30 @@ TWC.uiDialogConfig = (function() {
                         html += '<input type="time" class="twc-input" data-config-key="' + item.key + '" value="' + timeStr + '" />';
                         break;
                     case 'daymask':
-                        html += '<input type="number" class="twc-input" data-config-key="' + item.key + '" value="' + (val || 127) + '" min="0" max="127" />' +
-                            '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + TWC.utils.getDayMaskText(val || 127) + '</div>';
+                        var maskVal = parseInt(val) || 127;
+                        html += '<div class="twc-daymask-group" data-config-key="' + item.key + '">';
+                        var days = [
+                            { val: 1, label: TWC.i18n.t('days.sun') },
+                            { val: 2, label: TWC.i18n.t('days.mon') },
+                            { val: 4, label: TWC.i18n.t('days.tue') },
+                            { val: 8, label: TWC.i18n.t('days.wed') },
+                            { val: 16, label: TWC.i18n.t('days.thu') },
+                            { val: 32, label: TWC.i18n.t('days.fri') },
+                            { val: 64, label: TWC.i18n.t('days.sat') }
+                        ];
+                        html += '<div style="margin-bottom:8px;display:flex;gap:6px;">' +
+                                '<button type="button" class="twc-btn twc-btn-sm" onclick="$(this).closest(\'.twc-daymask-group\').find(\'input[type=checkbox]\').prop(\'checked\', true)">' + TWC.i18n.t('days.every') + '</button>' +
+                                '<button type="button" class="twc-btn twc-btn-sm" onclick="$(this).closest(\'.twc-daymask-group\').find(\'input\').prop(\'checked\', false); $(this).closest(\'.twc-daymask-group\').find(\'input[value=2], input[value=4], input[value=8], input[value=16], input[value=32]\').prop(\'checked\', true)">' + TWC.i18n.t('days.work') + '</button>' +
+                                '<button type="button" class="twc-btn twc-btn-sm" onclick="$(this).closest(\'.twc-daymask-group\').find(\'input\').prop(\'checked\', false); $(this).closest(\'.twc-daymask-group\').find(\'input[value=1], input[value=64]\').prop(\'checked\', true)">' + TWC.i18n.t('days.weekend') + '</button>' +
+                                '</div>';
+                        html += '<div style="display:flex; flex-wrap:wrap; gap:12px;">';
+                        for (var dm = 0; dm < days.length; dm++) {
+                            var checked = (maskVal & days[dm].val) ? ' checked' : '';
+                            html += '<label style="display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer;">' +
+                                    '<input type="checkbox" value="' + days[dm].val + '"' + checked + ' /> ' + days[dm].label +
+                                    '</label>';
+                        }
+                        html += '</div></div>';
                         break;
                     case 'textarea':
                         html += '<textarea class="twc-input" data-config-key="' + item.key + '" rows="6" style="height:auto;resize:vertical;font-family:var(--font-mono)">' + TWC.utils.escapeHtml(val || '') + '</textarea>';
@@ -153,8 +179,8 @@ TWC.uiDialogConfig = (function() {
 
         if (tabId === 'blocklist') {
             html += '<div style="margin-top:12px">' +
-                '<button class="twc-btn" id="update-blocklist-btn">更新屏蔽列表</button>' +
-                '<button class="twc-btn" id="test-port-btn" style="margin-left:8px">测试端口</button>' +
+                '<button class="twc-btn" id="update-blocklist-btn">' + TWC.i18n.t('dialog.settings.update_blocklist') + '</button>' +
+                '<button class="twc-btn" id="test-port-btn" style="margin-left:8px">' + TWC.i18n.t('dialog.settings.test_port') + '</button>' +
                 '<span id="port-test-result" style="margin-left:8px;font-size:12px"></span></div>';
         }
 
@@ -180,22 +206,22 @@ TWC.uiDialogConfig = (function() {
             $('#update-blocklist-btn').on('click', function() {
                 TWC.config.updateBlocklist(function(size, success) {
                     if (success) {
-                        TWC.ui.showToast('屏蔽列表已更新，共 ' + size + ' 条规则', 'success');
+                        TWC.ui.showToast(TWC.i18n.t('dialog.settings.blocklist_updated').replace('{n}', size), 'success');
                         $('[data-config-key="blocklist-size"]').val(size);
                     } else {
-                        TWC.ui.showToast('更新失败', 'error');
+                        TWC.ui.showToast(TWC.i18n.t('dialog.settings.update_failed'), 'error');
                     }
                 });
             });
 
             $('#test-port-btn').on('click', function() {
-                $('#port-test-result').text('测试中...').removeClass('text-success text-danger');
+                $('#port-test-result').text(TWC.i18n.t('dialog.settings.testing')).removeClass('text-success text-danger');
                 TWC.config.checkPort(function(isOpen, success) {
                     if (success) {
-                        $('#port-test-result').text(isOpen ? '端口开放 ✓' : '端口关闭 ✕')
+                        $('#port-test-result').text(isOpen ? (TWC.i18n.t('dialog.settings.port_open') + ' ✓') : (TWC.i18n.t('dialog.settings.port_closed') + ' ✕'))
                             .addClass(isOpen ? 'text-success' : 'text-danger');
                     } else {
-                        $('#port-test-result').text('测试失败').addClass('text-danger');
+                        $('#port-test-result').text(TWC.i18n.t('dialog.settings.test_failed')).addClass('text-danger');
                     }
                 });
             });
@@ -216,22 +242,22 @@ TWC.uiDialogConfig = (function() {
 
         var html = '<div class="twc-label-manager" id="label-manager" data-config-key="_label-manager">';
         html += '<div style="display:flex;gap:8px;margin-bottom:12px">' +
-            '<input type="text" class="twc-input" id="label-add-input" placeholder="输入新标签名称" style="flex:1" />' +
-            '<button class="twc-btn primary" id="label-add-btn" style="white-space:nowrap">添加</button>' +
+            '<input type="text" class="twc-input" id="label-add-input" placeholder="' + TWC.i18n.t('dialog.label.placeholder') + '" style="flex:1" />' +
+            '<button class="twc-btn primary" id="label-add-btn" style="white-space:nowrap">' + TWC.i18n.t('dialog.add.submit') + '</button>' +
             '</div>';
 
         if (allLabels.length === 0) {
-            html += '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">暂无标签，请添加</div>';
+            html += '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">' + TWC.i18n.t('dialog.label.no_labels') + '</div>';
         } else {
             html += '<div class="twc-label-manager-list">';
             for (var k = 0; k < allLabels.length; k++) {
                 var isFromTorrent = torrentLabels.indexOf(allLabels[k]) !== -1;
                 var isSaved = savedLabels.indexOf(allLabels[k]) !== -1;
-                var source = isFromTorrent && isSaved ? '任务+自定义' : (isFromTorrent ? '来自任务' : '自定义');
+                var source = isFromTorrent && isSaved ? TWC.i18n.t('dialog.label.source_both') : (isFromTorrent ? TWC.i18n.t('dialog.label.source_torrent') : TWC.i18n.t('dialog.label.source_custom'));
                 html += '<div class="twc-label-manager-item" data-label="' + TWC.utils.escapeHtml(allLabels[k]) + '">' +
                     '<span class="twc-label-manager-name">' + TWC.utils.escapeHtml(allLabels[k]) + '</span>' +
                     '<span class="twc-label-manager-source">' + source + '</span>' +
-                    '<button class="twc-btn twc-btn-sm twc-label-manager-delete" data-label="' + TWC.utils.escapeHtml(allLabels[k]) + '" title="删除">&times;</button>' +
+                    '<button class="twc-btn twc-btn-sm twc-label-manager-delete" data-label="' + TWC.utils.escapeHtml(allLabels[k]) + '" title="' + TWC.i18n.t('dialog.delete.submit') + '">&times;</button>' +
                     '</div>';
             }
             html += '</div>';
@@ -250,15 +276,15 @@ TWC.uiDialogConfig = (function() {
 
         $('#label-add-btn').off('click.labeladd').on('click.labeladd', function() {
             var name = $('#label-add-input').val().trim();
-            if (!name) { TWC.ui.showToast('请输入标签名称', 'warning'); return; }
+            if (!name) { TWC.ui.showToast(TWC.i18n.t('dialog.label.empty_warn'), 'warning'); return; }
             var savedLabels = TWC.utils.storageGet('twc-label-library', []);
-            if (savedLabels.indexOf(name) !== -1) { TWC.ui.showToast('标签已存在', 'warning'); return; }
+            if (savedLabels.indexOf(name) !== -1) { TWC.ui.showToast(TWC.i18n.t('dialog.label.exists_warn'), 'warning'); return; }
             savedLabels.push(name);
             savedLabels.sort();
             TWC.utils.storageSet('twc-label-library', savedLabels);
             $('#label-add-input').val('');
             refreshLabelManager();
-            TWC.ui.showToast('标签已添加: ' + name, 'success');
+            TWC.ui.showToast(TWC.i18n.t('dialog.label.add_success').replace('{name}', name), 'success');
         });
 
         $('#label-add-input').off('keydown.labelinput').on('keydown.labelinput', function(e) {
@@ -276,9 +302,199 @@ TWC.uiDialogConfig = (function() {
             if (idx !== -1) {
                 savedLabels.splice(idx, 1);
                 TWC.utils.storageSet('twc-label-library', savedLabels);
-                TWC.ui.showToast('标签已删除: ' + name, 'success');
+                TWC.ui.showToast(TWC.i18n.t('dialog.label.delete_success').replace('{name}', name), 'success');
             }
             refreshLabelManager();
+        });
+    }
+
+    function _renderGroupsTab() {
+        var $content = $('#config-content');
+        $content.html('<div class="twc-groups-loading">' + TWC.i18n.t('dialog.settings.loading') + '</div>');
+
+        TWC.config.loadGroups(function(groups, success) {
+            if (!success) {
+                var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
+                if (rpcVersion > 0 && rpcVersion < 17) {
+                    $content.html('<div class="twc-empty">' + TWC.i18n.t('status.group_unsupported') + '</div>');
+                } else {
+                    $content.html('<div class="twc-empty">' + TWC.i18n.t('status.group_failed') + '</div>');
+                }
+                return;
+            }
+
+            var html = '<div class="twc-groups-manager" id="groups-manager">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+            html += '<span style="font-size:13px;color:var(--text-muted)">' + TWC.i18n.t('dialog.settings.groups_hint') + '</span>';
+            html += '<button class="twc-btn primary" id="group-add-btn">' + TWC.i18n.t('dialog.settings.group_add') + '</button>';
+            html += '</div>';
+
+            if (!groups || groups.length === 0) {
+                html += '<div class="twc-empty" style="padding:40px">' + TWC.i18n.t('dialog.settings.no_groups') + '</div>';
+            } else {
+                html += '<div class="twc-groups-list" id="groups-list">';
+                for (var i = 0; i < groups.length; i++) {
+                    html += _renderGroupCard(groups[i]);
+                }
+                html += '</div>';
+            }
+
+            html += '</div>';
+            $content.html(html);
+
+            _bindGroupsEvents();
+        });
+    }
+
+    function _renderGroupCard(g) {
+        var dlEnabled = g['speed-limit-down-enabled'] || false;
+        var ulEnabled = g['speed-limit-up-enabled'] || false;
+        var dlLimit = g['speed-limit-down'] || 0;
+        var ulLimit = g['speed-limit-up'] || 0;
+        var honorsSession = g.honorsSessionLimits !== false;
+
+        var html = '<div class="twc-group-card" data-group-name="' + TWC.utils.escapeAttr(g.name) + '">';
+        html += '<div class="twc-group-card-header">';
+        html += '<span class="twc-group-name">' + TWC.utils.escapeHtml(g.name) + '</span>';
+        html += '<div class="twc-group-actions">';
+        html += '<button class="twc-btn twc-btn-sm twc-group-edit" data-group-name="' + TWC.utils.escapeAttr(g.name) + '">' + TWC.i18n.t('dialog.settings.group_edit') + '</button>';
+        html += '<button class="twc-btn twc-btn-sm twc-btn-danger twc-group-delete" data-group-name="' + TWC.utils.escapeAttr(g.name) + '">' + TWC.i18n.t('dialog.settings.group_delete') + '</button>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="twc-group-card-body">';
+        html += '<div class="twc-group-info-row">';
+        html += '<span>' + TWC.i18n.t('dialog.settings.group_download_limit') + '</span>';
+        html += '<span>' + (dlEnabled ? TWC.utils.formatSpeed(dlLimit * 1024) : TWC.i18n.t('dialog.settings.group_no_limit')) + '</span>';
+        html += '</div>';
+        html += '<div class="twc-group-info-row">';
+        html += '<span>' + TWC.i18n.t('dialog.settings.group_upload_limit') + '</span>';
+        html += '<span>' + (ulEnabled ? TWC.utils.formatSpeed(ulLimit * 1024) : TWC.i18n.t('dialog.settings.group_no_limit')) + '</span>';
+        html += '</div>';
+        html += '<div class="twc-group-info-row">';
+        html += '<span>' + TWC.i18n.t('dialog.settings.group_honors_session') + '</span>';
+        html += '<span>' + (honorsSession ? '✓' : '✗') + '</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function _bindGroupsEvents() {
+        $('#group-add-btn').off('click').on('click', function() {
+            _showGroupEditor(null);
+        });
+
+        $('#groups-list').off('click').on('click', '.twc-group-edit', function() {
+            var name = $(this).data('group-name');
+            var groups = TWC.config.getGroups() || [];
+            var group = null;
+            for (var i = 0; i < groups.length; i++) {
+                if (groups[i].name === name) { group = groups[i]; break; }
+            }
+            if (group) _showGroupEditor(group);
+        });
+
+        $('#groups-list').off('click.groupdelete').on('click.groupdelete', '.twc-group-delete', function() {
+            var name = $(this).data('group-name');
+            if (confirm(TWC.i18n.t('dialog.settings.group_delete_confirm').replace('{name}', name))) {
+                TWC.rpc.setGroup({
+                    name: name,
+                    'speed-limit-down-enabled': false,
+                    'speed-limit-up-enabled': false,
+                    'speed-limit-down': 0,
+                    'speed-limit-up': 0,
+                    honorsSessionLimits: true
+                }, function(success) {
+                    if (success) {
+                        TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_delete_success').replace('{name}', name), 'success');
+                        _renderGroupsTab();
+                    } else {
+                        TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_delete_failed'), 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function _showGroupEditor(existingGroup) {
+        var isEdit = !!existingGroup;
+        var name = isEdit ? existingGroup.name : '';
+        var dlEnabled = isEdit ? (existingGroup['speed-limit-down-enabled'] || false) : false;
+        var ulEnabled = isEdit ? (existingGroup['speed-limit-up-enabled'] || false) : false;
+        var dlLimit = isEdit ? (existingGroup['speed-limit-down'] || 0) : 0;
+        var ulLimit = isEdit ? (existingGroup['speed-limit-up'] || 0) : 0;
+        var honorsSession = isEdit ? (existingGroup.honorsSessionLimits !== false) : true;
+
+        var html = '<div class="twc-group-editor">';
+        html += '<div class="twc-form-group">';
+        html += '<label>' + TWC.i18n.t('dialog.settings.group_name') + '</label>';
+        html += '<input type="text" class="twc-input" id="group-editor-name" value="' + TWC.utils.escapeHtml(name) + '"' + (isEdit ? ' readonly' : '') + ' />';
+        html += '</div>';
+
+        html += '<div class="twc-form-group">';
+        html += '<label>' + TWC.i18n.t('dialog.settings.group_download_limit') + '</label>';
+        html += '<div style="display:flex;gap:8px;align-items:center">';
+        html += '<div class="twc-toggle' + (dlEnabled ? ' active' : '') + '" id="group-editor-dl-enabled">';
+        html += '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div></div>';
+        html += '<input type="number" class="twc-input" id="group-editor-dl-limit" value="' + dlLimit + '" min="0" style="width:120px" />';
+        html += '<span style="font-size:11px;color:var(--text-muted)">' + TWC.i18n.t('dialog.settings.group_speed_unit') + '</span>';
+        html += '</div></div>';
+
+        html += '<div class="twc-form-group">';
+        html += '<label>' + TWC.i18n.t('dialog.settings.group_upload_limit') + '</label>';
+        html += '<div style="display:flex;gap:8px;align-items:center">';
+        html += '<div class="twc-toggle' + (ulEnabled ? ' active' : '') + '" id="group-editor-ul-enabled">';
+        html += '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div></div>';
+        html += '<input type="number" class="twc-input" id="group-editor-ul-limit" value="' + ulLimit + '" min="0" style="width:120px" />';
+        html += '<span style="font-size:11px;color:var(--text-muted)">' + TWC.i18n.t('dialog.settings.group_speed_unit') + '</span>';
+        html += '</div></div>';
+
+        html += '<div class="twc-form-group">';
+        html += '<label>' + TWC.i18n.t('dialog.settings.group_honors_session') + '</label>';
+        html += '<div class="twc-toggle' + (honorsSession ? ' active' : '') + '" id="group-editor-honors-session">';
+        html += '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div></div>';
+        html += '</div>';
+
+        html += '</div>';
+
+        var footer = '<button class="twc-btn twc-modal-cancel">' + TWC.i18n.t('dialog.cancel') + '</button>' +
+            '<button class="twc-btn primary" id="group-editor-save">' + TWC.i18n.t('dialog.settings.save') + '</button>';
+
+        TWC.ui.showModal(html, {
+            title: isEdit ? TWC.i18n.t('dialog.settings.group_edit_title').replace('{name}', name) : TWC.i18n.t('dialog.settings.group_add_title'),
+            size: 'md',
+            footer: footer
+        });
+
+        $('#group-editor-dl-enabled, #group-editor-ul-enabled, #group-editor-honors-session').on('click', function() {
+            $(this).toggleClass('active');
+        });
+
+        $('#group-editor-save').on('click', function() {
+            var groupName = $('#group-editor-name').val().trim();
+            if (!groupName) {
+                TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_name_required'), 'warning');
+                return;
+            }
+
+            var props = {
+                name: groupName,
+                'speed-limit-down-enabled': $('#group-editor-dl-enabled').hasClass('active'),
+                'speed-limit-up-enabled': $('#group-editor-ul-enabled').hasClass('active'),
+                'speed-limit-down': parseInt($('#group-editor-dl-limit').val()) || 0,
+                'speed-limit-up': parseInt($('#group-editor-ul-limit').val()) || 0,
+                honorsSessionLimits: $('#group-editor-honors-session').hasClass('active')
+            };
+
+            TWC.rpc.setGroup(props, function(success) {
+                if (success) {
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_save_success'), 'success');
+                    TWC.ui.hideModal();
+                    _renderGroupsTab();
+                } else {
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_save_failed'), 'error');
+                }
+            });
         });
     }
 
@@ -301,7 +517,13 @@ TWC.uiDialogConfig = (function() {
                         props[item.key] = $el.hasClass('active');
                     } else if (item.type === 'time') {
                         props[item.key] = TWC.utils.timeToMinutes($el.val());
-                    } else if (item.type === 'number' || item.type === 'daymask') {
+                    } else if (item.type === 'daymask') {
+                        var finalMask = 0;
+                        $el.find('input[type=checkbox]:checked').each(function() {
+                            finalMask += parseInt($(this).val());
+                        });
+                        props[item.key] = finalMask;
+                    } else if (item.type === 'number') {
                         var numVal = $el.val();
                         if (item.step && item.step.indexOf('.') >= 0) {
                             props[item.key] = parseFloat(numVal) || 0;

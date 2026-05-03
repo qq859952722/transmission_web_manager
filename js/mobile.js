@@ -29,10 +29,10 @@ TWC.mobile = (function() {
             '<span class="m-header-title">Transmission</span>' +
             '</div>' +
             '<div class="m-header-right">' +
-            '<button class="m-icon-btn" id="m-btn-theme" title="切换主题">' +
+            '<button class="m-icon-btn" id="m-btn-theme" title="' + TWC.i18n.t('mobile.theme_toggle') + '">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' +
             '</button>' +
-            '<button class="m-icon-btn" id="m-btn-settings" title="设置">' +
+            '<button class="m-icon-btn" id="m-btn-settings" title="' + TWC.i18n.t('mobile.settings') + '">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
             '</button>' +
             '</div>' +
@@ -41,16 +41,16 @@ TWC.mobile = (function() {
             '<div class="m-navbar">' +
             '<div class="m-nav-item active" data-view="list">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
-            '<span>种子</span></div>' +
+            '<span>' + TWC.i18n.t('mobile.torrents') + '</span></div>' +
             '<div class="m-nav-item" data-view="stats">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>' +
-            '<span>统计</span></div>' +
+            '<span>' + TWC.i18n.t('mobile.stats') + '</span></div>' +
             '<div class="m-nav-item" data-view="speed">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
-            '<span>速度</span></div>' +
+            '<span>' + TWC.i18n.t('mobile.speed') + '</span></div>' +
             '<div class="m-nav-item" data-view="add">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>' +
-            '<span>添加</span></div>' +
+            '<span>' + TWC.i18n.t('mobile.add') + '</span></div>' +
             '</div>' +
             '</div>' +
             '<div class="m-modal-overlay" id="m-modal-overlay"></div>' +
@@ -116,20 +116,20 @@ TWC.mobile = (function() {
         var ids = [id];
         switch (action) {
             case 'start':
-                TWC.rpc.startTorrents(ids, function(s) { _showToast(s ? '已开始' : '操作失败', s ? 'success' : 'error'); _doRefresh(true); });
+                TWC.rpc.startTorrents(ids, function(s) { _showToast(s ? TWC.i18n.t('mobile.started') : TWC.i18n.t('mobile.op_failed'), s ? 'success' : 'error'); _doRefresh(true); });
                 break;
             case 'stop':
-                TWC.rpc.stopTorrents(ids, function(s) { _showToast(s ? '已暂停' : '操作失败', s ? 'success' : 'error'); _doRefresh(true); });
+                TWC.rpc.stopTorrents(ids, function(s) { _showToast(s ? TWC.i18n.t('mobile.paused') : TWC.i18n.t('mobile.op_failed'), s ? 'success' : 'error'); _doRefresh(true); });
                 break;
             case 'reannounce':
-                TWC.rpc.reannounceTorrents(ids, function(s) { _showToast(s ? '已重新宣告' : '操作失败', s ? 'success' : 'error'); _doRefresh(true); });
+                TWC.rpc.reannounceTorrents(ids, function(s) { _showToast(s ? TWC.i18n.t('mobile.reannounced') : TWC.i18n.t('mobile.op_failed'), s ? 'success' : 'error'); _doRefresh(true); });
                 break;
             case 'verify':
-                TWC.rpc.verifyTorrents(ids, function(s) { _showToast(s ? '已开始校验' : '操作失败', s ? 'success' : 'error'); _doRefresh(true); });
+                TWC.rpc.verifyTorrents(ids, function(s) { _showToast(s ? TWC.i18n.t('mobile.verifying') : TWC.i18n.t('mobile.op_failed'), s ? 'success' : 'error'); _doRefresh(true); });
                 break;
             case 'remove':
-                if (confirm('确定要删除此种子吗？')) {
-                    TWC.rpc.removeTorrents(ids, false, function(s) { _showToast(s ? '已删除' : '删除失败', s ? 'success' : 'error'); _detailId = null; _doRefresh(true); });
+                if (confirm(TWC.i18n.t('mobile.confirm_delete'))) {
+                    TWC.rpc.removeTorrents(ids, false, function(s) { _showToast(s ? TWC.i18n.t('mobile.deleted') : TWC.i18n.t('mobile.delete_failed'), s ? 'success' : 'error'); _detailId = null; _doRefresh(true); });
                 }
                 break;
         }
@@ -138,7 +138,7 @@ TWC.mobile = (function() {
     function _toggleAltSpeed() {
         var current = _sessionData['alt-speed-enabled'] || false;
         TWC.rpc.setSession({ 'alt-speed-enabled': !current }, function(s) {
-            if (s) { _showToast(!current ? '已启用备用限速' : '已关闭备用限速', 'success'); _doRefresh(true); }
+            if (s) { _showToast(!current ? TWC.i18n.t('mobile.alt_speed_on') : TWC.i18n.t('mobile.alt_speed_off'), 'success'); _doRefresh(true); }
         });
     }
 
@@ -148,7 +148,7 @@ TWC.mobile = (function() {
         if (dl > 0) props['speed-limit-down'] = dl;
         props['speed-limit-up-enabled'] = ul > 0;
         if (ul > 0) props['speed-limit-up'] = ul;
-        TWC.rpc.setSession(props, function(s) { if (s) { _showToast('限速已设置', 'success'); _doRefresh(true); } });
+        TWC.rpc.setSession(props, function(s) { if (s) { _showToast(TWC.i18n.t('mobile.speed_limit_set'), 'success'); _doRefresh(true); } });
     }
 
     function _submitAddTorrent() {
@@ -167,7 +167,7 @@ TWC.mobile = (function() {
         var opts = {
             'download-dir': dir || undefined,
             paused: paused,
-            bandwidthPriority: priority !== 1 ? priority : undefined,
+            bandwidth_priority: priority !== 1 ? priority : undefined,
             sequential_download: sequential ? true : undefined
         };
         if (peerLimit && parseInt(peerLimit, 10) > 0) opts['peer-limit'] = parseInt(peerLimit, 10);
@@ -182,11 +182,11 @@ TWC.mobile = (function() {
                 var urlOpts = $.extend({ filename: url }, opts);
                 TWC.rpc.addTorrent(urlOpts,
                     function(s, added, dup, err) {
-                        _showToast(dup ? '种子已存在' : (s ? '已添加' : '添加失败'), dup ? 'warning' : (s ? 'success' : 'error'));
+                        _showToast(dup ? TWC.i18n.t('mobile.torrent_exists') : (s ? TWC.i18n.t('mobile.added') : TWC.i18n.t('mobile.add_failed')), dup ? 'warning' : (s ? 'success' : 'error'));
                         if (s && added) {
                             var id = added.id;
-                            if (dlLimit) TWC.rpc.setTorrent([id], { downloadLimit: parseInt(dlLimit, 10), downloadLimited: true });
-                            if (ulLimit) TWC.rpc.setTorrent([id], { uploadLimit: parseInt(ulLimit, 10), uploadLimited: true });
+                            if (dlLimit) TWC.rpc.setTorrent([id], { download_limit: parseInt(dlLimit, 10), download_limited: true });
+                            if (ulLimit) TWC.rpc.setTorrent([id], { upload_limit: parseInt(ulLimit, 10), upload_limited: true });
                         }
                         _doRefresh(true);
                     });
@@ -202,11 +202,11 @@ TWC.mobile = (function() {
                         var fileOpts = $.extend({ metainfo: base64 }, opts);
                         TWC.rpc.addTorrent(fileOpts,
                             function(s, added) {
-                                _showToast(s ? '已添加' : '添加失败', s ? 'success' : 'error');
+                                _showToast(s ? TWC.i18n.t('mobile.added') : TWC.i18n.t('mobile.add_failed'), s ? 'success' : 'error');
                                 if (s && added) {
                                     var id = added.id;
-                                    if (dlLimit) TWC.rpc.setTorrent([id], { downloadLimit: parseInt(dlLimit, 10), downloadLimited: true });
-                                    if (ulLimit) TWC.rpc.setTorrent([id], { uploadLimit: parseInt(ulLimit, 10), uploadLimited: true });
+                                    if (dlLimit) TWC.rpc.setTorrent([id], { download_limit: parseInt(dlLimit, 10), download_limited: true });
+                                    if (ulLimit) TWC.rpc.setTorrent([id], { upload_limit: parseInt(ulLimit, 10), upload_limited: true });
                                 }
                                 _doRefresh(true);
                             });
@@ -215,20 +215,20 @@ TWC.mobile = (function() {
                 })(files[j]);
             }
         }
-        if (count === 0 && (!files || files.length === 0)) _showToast('请输入种子链接或选择文件', 'warning');
+        if (count === 0 && (!files || files.length === 0)) _showToast(TWC.i18n.t('mobile.enter_link_file'), 'warning');
     }
 
     function _showSettingsModal() {
         var html = '<div class="m-modal">' +
-            '<div class="m-modal-header"><h3>设置</h3><button class="m-modal-close" id="m-modal-close">✕</button></div>' +
+            '<div class="m-modal-header"><h3>' + TWC.i18n.t('mobile.settings') + '</h3><button class="m-modal-close" id="m-modal-close">✕</button></div>' +
             '<div class="m-modal-body">' +
-            _attrRow('版本', 'Transmission ' + (_sessionData.version || '-')) +
-            _attrRow('RPC版本', _sessionData['rpc-version'] || '-') +
-            _attrRow('默认下载目录', _sessionData['download-dir'] || '-') +
-            _attrRow('监听端口', _sessionData['peer-port'] || '-') +
-            _attrRow('DHT', _sessionData['dht-enabled'] ? '启用' : '禁用') +
-            _attrRow('PEX', _sessionData['pex-enabled'] ? '启用' : '禁用') +
-            _attrRow('端口转发', _sessionData['port-forwarding-enabled'] ? '启用' : '禁用') +
+            _attrRow(TWC.i18n.t('mobile.version'), 'Transmission ' + (_sessionData.version || '-')) +
+            _attrRow(TWC.i18n.t('mobile.rpc_version'), _sessionData['rpc-version'] || '-') +
+            _attrRow(TWC.i18n.t('mobile.default_dir'), _sessionData['download-dir'] || '-') +
+            _attrRow(TWC.i18n.t('mobile.peer_port'), _sessionData['peer-port'] || '-') +
+            _attrRow(TWC.i18n.t('mobile.dht'), _sessionData['dht-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
+            _attrRow(TWC.i18n.t('mobile.pex'), _sessionData['pex-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
+            _attrRow(TWC.i18n.t('mobile.port_forwarding'), _sessionData['port-forwarding-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
             '</div></div>';
         $('#m-modal-overlay').html(html).addClass('visible');
         $('#m-modal-close, #m-modal-overlay').on('click', function(e) {
@@ -262,12 +262,12 @@ TWC.mobile = (function() {
     function _doRefresh(forceFull) {
         var seq = ++_mobileRefreshSeq;
         var fields = [
-            'id', 'name', 'status', 'totalSize', 'percentDone', 'leftUntilDone',
-            'rateDownload', 'rateUpload', 'downloadedEver', 'uploadedEver', 'uploadRatio',
-            'eta', 'peersConnected', 'addedDate', 'doneDate', 'downloadDir', 'labels',
-            'error', 'errorString', 'haveValid', 'hashString', 'trackerStats',
-            'isStalled', 'isFinished', 'downloadLimited', 'downloadLimit',
-            'uploadLimited', 'uploadLimit'
+            'id', 'name', 'status', 'total_size', 'percent_done', 'left_until_done',
+            'rate_download', 'rate_upload', 'downloaded_ever', 'uploaded_ever', 'upload_ratio',
+            'eta', 'peers_connected', 'added_date', 'done_date', 'download_dir', 'labels',
+            'error', 'error_string', 'have_valid', 'hash_string', 'tracker_stats',
+            'is_stalled', 'is_finished', 'download_limited', 'download_limit',
+            'upload_limited', 'upload_limit'
         ];
 
         if (forceFull) {

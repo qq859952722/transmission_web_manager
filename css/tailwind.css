@@ -946,6 +946,52 @@ a:hover {
     grid-column: 1 / -1;
 }
 
+.twc-group-card {
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.twc-group-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+}
+.twc-group-name {
+    font-weight: 600;
+    font-size: 13px;
+}
+.twc-group-actions {
+    display: flex;
+    gap: 6px;
+}
+.twc-group-card-body {
+    padding: 10px 14px;
+}
+.twc-group-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+}
+.twc-group-info-row span:first-child {
+    color: var(--text-muted);
+}
+.twc-group-info-row span:last-child {
+    font-weight: 500;
+}
+.twc-btn-danger {
+    color: var(--color-danger-500);
+    border-color: var(--color-danger-500);
+}
+.twc-btn-danger:hover {
+    background: var(--color-danger-500);
+    color: #fff;
+}
+
 .twc-context-menu {
     position: fixed;
     background: var(--bg-modal);

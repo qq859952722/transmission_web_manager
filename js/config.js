@@ -12,226 +12,205 @@ TWC.config = (function() {
     var _isLoaded = false;
 
     var CONFIG_TABS = [
-        { id: 'download', name: '下载', icon: 'download' },
-        { id: 'speed', name: '速度限制', icon: 'speed' },
-        { id: 'network', name: '网络', icon: 'network' },
-        { id: 'peer', name: '连接', icon: 'peer' },
-        { id: 'seeding', name: '做种', icon: 'seeding' },
-        { id: 'queue', name: '队列', icon: 'queue' },
-        { id: 'labels', name: '标签管理', icon: 'labels' },
-        { id: 'blocklist', name: '屏蔽列表', icon: 'blocklist' },
-        { id: 'rpc', name: 'RPC', icon: 'rpc' },
-        { id: 'script', name: '脚本', icon: 'script' },
-        { id: 'advanced', name: '高级', icon: 'advanced' }
+        { id: 'download', i18n: 'detail.tabs.files', icon: 'download' },
+        { id: 'speed', i18n: 'detail.tabs.speed', icon: 'speed' },
+        { id: 'groups', i18n: 'dialog.settings.bandwidth_groups', fallback: 'Bandwidth Groups', icon: 'groups' },
+        { id: 'network', i18n: 'toolbar.network', fallback: 'Network', icon: 'network' },
+        { id: 'peer', i18n: 'detail.peers.title', icon: 'peer' },
+        { id: 'seeding', i18n: 'detail.settings.seed_ratio', icon: 'seeding' },
+        { id: 'queue', i18n: 'sidebar.status_queued', icon: 'queue' },
+        { id: 'labels', i18n: 'sidebar.labels', icon: 'labels' },
+        { id: 'blocklist', i18n: 'dialog.settings.blocklist', icon: 'blocklist' },
+        { id: 'rpc', fallback: 'RPC', icon: 'rpc' },
+        { id: 'script', i18n: 'dialog.settings.script', fallback: 'Script', icon: 'script' },
+        { id: 'advanced', i18n: 'dialog.settings.advanced', fallback: 'Advanced', icon: 'advanced' }
     ];
 
     var CONFIG_ITEMS = {
         download: [
             {
-                group: '下载目录',
+                i18nGroup: 'detail.settings.download_dir',
                 items: [
-                    { key: 'download-dir', label: '默认下载目录', type: 'folder', hint: '新种子的默认保存位置' },
-                    { key: 'incomplete-dir-enabled', label: '启用临时目录', type: 'toggle', hint: '未完成的文件保存到临时目录' },
-                    { key: 'incomplete-dir', label: '临时目录', type: 'folder', hint: '未完成文件的保存位置', depends: 'incomplete-dir-enabled' }
+                    { key: 'download-dir', i18nLabel: 'dialog.add.download_dir', type: 'folder', i18nHint: 'dialog.add.dir_placeholder' },
+                    { key: 'incomplete-dir-enabled', i18nLabel: 'dialog.settings.incomplete_enabled', fallbackLabel: 'Enable Incomplete Dir', type: 'toggle', i18nHint: 'dialog.settings.incomplete_hint', fallbackHint: 'Save unfinished files to a temporary folder' },
+                    { key: 'incomplete-dir', i18nLabel: 'dialog.settings.incomplete_dir', fallbackLabel: 'Incomplete Dir', type: 'folder', i18nHint: 'dialog.settings.incomplete_dir_hint', fallbackHint: 'Location for unfinished files', depends: 'incomplete-dir-enabled' }
                 ]
             },
             {
-                group: '添加行为',
+                i18nGroup: 'dialog.settings.add_behavior', fallbackGroup: 'Add Behavior',
                 items: [
-                    { key: 'start-added-torrents', label: '自动开始下载', type: 'toggle', hint: '添加种子后自动开始下载' },
-                    { key: 'rename-partial-files', label: '未完成文件加后缀', type: 'toggle', hint: '为未完成的文件添加 .part 后缀' },
-                    { key: 'trash-original-torrent-files', label: '删除原始种子文件', type: 'toggle', hint: '添加后删除原始 .torrent 文件' }
+                    { key: 'start-added-torrents', i18nLabel: 'dialog.settings.start_added', fallbackLabel: 'Start Added Torrents', type: 'toggle', i18nHint: 'dialog.add.paused' },
+                    { key: 'rename-partial-files', i18nLabel: 'dialog.settings.rename_partial', fallbackLabel: 'Rename Partial Files', type: 'toggle', i18nHint: 'dialog.settings.rename_partial_hint', fallbackHint: 'Append .part to unfinished files' },
+                    { key: 'trash-original-torrent-files', i18nLabel: 'dialog.settings.trash_torrent', fallbackLabel: 'Trash Original Torrent Files', type: 'toggle', i18nHint: 'dialog.settings.trash_torrent_hint', fallbackHint: 'Delete .torrent files after adding' }
                 ]
             }
         ],
         speed: [
             {
-                group: '全局速度限制',
+                i18nGroup: 'dialog.settings.global_speed', fallbackGroup: 'Global Speed Limits',
                 items: [
-                    { key: 'speed-limit-down-enabled', label: '启用下载限速', type: 'toggle' },
-                    { key: 'speed-limit-down', label: '下载限速', type: 'number', unit: 'KB/s', depends: 'speed-limit-down-enabled', min: 0 },
-                    { key: 'speed-limit-up-enabled', label: '启用上传限速', type: 'toggle' },
-                    { key: 'speed-limit-up', label: '上传限速', type: 'number', unit: 'KB/s', depends: 'speed-limit-up-enabled', min: 0 }
+                    { key: 'speed-limit-down-enabled', i18nLabel: 'dialog.settings.dl_limit_enabled', fallbackLabel: 'Enable Download Limit', type: 'toggle' },
+                    { key: 'speed-limit-down', i18nLabel: 'detail.settings.download_limit', type: 'number', unit: 'KB/s', depends: 'speed-limit-down-enabled', min: 0 },
+                    { key: 'speed-limit-up-enabled', i18nLabel: 'dialog.settings.ul_limit_enabled', fallbackLabel: 'Enable Upload Limit', type: 'toggle' },
+                    { key: 'speed-limit-up', i18nLabel: 'detail.settings.upload_limit', type: 'number', unit: 'KB/s', depends: 'speed-limit-up-enabled', min: 0 }
                 ]
             },
             {
-                group: '备用速度限制（时段限速）',
+                i18nGroup: 'toolbar.alt_speed',
                 items: [
-                    { key: 'alt-speed-enabled', label: '启用备用限速', type: 'toggle', hint: '立即启用备用速度限制' },
-                    { key: 'alt-speed-down', label: '备用下载限速', type: 'number', unit: 'KB/s', min: 0 },
-                    { key: 'alt-speed-up', label: '备用上传限速', type: 'number', unit: 'KB/s', min: 0 },
-                    { key: 'alt-speed-time-enabled', label: '启用定时备用限速', type: 'toggle' },
-                    { key: 'alt-speed-time-begin', label: '开始时间', type: 'time', depends: 'alt-speed-time-enabled', hint: '备用限速开始时间' },
-                    { key: 'alt-speed-time-end', label: '结束时间', type: 'time', depends: 'alt-speed-time-enabled', hint: '备用限速结束时间' },
-                    { key: 'alt-speed-time-day', label: '生效日', type: 'daymask', depends: 'alt-speed-time-enabled', hint: '位掩码：周日=1,周一=2...周六=64' }
+                    { key: 'alt-speed-enabled', i18nLabel: 'dialog.settings.enabled', type: 'toggle', i18nHint: 'status.alt_speed_on' },
+                    { key: 'alt-speed-down', i18nLabel: 'detail.speed.download', type: 'number', unit: 'KB/s', min: 0 },
+                    { key: 'alt-speed-up', i18nLabel: 'detail.speed.upload', type: 'number', unit: 'KB/s', min: 0 },
+                    { key: 'alt-speed-time-enabled', i18nLabel: 'dialog.settings.alt_speed_time', fallbackLabel: 'Enable Scheduled Alt Speed', type: 'toggle' },
+                    { key: 'alt-speed-time-begin', i18nLabel: 'dialog.settings.start_time', fallbackLabel: 'Start Time', type: 'time', depends: 'alt-speed-time-enabled' },
+                    { key: 'alt-speed-time-end', i18nLabel: 'dialog.settings.end_time', fallbackLabel: 'End Time', type: 'time', depends: 'alt-speed-time-enabled' },
+                    { key: 'alt-speed-time-day', i18nLabel: 'dialog.settings.days', fallbackLabel: 'Days', type: 'daymask', depends: 'alt-speed-time-enabled' }
                 ]
             }
         ],
         network: [
             {
-                group: '端口设置',
+                i18nGroup: 'dialog.settings.port_settings', fallbackGroup: 'Port Settings',
                 items: [
-                    { key: 'peer-port', label: '监听端口', type: 'number', min: 1, max: 65535 },
-                    { key: 'peer-port-random-on-start', label: '启动时随机端口', type: 'toggle' },
-                    { key: 'port-forwarding-enabled', label: '启用端口转发(UPnP/NAT-PMP)', type: 'toggle' }
+                    { key: 'peer-port', i18nLabel: 'dialog.settings.listen_port', fallbackLabel: 'Listen Port', type: 'number', min: 1, max: 65535 },
+                    { key: 'peer-port-random-on-start', i18nLabel: 'dialog.settings.random_port', fallbackLabel: 'Random Port on Start', type: 'toggle' },
+                    { key: 'port-forwarding-enabled', i18nLabel: 'dialog.settings.port_forwarding', fallbackLabel: 'Enable Port Forwarding', type: 'toggle' }
                 ]
             },
             {
-                group: '协议',
+                i18nGroup: 'dialog.settings.protocols', fallbackGroup: 'Protocols',
                 items: [
-                    { key: 'dht-enabled', label: '启用 DHT', type: 'toggle', hint: '分布式哈希表，用于无Tracker发现Peer' },
-                    { key: 'pex-enabled', label: '启用 PEX', type: 'toggle', hint: '对等交换，用于发现更多Peer' },
-                    { key: 'lpd-enabled', label: '启用 LPD', type: 'toggle', hint: '本地对等发现' },
-                    { key: 'utp-enabled', label: '启用 uTP', type: 'toggle', hint: 'Micro Transport Protocol' },
-                    { key: 'encryption', label: '加密策略', type: 'select', options: [
-                        { value: 'required', label: '强制加密' },
-                        { value: 'preferred', label: '首选加密' },
-                        { value: 'tolerated', label: '允许明文' }
+                    { key: 'dht-enabled', i18nLabel: 'dialog.settings.dht', fallbackLabel: 'DHT', type: 'toggle', i18nHint: 'dialog.settings.dht_hint', fallbackHint: 'Distributed Hash Table' },
+                    { key: 'pex-enabled', i18nLabel: 'dialog.settings.pex', fallbackLabel: 'PEX', type: 'toggle', i18nHint: 'dialog.settings.pex_hint', fallbackHint: 'Peer Exchange' },
+                    { key: 'lpd-enabled', i18nLabel: 'dialog.settings.lpd', fallbackLabel: 'LPD', type: 'toggle', i18nHint: 'dialog.settings.lpd_hint', fallbackHint: 'Local Peer Discovery' },
+                    { key: 'utp-enabled', i18nLabel: 'dialog.settings.utp', fallbackLabel: 'uTP', type: 'toggle', i18nHint: 'dialog.settings.utp_hint', fallbackHint: 'Micro Transport Protocol' },
+                    { key: 'encryption', i18nLabel: 'detail.peers.encryption', type: 'select', options: [
+                        { value: 'required', i18nLabel: 'dialog.settings.enc_required', fallbackLabel: 'Required' },
+                        { value: 'preferred', i18nLabel: 'dialog.settings.enc_preferred', fallbackLabel: 'Preferred' },
+                        { value: 'tolerated', i18nLabel: 'dialog.settings.enc_tolerated', fallbackLabel: 'Tolerated' }
                     ]}
                 ]
             },
             {
-                group: '安全',
+                i18nGroup: 'dialog.settings.security', fallbackGroup: 'Security',
                 items: [
-                    { key: 'anti-brute-force-enabled', label: '启用防暴力破解', type: 'toggle' },
-                    { key: 'anti-brute-force-threshold', label: '失败次数阈值', type: 'number', depends: 'anti-brute-force-enabled', min: 1 }
+                    { key: 'anti-brute-force-enabled', i18nLabel: 'dialog.settings.anti_brute', fallbackLabel: 'Enable Anti Brute Force', type: 'toggle' },
+                    { key: 'anti-brute-force-threshold', i18nLabel: 'dialog.settings.anti_brute_threshold', fallbackLabel: 'Threshold', type: 'number', depends: 'anti-brute-force-enabled', min: 1 }
                 ]
             },
             {
-                group: '传输偏好',
+                i18nGroup: 'dialog.settings.transport_pref', fallbackGroup: 'Transport Preferences',
                 items: [
-                    { key: 'preferred_transports', label: '首选传输协议', type: 'select', valueType: 'array', options: [
-                        { value: 'utp,tcp', label: 'uTP 优先' },
-                        { value: 'tcp,utp', label: 'TCP 优先' },
-                        { value: 'utp', label: '仅 uTP' },
-                        { value: 'tcp', label: '仅 TCP' }
-                    ], hint: '4.0+ 新增，控制传输协议的优先级' },
-                    { key: 'sequential_download', label: '顺序下载', type: 'toggle', hint: '4.0+ 新增，按顺序下载分片' }
+                    { key: 'preferred_transports', i18nLabel: 'dialog.settings.pref_transports', fallbackLabel: 'Preferred Transports', type: 'select', valueType: 'array', options: [
+                        { value: 'utp,tcp', i18nLabel: 'dialog.settings.pref_utp_tcp', fallbackLabel: 'uTP Preferred' },
+                        { value: 'tcp,utp', i18nLabel: 'dialog.settings.pref_tcp_utp', fallbackLabel: 'TCP Preferred' },
+                        { value: 'utp', i18nLabel: 'dialog.settings.pref_utp', fallbackLabel: 'uTP Only' },
+                        { value: 'tcp', i18nLabel: 'dialog.settings.pref_tcp', fallbackLabel: 'TCP Only' }
+                    ] },
+                    { key: 'sequential_download', i18nLabel: 'dialog.add.sequential', type: 'toggle' }
                 ]
             }
         ],
         peer: [
             {
-                group: '连接限制',
+                i18nGroup: 'dialog.settings.conn_limits', fallbackGroup: 'Connection Limits',
                 items: [
-                    { key: 'peer-limit-global', label: '全局最大连接数', type: 'number', min: 1, max: 9999 },
-                    { key: 'peer-limit-per-torrent', label: '每种子最大连接数', type: 'number', min: 1, max: 9999 }
+                    { key: 'peer-limit-global', i18nLabel: 'dialog.settings.global_peer_limit', fallbackLabel: 'Global Max Peers', type: 'number', min: 1, max: 9999 },
+                    { key: 'peer-limit-per-torrent', i18nLabel: 'dialog.add.peer_limit', fallbackLabel: 'Per Torrent Peer Limit', type: 'number', min: 1, max: 9999 }
                 ]
             }
         ],
         seeding: [
             {
-                group: '做种限制',
+                i18nGroup: 'detail.settings.seed_ratio',
                 items: [
-                    { key: 'seedRatioLimited', label: '启用做种比例限制', type: 'toggle' },
-                    { key: 'seedRatioLimit', label: '做种比例限制', type: 'number', step: '0.1', depends: 'seedRatioLimited', min: 0 },
-                    { key: 'idle-seeding-limit-enabled', label: '启用空闲做种超时', type: 'toggle' },
-                    { key: 'idle-seeding-limit', label: '空闲做种超时', type: 'number', unit: '分钟', depends: 'idle-seeding-limit-enabled', min: 0 }
+                    { key: 'seed_ratio_limited', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'seed_ratio_limit', i18nLabel: 'detail.settings.seed_ratio', fallbackLabel: 'Seed Ratio Limit', type: 'number', step: '0.1', depends: 'seed_ratio_limited', min: 0 },
+                    { key: 'idle-seeding-limit-enabled', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'toggle' },
+                    { key: 'idle-seeding-limit', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'idle-seeding-limit-enabled', min: 0 }
                 ]
             }
         ],
         queue: [
             {
-                group: '下载队列',
+                i18nGroup: 'dialog.settings.dl_queue', fallbackGroup: 'Download Queue',
                 items: [
-                    { key: 'download-queue-enabled', label: '启用下载队列', type: 'toggle' },
-                    { key: 'download-queue-size', label: '最大同时下载数', type: 'number', depends: 'download-queue-enabled', min: 1 }
+                    { key: 'download-queue-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'download-queue-size', i18nLabel: 'dialog.settings.max_dl', fallbackLabel: 'Max Active Downloads', type: 'number', depends: 'download-queue-enabled', min: 1 }
                 ]
             },
             {
-                group: '做种队列',
+                i18nGroup: 'dialog.settings.seed_queue', fallbackGroup: 'Seed Queue',
                 items: [
-                    { key: 'seed-queue-enabled', label: '启用做种队列', type: 'toggle' },
-                    { key: 'seed-queue-size', label: '最大同时做种数', type: 'number', depends: 'seed-queue-enabled', min: 1 }
+                    { key: 'seed-queue-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'seed-queue-size', i18nLabel: 'dialog.settings.max_seed', fallbackLabel: 'Max Active Seeds', type: 'number', depends: 'seed-queue-enabled', min: 1 }
                 ]
             },
             {
-                group: '停滞检测',
+                i18nGroup: 'dialog.settings.stalled_detection', fallbackGroup: 'Stalled Detection',
                 items: [
-                    { key: 'queue-stalled-enabled', label: '启用停滞检测', type: 'toggle' },
-                    { key: 'queue-stalled-minutes', label: '停滞超时', type: 'number', unit: '分钟', depends: 'queue-stalled-enabled', min: 1 }
+                    { key: 'queue-stalled-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'queue-stalled-minutes', i18nLabel: 'dialog.settings.stalled_timeout', fallbackLabel: 'Stalled Timeout', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'queue-stalled-enabled', min: 1 }
                 ]
             }
         ],
         labels: [
             {
-                group: '标签库',
+                i18nGroup: 'dialog.label.saved_label', fallbackGroup: 'Saved Labels',
                 items: [
-                    { key: '_label-library', label: '自定义标签', type: 'label-manager' }
+                    { key: '_label-library', i18nLabel: 'dialog.label.input_label', fallbackLabel: 'Labels', type: 'label-manager' }
                 ]
             }
         ],
         blocklist: [
             {
-                group: '屏蔽列表',
+                i18nGroup: 'dialog.settings.blocklist', fallbackGroup: 'Blocklist',
                 items: [
-                    { key: 'blocklist-enabled', label: '启用屏蔽列表', type: 'toggle' },
-                    { key: 'blocklist-url', label: '屏蔽列表 URL', type: 'text', depends: 'blocklist-enabled' },
-                    { key: 'blocklist-size', label: '当前规则数', type: 'readonly' }
+                    { key: 'blocklist-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'blocklist-url', i18nLabel: 'dialog.settings.blocklist_url', fallbackLabel: 'URL', type: 'text', depends: 'blocklist-enabled' },
+                    { key: 'blocklist-size', i18nLabel: 'dialog.settings.rules_count', fallbackLabel: 'Rules Count', type: 'readonly' }
                 ]
             }
         ],
         rpc: [
             {
-                group: 'RPC 信息（只读，请通过 settings.json 修改）',
+                i18nGroup: 'dialog.settings.rpc_info',
+                fallbackGroup: 'RPC',
                 items: [
-                    { key: 'rpc-version', label: 'RPC 版本', type: 'readonly' },
-                    { key: 'rpc-version-semver', label: 'RPC 语义版本', type: 'readonly' },
-                    { key: 'rpc-version-minimum', label: '最低 RPC 版本', type: 'readonly' },
-                    { key: 'session-id', label: 'Session ID', type: 'readonly' }
-                ]
-            },
-            {
-                group: 'RPC 设置（需通过 settings.json 修改后重启生效）',
-                items: [
-                    { key: '_rpc-notice', label: '提示', type: 'readonly-text', value: '以下 RPC 设置无法通过 RPC 接口读取，请编辑 settings.json 文件修改后重启 Transmission：rpc-enabled, rpc-port, rpc-url, rpc-bind-address, rpc-socket-path, rpc-whitelist-enabled, rpc-whitelist, rpc-host-whitelist-enabled, rpc-host-whitelist, rpc-authentication-required, rpc-username, rpc-password' }
+                    { key: 'rpc-version', i18nLabel: 'dialog.about.rpc_version', fallbackLabel: 'RPC Version', type: 'readonly' },
+                    { key: 'rpc-version-semver', i18nLabel: 'dialog.settings.rpc_semver', fallbackLabel: 'RPC Semantic Version', type: 'readonly' },
+                    { key: 'rpc-version-minimum', i18nLabel: 'dialog.settings.rpc_min_version', fallbackLabel: 'Min Version', type: 'readonly' },
+                    { key: 'session-id', i18nLabel: 'dialog.settings.session_id', fallbackLabel: 'Session ID', type: 'readonly' }
                 ]
             }
         ],
         script: [
             {
-                group: '种子添加脚本',
+                i18nGroup: 'dialog.settings.script_added', fallbackGroup: 'Torrent Added Script',
                 items: [
-                    { key: 'script-torrent-added-enabled', label: '启用添加脚本', type: 'toggle' },
-                    { key: 'script-torrent-added-filename', label: '脚本路径', type: 'file', depends: 'script-torrent-added-enabled', hint: '脚本需有执行权限' }
+                    { key: 'script-torrent-added-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'script-torrent-added-filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script-torrent-added-enabled' }
                 ]
             },
             {
-                group: '下载完成脚本',
+                i18nGroup: 'dialog.settings.script_done', fallbackGroup: 'Torrent Done Script',
                 items: [
-                    { key: 'script-torrent-done-enabled', label: '启用完成脚本', type: 'toggle' },
-                    { key: 'script-torrent-done-filename', label: '脚本路径', type: 'file', depends: 'script-torrent-done-enabled', hint: '脚本需有执行权限' }
-                ]
-            },
-            {
-                group: '做种完成脚本',
-                items: [
-                    { key: 'script-torrent-done-seeding-enabled', label: '启用做种完成脚本', type: 'toggle' },
-                    { key: 'script-torrent-done-seeding-filename', label: '脚本路径', type: 'file', depends: 'script-torrent-done-seeding-enabled', hint: '4.0+ 新增，脚本需有执行权限' }
+                    { key: 'script-torrent-done-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'script-torrent-done-filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script-torrent-done-enabled' }
                 ]
             }
         ],
         advanced: [
             {
-                group: '默认 Tracker',
+                fallbackGroup: 'Tracker',
                 items: [
-                    { key: 'default-trackers', label: '默认 Tracker 列表', type: 'textarea', hint: '每行一个 Tracker URL（仅支持 http/https/udp）；空行分隔不同组（tier）；同组内为备份关系，不同组为并行关系' }
+                    { key: 'default-trackers', i18nLabel: 'dialog.tracker.add_label', fallbackLabel: 'Default Trackers', type: 'textarea' }
                 ]
             },
             {
-                group: '缓存',
+                fallbackGroup: 'Cache',
                 items: [
-                    { key: 'cache-size-mb', label: '缓存大小', type: 'number', unit: 'MB', min: 1, hint: '磁盘缓存大小' }
-                ]
-            },
-            {
-                group: '只读信息',
-                items: [
-                    { key: 'version', label: 'Transmission 版本', type: 'readonly' },
-                    { key: 'config-dir', label: '配置目录', type: 'readonly' },
-                    { key: 'download-dir-free-space', label: '下载目录可用空间', type: 'readonly-bytes' },
-                    { key: 'tcp-enabled', label: 'TCP 启用', type: 'readonly' },
-                    { key: 'reqq', label: '请求队列长度', type: 'readonly' }
+                    { key: 'cache-size-mb', i18nLabel: 'dialog.settings.cache_size', fallbackLabel: 'Cache Size', type: 'number', unit: 'MB', min: 1 }
                 ]
             }
         ]
@@ -345,10 +324,43 @@ TWC.config = (function() {
     }
 
     function getConfigTabs() {
+        for (var i = 0; i < CONFIG_TABS.length; i++) {
+            var tab = CONFIG_TABS[i];
+            if (tab.i18n) tab.name = TWC.i18n.t(tab.i18n) || tab.fallback || tab.i18n;
+            else if (!tab.name) tab.name = tab.fallback;
+        }
         return CONFIG_TABS;
     }
 
     function getConfigItems() {
+        for (var key in CONFIG_ITEMS) {
+            var cat = CONFIG_ITEMS[key];
+            for (var i = 0; i < cat.length; i++) {
+                var group = cat[i];
+                if (group.i18nGroup) group.group = TWC.i18n.t(group.i18nGroup) || group.fallbackGroup || group.i18nGroup;
+                else if (!group.group) group.group = group.fallbackGroup;
+
+                for (var j = 0; j < group.items.length; j++) {
+                    var item = group.items[j];
+                    if (item.i18nLabel) item.label = TWC.i18n.t(item.i18nLabel) || item.fallbackLabel || item.i18nLabel;
+                    else if (!item.label) item.label = item.fallbackLabel;
+
+                    if (item.i18nHint) item.hint = TWC.i18n.t(item.i18nHint) || item.fallbackHint || item.i18nHint;
+                    else if (!item.hint) item.hint = item.fallbackHint;
+
+                    if (item.i18nUnit) item.unit = TWC.i18n.t(item.i18nUnit) || item.fallbackUnit || item.i18nUnit;
+                    else if (!item.unit) item.unit = item.fallbackUnit;
+
+                    if (item.options) {
+                        for (var k = 0; k < item.options.length; k++) {
+                            var opt = item.options[k];
+                            if (opt.i18nLabel) opt.label = TWC.i18n.t(opt.i18nLabel) || opt.fallbackLabel || opt.i18nLabel;
+                            else if (!opt.label) opt.label = opt.fallbackLabel;
+                        }
+                    }
+                }
+            }
+        }
         return CONFIG_ITEMS;
     }
 

@@ -8,12 +8,12 @@ TWC.mobileViews = (function() {
 
         var html = '<div class="m-filter-bar">';
         var filters = [
-            { status: 'all', label: '全部', count: counts.all },
-            { status: 'downloading', label: '下载', count: counts.downloading },
-            { status: 'seeding', label: '做种', count: counts.seeding },
-            { status: 'stopped', label: '停止', count: counts.stopped },
-            { status: 'active', label: '活跃', count: counts.active },
-            { status: 'error', label: '错误', count: counts.error }
+            { status: 'all', label: TWC.i18n.t('filter.all'), count: counts.all },
+            { status: 'downloading', label: TWC.i18n.t('sidebar.status_downloading'), count: counts.downloading },
+            { status: 'seeding', label: TWC.i18n.t('sidebar.status_seeding'), count: counts.seeding },
+            { status: 'stopped', label: TWC.i18n.t('sidebar.status_stopped'), count: counts.stopped },
+            { status: 'active', label: TWC.i18n.t('filter.active'), count: counts.active },
+            { status: 'error', label: TWC.i18n.t('filter.error'), count: counts.error }
         ];
         for (var i = 0; i < filters.length; i++) {
             var f = filters[i];
@@ -24,7 +24,7 @@ TWC.mobileViews = (function() {
 
         html += '<div class="m-torrent-list">';
         if (filtered.length === 0) {
-            html += '<div class="m-empty">暂无种子</div>';
+            html += '<div class="m-empty">' + TWC.i18n.t('status.no_torrents') + '</div>';
         } else {
             for (var j = 0; j < filtered.length; j++) html += _renderItem(filtered[j]);
         }
@@ -35,12 +35,12 @@ TWC.mobileViews = (function() {
     }
 
     function renderDetail(t) {
-        var pct = ((t.percentDone || 0) * 100).toFixed(1);
+        var pct = ((t.percent_done || 0) * 100).toFixed(1);
         var statusText = TWC.utils.getStatusText(t.status);
 
         var html = '<div class="m-detail">' +
             '<div class="m-detail-header">' +
-            '<button class="m-detail-back">← 返回</button><span>种子详情</span>' +
+            '<button class="m-detail-back">← ' + TWC.i18n.t('dialog.tracker.btn_cancel') + '</button><span>' + TWC.i18n.t('detail.title') + '</span>' +
             '</div>' +
             '<div class="m-detail-body">' +
             '<div class="m-detail-name">' + TWC.utils.escapeHtml(t.name) + '</div>' +
@@ -49,30 +49,30 @@ TWC.mobileViews = (function() {
             '<div class="m-progress-fill m-progress-downloading" style="width:' + pct + '%"></div>' +
             '<span class="m-progress-label">' + pct + '%</span></div></div>' +
             '<div class="m-detail-actions">' +
-            (t.status === 0 ? '<button class="m-detail-action" data-action="start">▶ 开始</button>' :
-                '<button class="m-detail-action" data-action="stop">⏸ 暂停</button>') +
-            '<button class="m-detail-action" data-action="reannounce">🔄 重新宣告</button>' +
-            '<button class="m-detail-action" data-action="verify">✓ 校验</button>' +
-            '<button class="m-detail-action danger" data-action="remove">✕ 删除</button>' +
+            (t.status === 0 ? '<button class="m-detail-action" data-action="start">▶ ' + TWC.i18n.t('toolbar.start') + '</button>' :
+                '<button class="m-detail-action" data-action="stop">⏸ ' + TWC.i18n.t('toolbar.pause') + '</button>') +
+            '<button class="m-detail-action" data-action="reannounce">🔄 ' + TWC.i18n.t('toolbar.reannounce') + '</button>' +
+            '<button class="m-detail-action" data-action="verify">✓ ' + TWC.i18n.t('toolbar.verify') + '</button>' +
+            '<button class="m-detail-action danger" data-action="remove">✕ ' + TWC.i18n.t('toolbar.remove') + '</button>' +
             '</div>' +
             '<div class="m-detail-attrs">' +
-            _attrRow('状态', statusText) +
-            _attrRow('总大小', TWC.utils.formatBytes(t.totalSize)) +
-            _attrRow('已完成', TWC.utils.formatBytes(t.haveValid)) +
-            _attrRow('剩余', TWC.utils.formatBytes(t.leftUntilDone)) +
-            _attrRow('下载速度', TWC.utils.formatSpeed(t.rateDownload)) +
-            _attrRow('上传速度', TWC.utils.formatSpeed(t.rateUpload)) +
-            _attrRow('下载量', TWC.utils.formatBytes(t.downloadedEver)) +
-            _attrRow('上传量', TWC.utils.formatBytes(t.uploadedEver)) +
-            _attrRow('分享率', TWC.utils.formatRatio(t.uploadRatio)) +
-            _attrRow('做种数', _getSeederCount(t)) +
-            _attrRow('下载数', _getLeecherCount(t)) +
-            _attrRow('连接Peer', t.peersConnected) +
-            _attrRow('ETA', TWC.utils.formatETA(t.eta)) +
-            _attrRow('添加时间', TWC.utils.formatTimestamp(t.addedDate)) +
-            _attrRow('下载目录', t.downloadDir || '-') +
-            _attrRow('标签', t.labels ? t.labels.join(', ') : '-') +
-            (t.error !== 0 ? _attrRow('错误', t.errorString) : '') +
+            _attrRow(TWC.i18n.t('columns.status'), statusText) +
+            _attrRow(TWC.i18n.t('columns.size'), TWC.utils.formatBytes(t.total_size)) +
+            _attrRow(TWC.i18n.t('columns.downloaded'), TWC.utils.formatBytes(t.have_valid)) +
+            _attrRow(TWC.i18n.t('detail.general.left'), TWC.utils.formatBytes(t.left_until_done)) +
+            _attrRow(TWC.i18n.t('columns.rate_download'), TWC.utils.formatSpeed(t.rate_download)) +
+            _attrRow(TWC.i18n.t('columns.rate_upload'), TWC.utils.formatSpeed(t.rate_upload)) +
+            _attrRow(TWC.i18n.t('detail.speed.total_download'), TWC.utils.formatBytes(t.downloaded_ever)) +
+            _attrRow(TWC.i18n.t('detail.speed.total_upload'), TWC.utils.formatBytes(t.uploaded_ever)) +
+            _attrRow(TWC.i18n.t('columns.ratio'), TWC.utils.formatRatio(t.upload_ratio)) +
+            _attrRow(TWC.i18n.t('columns.seeders'), _getSeederCount(t)) +
+            _attrRow(TWC.i18n.t('columns.leechers'), _getLeecherCount(t)) +
+            _attrRow(TWC.i18n.t('columns.peers'), t.peers_connected) +
+            _attrRow(TWC.i18n.t('columns.eta'), TWC.utils.formatETA(t.eta)) +
+            _attrRow(TWC.i18n.t('columns.added_date'), TWC.utils.formatTimestamp(t.added_date)) +
+            _attrRow(TWC.i18n.t('columns.download_dir'), t.download_dir || '-') +
+            _attrRow(TWC.i18n.t('columns.labels'), t.labels ? t.labels.join(', ') : '-') +
+            (t.error !== 0 ? _attrRow(TWC.i18n.t('sidebar.status_error'), t.error_string) : '') +
             '</div></div></div>';
 
         $('#m-content').html(html);
@@ -86,29 +86,29 @@ TWC.mobileViews = (function() {
         var altSpeedEnabled = sessionData['alt-speed-enabled'] || false;
 
         var html = '<div class="m-stats">' +
-            '<div class="m-stats-section"><div class="m-stats-title">全局速度</div>' +
+            '<div class="m-stats-section"><div class="m-stats-title">' + TWC.i18n.t('system.global_stats') + '</div>' +
             '<div class="m-stats-row">' +
-            '<div class="m-stat-card"><div class="m-stat-label">下载速度</div><div class="m-stat-value m-stat-dl">' + TWC.utils.formatSpeed(globalStats.downloadSpeed) + '</div></div>' +
-            '<div class="m-stat-card"><div class="m-stat-label">上传速度</div><div class="m-stat-value m-stat-ul">' + TWC.utils.formatSpeed(globalStats.uploadSpeed) + '</div></div>' +
+            '<div class="m-stat-card"><div class="m-stat-label">' + TWC.i18n.t('columns.rate_download') + '</div><div class="m-stat-value m-stat-dl">' + TWC.utils.formatSpeed(globalStats.downloadSpeed) + '</div></div>' +
+            '<div class="m-stat-card"><div class="m-stat-label">' + TWC.i18n.t('columns.rate_upload') + '</div><div class="m-stat-value m-stat-ul">' + TWC.utils.formatSpeed(globalStats.uploadSpeed) + '</div></div>' +
             '</div></div>' +
-            '<div class="m-stats-section"><div class="m-stats-title">累计统计</div>' +
+            '<div class="m-stats-section"><div class="m-stats-title">' + TWC.i18n.t('system.cumulative_stats') + '</div>' +
             '<div class="m-stats-row">' +
-            '<div class="m-stat-card"><div class="m-stat-label">累计下载</div><div class="m-stat-value">' + TWC.utils.formatBytes(cumulative.downloadedBytes || 0) + '</div></div>' +
-            '<div class="m-stat-card"><div class="m-stat-label">累计上传</div><div class="m-stat-value">' + TWC.utils.formatBytes(cumulative.uploadedBytes || 0) + '</div></div>' +
+            '<div class="m-stat-card"><div class="m-stat-label">' + TWC.i18n.t('columns.downloaded') + '</div><div class="m-stat-value">' + TWC.utils.formatBytes(cumulative.downloadedBytes || 0) + '</div></div>' +
+            '<div class="m-stat-card"><div class="m-stat-label">' + TWC.i18n.t('columns.uploaded') + '</div><div class="m-stat-value">' + TWC.utils.formatBytes(cumulative.uploadedBytes || 0) + '</div></div>' +
             '</div></div>' +
-            '<div class="m-stats-section"><div class="m-stats-title">种子状态</div>' +
+            '<div class="m-stats-section"><div class="m-stats-title">' + TWC.i18n.t('sidebar.status_all') + '</div>' +
             '<div class="m-stats-grid">' +
-            _miniStat('全部', counts.all) + _miniStat('下载中', counts.downloading) +
-            _miniStat('做种中', counts.seeding) + _miniStat('已停止', counts.stopped) +
-            _miniStat('校验中', counts.checking) + _miniStat('错误', counts.error) +
+            _miniStat(TWC.i18n.t('filter.all'), counts.all) + _miniStat(TWC.i18n.t('sidebar.status_downloading'), counts.downloading) +
+            _miniStat(TWC.i18n.t('sidebar.status_seeding'), counts.seeding) + _miniStat(TWC.i18n.t('sidebar.status_stopped'), counts.stopped) +
+            _miniStat(TWC.i18n.t('sidebar.status_checking'), counts.checking) + _miniStat(TWC.i18n.t('filter.error'), counts.error) +
             '</div></div>' +
-            '<div class="m-stats-section"><div class="m-stats-title">系统信息</div>' +
-            _attrRow('版本', 'Transmission ' + (sessionData.version || '-')) +
-            _attrRow('备用限速', altSpeedEnabled ? '已启用' : '未启用') +
+            '<div class="m-stats-section"><div class="m-stats-title">' + TWC.i18n.t('system.sys_info') + '</div>' +
+            _attrRow(TWC.i18n.t('mobile.version'), 'Transmission ' + (sessionData.version || '-')) +
+            _attrRow(TWC.i18n.t('dialog.speed.alt_speed'), altSpeedEnabled ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
             '</div>' +
             '<div class="m-stats-section">' +
             '<button class="m-btn' + (altSpeedEnabled ? ' active' : '') + '" id="m-alt-speed-toggle">' +
-            (altSpeedEnabled ? '关闭备用限速' : '启用备用限速') + '</button></div></div>';
+            (altSpeedEnabled ? TWC.i18n.t('mobile.alt_speed_off') : TWC.i18n.t('mobile.alt_speed_on')) + '</button></div></div>';
 
         $('#m-content').html(html);
     }
@@ -123,29 +123,21 @@ TWC.mobileViews = (function() {
         var altUl = sessionData['alt-speed-up'] || 0;
 
         var html = '<div class="m-speed-page">' +
-            '<div class="m-speed-section"><div class="m-speed-title">速度限制</div>' +
+            '<div class="m-speed-section"><div class="m-speed-title">' + TWC.i18n.t('dialog.speed.global_limits') + '</div>' +
             '<div class="m-speed-form">' +
-            '<div class="m-speed-row"><label>下载限速</label><div class="m-speed-input-group">' +
+            '<div class="m-speed-row"><label>' + TWC.i18n.t('dialog.add.dl_limit') + '</label><div class="m-speed-input-group">' +
             '<input type="checkbox" id="m-dl-enabled"' + (dlEnabled ? ' checked' : '') + ' />' +
             '<input type="number" id="m-dl-limit" value="' + dlLimit + '" min="0" /> KB/s</div></div>' +
-            '<div class="m-speed-row"><label>上传限速</label><div class="m-speed-input-group">' +
+            '<div class="m-speed-row"><label>' + TWC.i18n.t('dialog.add.ul_limit') + '</label><div class="m-speed-input-group">' +
             '<input type="checkbox" id="m-ul-enabled"' + (ulEnabled ? ' checked' : '') + ' />' +
             '<input type="number" id="m-ul-limit" value="' + ulLimit + '" min="0" /> KB/s</div></div>' +
-            '<button class="m-btn primary" id="m-save-speed">保存限速设置</button>' +
+            '<button class="m-btn primary" id="m-save-speed">' + TWC.i18n.t('dialog.settings.save') + '</button>' +
             '</div></div>' +
-            '<div class="m-speed-section"><div class="m-speed-title">快速限速预设</div>' +
-            '<div class="m-speed-presets">' +
-            '<button class="m-speed-preset" data-dl="0" data-ul="0">不限速</button>' +
-            '<button class="m-speed-preset" data-dl="512" data-ul="256">512/256</button>' +
-            '<button class="m-speed-preset" data-dl="1024" data-ul="512">1M/512K</button>' +
-            '<button class="m-speed-preset" data-dl="2048" data-ul="1024">2M/1M</button>' +
-            '<button class="m-speed-preset" data-dl="5120" data-ul="2048">5M/2M</button>' +
-            '</div></div>' +
-            '<div class="m-speed-section"><div class="m-speed-title">备用限速</div>' +
-            '<div class="m-speed-row"><label>启用备用限速</label>' +
-            '<button class="m-btn' + (altEnabled ? ' active' : '') + '" id="m-alt-speed-toggle2">' + (altEnabled ? '已启用' : '未启用') + '</button></div>' +
-            '<div class="m-speed-row"><label>备用下载</label><span class="m-speed-val-sm">' + altDl + ' KB/s</span></div>' +
-            '<div class="m-speed-row"><label>备用上传</label><span class="m-speed-val-sm">' + altUl + ' KB/s</span></div>' +
+            '<div class="m-speed-section"><div class="m-speed-title">' + TWC.i18n.t('dialog.speed.alt_speed') + '</div>' +
+            '<div class="m-speed-row"><label>' + TWC.i18n.t('mobile.enabled') + '</label>' +
+            '<button class="m-btn' + (altEnabled ? ' active' : '') + '" id="m-alt-speed-toggle2">' + (altEnabled ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) + '</button></div>' +
+            '<div class="m-speed-row"><label>' + TWC.i18n.t('dialog.add.dl_limit') + '</label><span class="m-speed-val-sm">' + altDl + ' KB/s</span></div>' +
+            '<div class="m-speed-row"><label>' + TWC.i18n.t('dialog.add.ul_limit') + '</label><span class="m-speed-val-sm">' + altUl + ' KB/s</span></div>' +
             '</div></div>';
 
         $('#m-content').html(html);
@@ -163,32 +155,32 @@ TWC.mobileViews = (function() {
     }
 
     function renderAdd(sessionData) {
-        var downloadDir = sessionData['download-dir'] || '';
+        var download_dir = sessionData['download-dir'] || '';
         var peerLimit = sessionData['peer-limit-per-torrent'] || '';
         var html = '<div class="m-add-page">' +
-            '<div class="m-add-section"><label>种子链接 / 磁力链接</label>' +
-            '<textarea id="m-add-url" rows="3" placeholder="输入种子URL或磁力链接，每行一个"></textarea></div>' +
-            '<div class="m-add-section"><label>种子文件</label><input type="file" id="m-add-file" accept=".torrent" multiple /></div>' +
-            '<div class="m-add-section"><label>下载目录</label><input type="text" id="m-add-dir" value="' + TWC.utils.escapeHtml(downloadDir) + '" placeholder="留空使用默认目录" /></div>' +
-            '<div class="m-add-row"><div class="m-add-half"><label>最大连接数</label>' +
-            '<input type="number" id="m-add-peer-limit" min="0" placeholder="默认" value="' + peerLimit + '" /></div>' +
-            '<div class="m-add-half"><label>优先级</label>' +
-            '<select id="m-add-priority"><option value="0">低</option><option value="1" selected>正常</option><option value="2">高</option></select></div></div>' +
-            '<div class="m-add-row"><div class="m-add-half"><label>下载限速 (kB/s)</label>' +
-            '<input type="number" id="m-add-dl-limit" min="0" placeholder="不限" /></div>' +
-            '<div class="m-add-half"><label>上传限速 (kB/s)</label>' +
-            '<input type="number" id="m-add-ul-limit" min="0" placeholder="不限" /></div></div>' +
-            '<div class="m-add-section"><label>标签 <span style="font-weight:normal;color:var(--text-muted);font-size:12px">(逗号分隔)</span></label>' +
-            '<input type="text" id="m-add-labels" placeholder="例如: 电影, 高清" /></div>' +
+            '<div class="m-add-section"><label>' + TWC.i18n.t('dialog.add.urls') + '</label>' +
+            '<textarea id="m-add-url" rows="3" placeholder="' + TWC.i18n.t('mobile.enter_link_file') + '"></textarea></div>' +
+            '<div class="m-add-section"><label>' + TWC.i18n.t('mobile.select_file') + '</label><input type="file" id="m-add-file" accept=".torrent" multiple /></div>' +
+            '<div class="m-add-section"><label>' + TWC.i18n.t('columns.download_dir') + '</label><input type="text" id="m-add-dir" value="' + TWC.utils.escapeHtml(download_dir) + '" placeholder="' + TWC.i18n.t('mobile.empty_default') + '" /></div>' +
+            '<div class="m-add-row"><div class="m-add-half"><label>' + TWC.i18n.t('mobile.max_peers') + '</label>' +
+            '<input type="number" id="m-add-peer-limit" min="0" placeholder="' + TWC.i18n.t('mobile.default') + '" value="' + peerLimit + '" /></div>' +
+            '<div class="m-add-half"><label>' + TWC.i18n.t('mobile.priority') + '</label>' +
+            '<select id="m-add-priority"><option value="0">' + TWC.i18n.t('mobile.low') + '</option><option value="1" selected>' + TWC.i18n.t('mobile.normal') + '</option><option value="2">' + TWC.i18n.t('mobile.high') + '</option></select></div></div>' +
+            '<div class="m-add-row"><div class="m-add-half"><label>' + TWC.i18n.t('mobile.dl_limit') + '</label>' +
+            '<input type="number" id="m-add-dl-limit" min="0" placeholder="' + TWC.i18n.t('mobile.unlimited') + '" /></div>' +
+            '<div class="m-add-half"><label>' + TWC.i18n.t('mobile.ul_limit') + '</label>' +
+            '<input type="number" id="m-add-ul-limit" min="0" placeholder="' + TWC.i18n.t('mobile.unlimited') + '" /></div></div>' +
+            '<div class="m-add-section"><label>' + TWC.i18n.t('columns.labels') + ' <span style="font-weight:normal;color:var(--text-muted);font-size:12px">' + TWC.i18n.t('mobile.tags_hint') + '</span></label>' +
+            '<input type="text" id="m-add-labels" placeholder="' + TWC.i18n.t('mobile.tags_placeholder') + '" /></div>' +
             '<div class="m-add-section" style="display:flex;gap:16px;flex-wrap:wrap">' +
-            '<label class="m-checkbox-label"><input type="checkbox" id="m-add-paused" /> 暂停启动</label>' +
-            '<label class="m-checkbox-label"><input type="checkbox" id="m-add-sequential" /> 顺序下载</label></div>' +
-            '<button class="m-btn primary" id="m-add-submit" style="width:100%;margin-top:16px">添加种子</button></div>';
+            '<label class="m-checkbox-label"><input type="checkbox" id="m-add-paused" /> ' + TWC.i18n.t('mobile.pause_start') + '</label>' +
+            '<label class="m-checkbox-label"><input type="checkbox" id="m-add-sequential" /> ' + TWC.i18n.t('mobile.sequential') + '</label></div>' +
+            '<button class="m-btn primary" id="m-add-submit" style="width:100%;margin-top:16px">' + TWC.i18n.t('mobile.add_torrent') + '</button></div>';
         $('#m-content').html(html);
     }
 
     function _renderItem(t) {
-        var pct = ((t.percentDone || 0) * 100).toFixed(1);
+        var pct = ((t.percent_done || 0) * 100).toFixed(1);
         var statusText = TWC.utils.getStatusText(t.status);
         var progressColor = '';
         if (t.status === 0) progressColor = 'm-progress-stopped';
@@ -210,10 +202,10 @@ TWC.mobileViews = (function() {
             '<span class="m-progress-text">' + pct + '%</span></div>' +
             '<div class="m-torrent-info">' +
             '<span class="m-info-status">' + statusText + '</span>' +
-            (t.rateDownload > 0 ? '<span class="m-info-dl">⬇ ' + TWC.utils.formatSpeed(t.rateDownload) + '</span>' : '') +
-            (t.rateUpload > 0 ? '<span class="m-info-ul">⬆ ' + TWC.utils.formatSpeed(t.rateUpload) + '</span>' : '') +
-            '<span class="m-info-size">' + TWC.utils.formatBytes(t.totalSize) + '</span>' +
-            '<span class="m-info-ratio">R:' + TWC.utils.formatRatio(t.uploadRatio) + '</span>' +
+            (t.rate_download > 0 ? '<span class="m-info-dl">⬇ ' + TWC.utils.formatSpeed(t.rate_download) + '</span>' : '') +
+            (t.rate_upload > 0 ? '<span class="m-info-ul">⬆ ' + TWC.utils.formatSpeed(t.rate_upload) + '</span>' : '') +
+            '<span class="m-info-size">' + TWC.utils.formatBytes(t.total_size) + '</span>' +
+            '<span class="m-info-ratio">R:' + TWC.utils.formatRatio(t.upload_ratio) + '</span>' +
             '</div></div>';
     }
 
@@ -256,7 +248,7 @@ TWC.mobileViews = (function() {
             case 'seeding': return t.status === 6 || t.status === 5;
             case 'stopped': return t.status === 0;
             case 'checking': return t.status === 1 || t.status === 2;
-            case 'active': return t.rateDownload > 0 || t.rateUpload > 0;
+            case 'active': return t.rate_download > 0 || t.rate_upload > 0;
             case 'error': return t.error !== 0;
             default: return true;
         }
@@ -272,7 +264,7 @@ TWC.mobileViews = (function() {
             if (t.status === 6 || t.status === 5) counts.seeding++;
             if (t.status === 0) counts.stopped++;
             if (t.status === 1 || t.status === 2) counts.checking++;
-            if (t.rateDownload > 0 || t.rateUpload > 0) counts.active++;
+            if (t.rate_download > 0 || t.rate_upload > 0) counts.active++;
             if (t.error !== 0) counts.error++;
         }
         return counts;
@@ -283,25 +275,25 @@ TWC.mobileViews = (function() {
         var ids = Object.keys(torrents);
         for (var i = 0; i < ids.length; i++) {
             var t = torrents[ids[i]];
-            totalDl += t.rateDownload || 0;
-            totalUl += t.rateUpload || 0;
+            totalDl += t.rate_download || 0;
+            totalUl += t.rate_upload || 0;
         }
         return { downloadSpeed: totalDl, uploadSpeed: totalUl };
     }
 
     function _getSeederCount(t) {
-        if (t.trackerStats && t.trackerStats.length > 0) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
             var max = -1;
-            for (var i = 0; i < t.trackerStats.length; i++) { if (t.trackerStats[i].seederCount > max) max = t.trackerStats[i].seederCount; }
+            for (var i = 0; i < t.tracker_stats.length; i++) { if (t.tracker_stats[i].seeder_count > max) max = t.tracker_stats[i].seeder_count; }
             return max >= 0 ? max : '-';
         }
         return '-';
     }
 
     function _getLeecherCount(t) {
-        if (t.trackerStats && t.trackerStats.length > 0) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
             var max = -1;
-            for (var i = 0; i < t.trackerStats.length; i++) { if (t.trackerStats[i].leecherCount > max) max = t.trackerStats[i].leecherCount; }
+            for (var i = 0; i < t.tracker_stats.length; i++) { if (t.tracker_stats[i].leecher_count > max) max = t.tracker_stats[i].leecher_count; }
             return max >= 0 ? max : '-';
         }
         return '-';

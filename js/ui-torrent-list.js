@@ -2,24 +2,24 @@ var TWC = TWC || {};
 
 TWC.uiList = (function() {
     var _columns = [
-        { id: 'name', label: '名称', width: 300, sortable: true, visible: true },
-        { id: 'totalSize', label: '大小', width: 80, sortable: true, visible: true, align: 'right' },
-        { id: 'percentDone', label: '进度', width: 120, sortable: true, visible: true },
-        { id: 'rateDownload', label: '下载速度', width: 90, sortable: true, visible: true, align: 'right' },
-        { id: 'rateUpload', label: '上传速度', width: 90, sortable: true, visible: true, align: 'right' },
-        { id: 'uploadRatio', label: '分享率', width: 65, sortable: true, visible: true, align: 'right' },
-        { id: 'uploadedEver', label: '上传量', width: 85, sortable: true, visible: true, align: 'right' },
-        { id: 'downloadedEver', label: '下载量', width: 85, sortable: true, visible: true, align: 'right' },
-        { id: 'eta', label: '剩余时间', width: 80, sortable: true, visible: true, align: 'right' },
-        { id: 'seeders', label: '做种', width: 50, sortable: true, visible: true, align: 'center' },
-        { id: 'leechers', label: '下载', width: 50, sortable: true, visible: true, align: 'center' },
-        { id: 'peersConnected', label: '连接', width: 50, sortable: true, visible: true, align: 'center' },
-        { id: 'status', label: '状态', width: 70, sortable: true, visible: true },
-        { id: 'addedDate', label: '添加时间', width: 130, sortable: true, visible: false },
-        { id: 'doneDate', label: '完成时间', width: 130, sortable: true, visible: false },
-        { id: 'downloadDir', label: '下载目录', width: 150, sortable: true, visible: false },
-        { id: 'labels', label: '标签', width: 100, sortable: false, visible: false },
-        { id: 'queuePosition', label: '队列', width: 50, sortable: true, visible: false, align: 'center' }
+        { id: 'name', i18n: 'columns.name', width: 300, sortable: true, visible: true },
+        { id: 'total_size', i18n: 'columns.size', width: 80, sortable: true, visible: true, align: 'right' },
+        { id: 'percent_done', i18n: 'columns.progress', width: 120, sortable: true, visible: true },
+        { id: 'rate_download', i18n: 'columns.rate_download', width: 90, sortable: true, visible: true, align: 'right' },
+        { id: 'rate_upload', i18n: 'columns.rate_upload', width: 90, sortable: true, visible: true, align: 'right' },
+        { id: 'upload_ratio', i18n: 'columns.ratio', width: 65, sortable: true, visible: true, align: 'right' },
+        { id: 'uploaded_ever', i18n: 'columns.uploaded', width: 85, sortable: true, visible: true, align: 'right' },
+        { id: 'downloaded_ever', i18n: 'columns.downloaded', width: 85, sortable: true, visible: true, align: 'right' },
+        { id: 'eta', i18n: 'columns.eta', width: 80, sortable: true, visible: true, align: 'right' },
+        { id: 'seeders', i18n: 'columns.seeders', tooltip: 'columns.tooltip_seeders', width: 50, sortable: true, visible: true, align: 'center' },
+        { id: 'leechers', i18n: 'columns.leechers', tooltip: 'columns.tooltip_leechers', width: 50, sortable: true, visible: true, align: 'center' },
+        { id: 'peers_connected', i18n: 'columns.peers', tooltip: 'columns.tooltip_peers_connected', width: 50, sortable: true, visible: true, align: 'center' },
+        { id: 'status', i18n: 'columns.status', width: 70, sortable: true, visible: true },
+        { id: 'added_date', i18n: 'columns.added_date', width: 130, sortable: true, visible: false },
+        { id: 'done_date', i18n: 'columns.done_date', width: 130, sortable: true, visible: false },
+        { id: 'download_dir', i18n: 'columns.download_dir', width: 150, sortable: true, visible: false },
+        { id: 'labels', i18n: 'columns.labels', width: 100, sortable: false, visible: false },
+        { id: 'queue_position', i18n: 'columns.queue', width: 50, sortable: true, visible: false, align: 'center' }
     ];
     var _lastShiftId = null;
     var _virtualScrollEnabled = false;
@@ -38,6 +38,9 @@ TWC.uiList = (function() {
     var _needsFullRender = true;
 
     function init() {
+        for (var i = 0; i < _columns.length; i++) {
+            _columns[i].label = TWC.i18n.t(_columns[i].i18n);
+        }
         _loadColumnConfig();
     }
 
@@ -98,9 +101,11 @@ TWC.uiList = (function() {
                 }
             }
             var align = col.align ? 'text-align:' + col.align + ';' : '';
+            var titleAttr = col.tooltip ? ' title="' + TWC.utils.escapeAttr(TWC.i18n.t(col.tooltip)) + '"' : '';
             html += '<th style="width:' + col.width + 'px;' + align + '"' +
                 ' data-sort-field="' + col.id + '"' +
                 ' class="' + sortClass + '"' +
+                titleAttr +
                 (col.sortable ? '' : ' style="cursor:default;' + align + '"') + '>' +
                 col.label + sortIcon +
                 '<div class="col-resize" data-col-id="' + col.id + '"></div>' +
@@ -114,7 +119,7 @@ TWC.uiList = (function() {
             html += '<tr><td colspan="' + colSpan + '" style="text-align:center;padding:40px;color:var(--text-muted)">' +
                 '<div class="twc-empty">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>' +
-                '暂无种子' +
+                TWC.i18n.t('status.no_torrents') +
                 '</div>' +
                 '</td></tr>';
             html += '</tbody></table></div></div>';
@@ -291,7 +296,7 @@ TWC.uiList = (function() {
         $('.twc-column-popup').remove();
 
         var html = '<div class="twc-column-popup" style="position:fixed;left:' + x + 'px;top:' + y + 'px;z-index:10000">' +
-            '<div class="twc-column-popup-title">列显示设置</div>';
+            '<div class="twc-column-popup-title">' + TWC.i18n.t('dialog.settings.title') + '</div>';
         for (var i = 0; i < _columns.length; i++) {
             var col = _columns[i];
             html += '<label class="twc-column-popup-item">' +
@@ -317,25 +322,25 @@ TWC.uiList = (function() {
             case 'name':
                 var statusIcon = '';
                 if (t.error !== 0) statusIcon = '<span style="color:var(--color-danger-500);margin-right:4px">⚠</span>';
-                else if (t.recheckProgress > 0 || t.status === 1 || t.status === 2) statusIcon = '<span style="color:var(--color-warning-500);margin-right:4px">🔍</span>';
-                else if (t.isStalled) statusIcon = '<span style="color:var(--color-warning-500);margin-right:4px">⏸</span>';
+                else if (t.recheck_progress > 0 || t.status === 1 || t.status === 2) statusIcon = '<span style="color:var(--color-warning-500);margin-right:4px">🔍</span>';
+                else if (t.is_stalled) statusIcon = '<span style="color:var(--color-warning-500);margin-right:4px">⏸</span>';
                 return statusIcon + '<span class="torrent-name" title="' + TWC.utils.escapeHtml(t.name) + '">' + TWC.utils.escapeHtml(t.name) + '</span>';
-            case 'totalSize':
-                var displaySize = t.sizeWhenDone || t.totalSize || 0;
-                var tooltip = '总大小: ' + TWC.utils.formatBytes(t.totalSize || 0);
+            case 'total_size':
+                var displaySize = t.size_when_done || t.total_size || 0;
+                var tooltip = TWC.i18n.t('detail.general.size') + ': ' + TWC.utils.formatBytes(t.total_size || 0);
                 return '<span title="' + TWC.utils.escapeAttr(tooltip) + '">' + TWC.utils.formatBytes(displaySize) + '</span>';
-            case 'percentDone':
+            case 'percent_done':
                 return _renderProgressBar(t);
-            case 'rateDownload':
-                return t.rateDownload > 0 ? '<span class="text-info text-mono">' + TWC.utils.formatSpeed(t.rateDownload) + '</span>' : '<span class="text-muted">-</span>';
-            case 'rateUpload':
-                return t.rateUpload > 0 ? '<span class="text-success text-mono">' + TWC.utils.formatSpeed(t.rateUpload) + '</span>' : '<span class="text-muted">-</span>';
-            case 'uploadRatio':
-                return '<span class="' + TWC.utils.getRatioClass(t.uploadRatio) + ' text-mono">' + TWC.utils.formatRatio(t.uploadRatio) + '</span>';
-            case 'uploadedEver':
-                return '<span class="text-mono">' + TWC.utils.formatBytes(t.uploadedEver) + '</span>';
-            case 'downloadedEver':
-                return '<span class="text-mono">' + TWC.utils.formatBytes(t.downloadedEver) + '</span>';
+            case 'rate_download':
+                return t.rate_download > 0 ? '<span class="text-info text-mono">' + TWC.utils.formatSpeed(t.rate_download) + '</span>' : '<span class="text-muted">-</span>';
+            case 'rate_upload':
+                return t.rate_upload > 0 ? '<span class="text-success text-mono">' + TWC.utils.formatSpeed(t.rate_upload) + '</span>' : '<span class="text-muted">-</span>';
+            case 'upload_ratio':
+                return '<span class="' + TWC.utils.getRatioClass(t.upload_ratio) + ' text-mono">' + TWC.utils.formatRatio(t.upload_ratio) + '</span>';
+            case 'uploaded_ever':
+                return '<span class="text-mono">' + TWC.utils.formatBytes(t.uploaded_ever) + '</span>';
+            case 'downloaded_ever':
+                return '<span class="text-mono">' + TWC.utils.formatBytes(t.downloaded_ever) + '</span>';
             case 'eta':
                 return (t.eta > 0) ? TWC.utils.formatETA(t.eta) : '<span class="text-muted">-</span>';
             case 'seeders':
@@ -344,16 +349,16 @@ TWC.uiList = (function() {
             case 'leechers':
                 var leechers = _getLeecherCount(t);
                 return leechers >= 0 ? '<span class="text-mono">' + leechers + '</span>' : '<span class="text-muted">-</span>';
-            case 'peersConnected':
-                return '<span class="text-mono">' + (t.peersConnected || 0) + '</span>';
+            case 'peers_connected':
+                return '<span class="text-mono">' + (t.peers_connected || 0) + '</span>';
             case 'status':
                 return '<span class="twc-badge ' + _getStatusBadge(t.status) + '">' + TWC.utils.getStatusText(t.status) + '</span>';
-            case 'addedDate':
-                return TWC.utils.formatTimestamp(t.addedDate);
-            case 'doneDate':
-                return t.doneDate > 0 ? TWC.utils.formatTimestamp(t.doneDate) : '-';
-            case 'downloadDir':
-                return '<span title="' + TWC.utils.escapeHtml(t.downloadDir || '') + '">' + TWC.utils.escapeHtml(t.downloadDir || '-') + '</span>';
+            case 'added_date':
+                return TWC.utils.formatTimestamp(t.added_date);
+            case 'done_date':
+                return t.done_date > 0 ? TWC.utils.formatTimestamp(t.done_date) : '-';
+            case 'download_dir':
+                return '<span title="' + TWC.utils.escapeHtml(t.download_dir || '') + '">' + TWC.utils.escapeHtml(t.download_dir || '-') + '</span>';
             case 'labels':
                 if (!t.labels || t.labels.length === 0) return '<span class="text-muted">-</span>';
                 var labelHtml = '';
@@ -361,15 +366,15 @@ TWC.uiList = (function() {
                     labelHtml += '<span class="twc-badge info" style="margin-right:3px">' + TWC.utils.escapeHtml(t.labels[li]) + '</span>';
                 }
                 return labelHtml;
-            case 'queuePosition':
-                return t.queuePosition;
+            case 'queue_position':
+                return t.queue_position;
             default:
                 return '';
         }
     }
 
     function _renderProgressBar(t) {
-        var pct = t.percentDone || 0;
+        var pct = t.percent_done || 0;
         var pctStr = (pct * 100).toFixed(1);
         var status = t.status;
         var colorClass;
@@ -377,15 +382,15 @@ TWC.uiList = (function() {
 
         if (t.error !== 0) {
             colorClass = 'bg-red-500';
-        } else if (t.recheckProgress > 0 || status === 1 || status === 2) {
-            if (t.recheckProgress > 0) {
-                pct = t.recheckProgress;
+        } else if (t.recheck_progress > 0 || status === 1 || status === 2) {
+            if (t.recheck_progress > 0) {
+                pct = t.recheck_progress;
                 pctStr = (pct * 100).toFixed(1);
-                displayText = '校验中 ' + pctStr + '%';
+                displayText = TWC.i18n.t('status.checking') + ' ' + pctStr + '%';
             } else if (status === 1) {
-                displayText = '等待校验';
+                displayText = TWC.i18n.t('status.check_wait');
             } else if (status === 2) {
-                displayText = '校验中';
+                displayText = TWC.i18n.t('status.checking');
             }
             colorClass = 'bg-yellow-500';
         } else if (status === 0) {
@@ -417,10 +422,10 @@ TWC.uiList = (function() {
     }
 
     function _getSeederCount(t) {
-        if (t.trackerStats && t.trackerStats.length > 0) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
             var maxSeeders = -1;
-            for (var i = 0; i < t.trackerStats.length; i++) {
-                var sc = t.trackerStats[i].seederCount;
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                var sc = t.tracker_stats[i].seeder_count;
                 if (sc > maxSeeders) {
                     maxSeeders = sc;
                 }
@@ -431,10 +436,10 @@ TWC.uiList = (function() {
     }
 
     function _getLeecherCount(t) {
-        if (t.trackerStats && t.trackerStats.length > 0) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
             var maxLeechers = -1;
-            for (var i = 0; i < t.trackerStats.length; i++) {
-                var lc = t.trackerStats[i].leecherCount;
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                var lc = t.tracker_stats[i].leecher_count;
                 if (lc > maxLeechers) {
                     maxLeechers = lc;
                 }
@@ -516,54 +521,54 @@ TWC.uiList = (function() {
         var t = single ? TWC.torrent.getTorrent(ids[0]) : null;
 
         var items = [
-            { label: '开始', action: 'start', icon: '<polygon points="5,3 19,12 5,21"/>', onClick: function() { TWC.rpc.startTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '立即开始', action: 'startNow', icon: '<polygon points="5,3 19,12 5,21"/><line x1="19" y1="3" x2="19" y2="21"/>', onClick: function() { TWC.rpc.startNowTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '暂停', action: 'stop', icon: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>', onClick: function() { TWC.rpc.stopTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.start'), action: 'start', icon: '<polygon points="5,3 19,12 5,21"/>', onClick: function() { TWC.rpc.startTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.start_now'), action: 'startNow', icon: '<polygon points="5,3 19,12 5,21"/><line x1="19" y1="3" x2="19" y2="21"/>', onClick: function() { TWC.rpc.startNowTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.pause'), action: 'stop', icon: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>', onClick: function() { TWC.rpc.stopTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
             { separator: true },
-            { label: '重新宣告', action: 'reannounce', onClick: function() { TWC.rpc.reannounceTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '校验', action: 'verify', onClick: function() { 
+            { label: TWC.i18n.t('context.reannounce'), action: 'reannounce', onClick: function() { TWC.rpc.reannounceTorrents(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.verify'), action: 'verify', onClick: function() { 
                 TWC.rpc.verifyTorrents(ids, function(success) {
                     if (success) {
                         if (ids.length === 1) {
                             var t = TWC.torrent.getTorrent(ids[0]);
-                            TWC.ui.showToast('已开始校验: ' + (t ? t.name : ids.length + ' 个种子'), 'success');
+                            TWC.ui.showToast(TWC.i18n.t('status.checking_torrent').replace('{name}', (t ? t.name : ids.length)), 'success');
                         } else {
-                            TWC.ui.showToast('已开始校验 ' + ids.length + ' 个种子', 'success');
+                            TWC.ui.showToast(TWC.i18n.t('status.checking_multi').replace('{n}', ids.length), 'success');
                         }
                     }
                     TWC.ui.refreshData(true);
                 }); 
             } },
             { separator: true },
-            { label: '移至顶部', action: 'queueTop', onClick: function() { TWC.rpc.queueMoveTop(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '上移', action: 'queueUp', onClick: function() { TWC.rpc.queueMoveUp(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '下移', action: 'queueDown', onClick: function() { TWC.rpc.queueMoveDown(ids, function() { TWC.ui.refreshData(true); }); } },
-            { label: '移至底部', action: 'queueBottom', onClick: function() { TWC.rpc.queueMoveBottom(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.queue_top'), action: 'queueTop', onClick: function() { TWC.rpc.queueMoveTop(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.queue_up'), action: 'queueUp', onClick: function() { TWC.rpc.queueMoveUp(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.queue_down'), action: 'queueDown', onClick: function() { TWC.rpc.queueMoveDown(ids, function() { TWC.ui.refreshData(true); }); } },
+            { label: TWC.i18n.t('context.queue_bottom'), action: 'queueBottom', onClick: function() { TWC.rpc.queueMoveBottom(ids, function() { TWC.ui.refreshData(true); }); } },
             { separator: true },
-            { label: '修改下载目录', action: 'changeDir', onClick: function() { TWC.uiDialog.showChangeDir(ids); } },
-            { label: '设置标签', action: 'setLabel', onClick: function() { TWC.uiDialog.showSetLabel(ids); } },
-            { label: '限速设置', action: 'setSpeed', onClick: function() { TWC.uiDialog.showSetSpeedLimit(ids); } },
+            { label: TWC.i18n.t('context.change_dir'), action: 'changeDir', onClick: function() { TWC.uiDialog.showChangeDir(ids); } },
+            { label: TWC.i18n.t('context.set_label'), action: 'setLabel', onClick: function() { TWC.uiDialog.showSetLabel(ids); } },
+            { label: TWC.i18n.t('context.set_speed'), action: 'setSpeed', onClick: function() { TWC.uiDialog.showSetSpeedLimit(ids); } },
             { separator: true }
         ];
 
         if (single && t) {
-            items.push({ label: '复制磁力链接', action: 'copyMagnet', onClick: function() { TWC.utils.copyToClipboard(t.magnetLink); } });
-            items.push({ label: '复制Hash', action: 'copyHash', onClick: function() { TWC.utils.copyToClipboard(t.hashString); } });
+            items.push({ label: TWC.i18n.t('context.copy_magnet'), action: 'copyMagnet', onClick: function() { TWC.utils.copyToClipboard(t.magnet_link); } });
+            items.push({ label: TWC.i18n.t('context.copy_hash'), action: 'copyHash', onClick: function() { TWC.utils.copyToClipboard(t.hash_string); } });
             items.push({ separator: true });
-            items.push({ label: '重命名文件', action: 'renameFile', onClick: function() { TWC.uiDialog.showRenameFile(ids); } });
-            if (t.trackerStats && t.trackerStats.length > 0) {
-                items.push({ label: '移除Tracker', action: 'removeTracker', onClick: function() { TWC.uiDialog.showRemoveTracker(ids); } });
+            items.push({ label: TWC.i18n.t('context.rename'), action: 'renameFile', onClick: function() { TWC.uiDialog.showRenameFile(ids); } });
+            if (t.tracker_stats && t.tracker_stats.length > 0) {
+                items.push({ label: TWC.i18n.t('context.remove_tracker'), action: 'removeTracker', onClick: function() { TWC.uiDialog.showRemoveTracker(ids); } });
             }
         }
 
         items.push({ separator: true });
         items.push({
-            label: '删除种子', action: 'remove', danger: true,
+            label: TWC.i18n.t('context.remove'), action: 'remove', danger: true,
             icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
             onClick: function() { TWC.uiDialog.showConfirmDelete(ids); }
         });
         items.push({
-            label: '删除种子及数据', action: 'removeData', danger: true,
+            label: TWC.i18n.t('context.remove_data'), action: 'removeData', danger: true,
             onClick: function() { TWC.uiDialog.showConfirmDelete(ids, true); }
         });
 
@@ -572,9 +577,9 @@ TWC.uiList = (function() {
 
     function _updateFilterInfo(count) {
         var filterState = TWC.torrent.getFilterState();
-        var text = '共 ' + count + ' 个种子';
+        var text = TWC.i18n.t('status.torrents').replace('{n}', count);
         if (filterState.search) {
-            text += ' (搜索: ' + filterState.search + ')';
+            text += ' (' + TWC.i18n.t('toolbar.search_placeholder').replace('...', ': ') + filterState.search + ')';
         }
         $('#filter-info').text(text);
     }
@@ -620,7 +625,7 @@ TWC.uiList = (function() {
     function getCountryFlag(ip) {
         if (_countryCache[ip]) return _countryCache[ip];
         var code = '';
-        if (TWC.geoip.isPrivateIP(ip)) {
+        if (TWC.geoip.is_privateIP(ip)) {
             code = 'local';
         } else if (TWC.geoip.isLoaded()) {
             var info = TWC.geoip.getCountryInfo(ip);

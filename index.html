@@ -44,11 +44,15 @@
 <body>
     <div class="twc-loading-screen" id="loading-screen">
         <div class="twc-loading-spinner"></div>
-        <div class="twc-loading-text">正在连接 Transmission...</div>
+        <div class="twc-loading-text" id="loading-text">正在连接 Transmission...</div>
     </div>
 
     <script src="js/jquery-3.7.1.min.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/lang/zh-CN.js"></script>
+    <script src="js/lang/en.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/legacy/rpc-legacy-adapter.js"></script>
     <script src="js/rpc.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/torrent.js"></script>
@@ -73,10 +77,11 @@
         TWC.rpc.setConfig(rpcUrl);
 
         TWC.geoip.init(function(geoipOk) {
-            if (!geoipOk) console.warn('GeoIP: 数据库加载失败，国家信息不可用');
+            if (!geoipOk) console.warn('GeoIP: ' + TWC.i18n.t('times.unknown'));
         });
 
-        TWC.theme.init();
+        TWC.i18n.init();
+        $('#loading-text').text(TWC.i18n.t('status.connecting'));
 
         TWC.rpc.testConnection(function(success, data) {
             if (success) {
@@ -84,7 +89,6 @@
                     if (sessionSuccess) {
                         $('#loading-screen').fadeOut(200, function() { $(this).remove(); });
                         TWC.torrent.init();
-                        TWC.uiList.init();
                         TWC.ui.init();
                     } else {
                         _showLogin();
@@ -103,23 +107,23 @@
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' +
                 '</div>' +
                 '<h2>Transmission Web Control</h2>' +
-                '<p class="twc-login-subtitle">连接到 Transmission RPC 服务</p>' +
+                '<p class="twc-login-subtitle">' + TWC.i18n.t('login.title') + '</p>' +
                 '<div class="twc-login-form">' +
                 '<div class="twc-form-group">' +
-                '<label>RPC 地址</label>' +
+                '<label>' + TWC.i18n.t('login.rpc_address') + '</label>' +
                 '<input type="text" id="login-url" value="' + TWC.utils.escapeHtml(rpcUrl) + '" placeholder="/transmission/rpc" />' +
-                '<div class="twc-form-hint">常见地址: /transmission/rpc 或 http://IP:9091/transmission/rpc</div>' +
+                '<div class="twc-form-hint">' + TWC.i18n.t('login.rpc_hint') + '</div>' +
                 '</div>' +
                 '<div class="twc-form-group">' +
-                '<label>用户名</label>' +
-                '<input type="text" id="login-username" placeholder="可选" autocomplete="username" />' +
+                '<label>' + TWC.i18n.t('login.username') + '</label>' +
+                '<input type="text" id="login-username" placeholder="' + TWC.i18n.t('login.optional') + '" autocomplete="username" />' +
                 '</div>' +
                 '<div class="twc-form-group">' +
-                '<label>密码</label>' +
-                '<input type="password" id="login-password" placeholder="可选" autocomplete="current-password" />' +
+                '<label>' + TWC.i18n.t('login.password') + '</label>' +
+                '<input type="password" id="login-password" placeholder="' + TWC.i18n.t('login.optional') + '" autocomplete="current-password" />' +
                 '</div>' +
                 '<div id="login-error" class="twc-login-error" style="display:none"></div>' +
-                '<button class="twc-btn primary twc-login-btn" id="login-submit">连接</button>' +
+                '<button class="twc-btn primary twc-login-btn" id="login-submit">' + TWC.i18n.t('login.connect') + '</button>' +
                 '</div>' +
                 '</div>' +
                 '</div>';
@@ -131,29 +135,28 @@
                 var password = $('#login-password').val();
 
                 if (!url) {
-                    $('#login-error').text('请输入 RPC 地址').show();
+                    $('#login-error').text(TWC.i18n.t('login.error_empty')).show();
                     return;
                 }
 
                 TWC.rpc.setConfig(url, username, password);
                 $('#login-error').hide();
-                $('#login-submit').prop('disabled', true).text('连接中...');
+                $('#login-submit').prop('disabled', true).text(TWC.i18n.t('login.connecting'));
 
                 TWC.rpc.testConnection(function(success2) {
-                    $('#login-submit').prop('disabled', false).text('连接');
+                    $('#login-submit').prop('disabled', false).text(TWC.i18n.t('login.connect'));
                     if (success2) {
                         TWC.config.loadSession(function(sessionSuccess) {
                             if (sessionSuccess) {
                                 $('#login-overlay').fadeOut(200, function() { $(this).remove(); });
                                 TWC.torrent.init();
-                                TWC.uiList.init();
                                 TWC.ui.init();
                             } else {
-                                $('#login-error').text('加载会话信息失败').show();
+                                $('#login-error').text(TWC.i18n.t('login.error_session')).show();
                             }
                         });
                     } else {
-                        $('#login-error').text('连接失败，请检查地址和认证信息').show();
+                        $('#login-error').text(TWC.i18n.t('login.error_auth')).show();
                     }
                 });
             });

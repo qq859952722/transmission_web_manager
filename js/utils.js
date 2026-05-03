@@ -3,6 +3,7 @@ var TWC = TWC || {};
 TWC.utils = (function() {
     function formatBytes(bytes, decimals) {
         if (decimals === undefined) decimals = 2;
+        if (bytes === undefined || bytes === null || isNaN(bytes)) return '0 B';
         if (bytes === 0) return '0 B';
         if (bytes < 0) return '0 B';
         var k = 1024;
@@ -21,17 +22,17 @@ TWC.utils = (function() {
     function formatETA(seconds) {
         if (!seconds || seconds < 0) return '∞';
         if (seconds === -1) return '∞';
-        if (seconds === -2) return '未知';
+        if (seconds === -2) return TWC.i18n.t('times.unknown');
         var days = Math.floor(seconds / 86400);
         var hours = Math.floor((seconds % 86400) / 3600);
         var minutes = Math.floor((seconds % 3600) / 60);
         var secs = Math.floor(seconds % 60);
         var parts = [];
-        if (days > 0) parts.push(days + '天');
-        if (hours > 0) parts.push(hours + '时');
-        if (minutes > 0) parts.push(minutes + '分');
-        if (secs > 0 && days === 0) parts.push(secs + '秒');
-        return parts.join('') || '0秒';
+        if (days > 0) parts.push(days + TWC.i18n.t('times.day'));
+        if (hours > 0) parts.push(hours + TWC.i18n.t('times.hour'));
+        if (minutes > 0) parts.push(minutes + TWC.i18n.t('times.min'));
+        if (secs > 0 && days === 0) parts.push(secs + TWC.i18n.t('times.sec'));
+        return parts.join('') || ('0' + TWC.i18n.t('times.sec'));
     }
 
     function formatTimestamp(timestamp) {
@@ -75,15 +76,15 @@ TWC.utils = (function() {
 
     function getStatusText(status) {
         var map = {
-            0: '已停止',
-            1: '等待校验',
-            2: '校验中',
-            3: '等待下载',
-            4: '下载中',
-            5: '等待做种',
-            6: '做种中'
+            0: TWC.i18n.t('status.stopped'),
+            1: TWC.i18n.t('status.check_wait'),
+            2: TWC.i18n.t('status.checking'),
+            3: TWC.i18n.t('status.download_wait'),
+            4: TWC.i18n.t('status.downloading'),
+            5: TWC.i18n.t('status.seed_wait'),
+            6: TWC.i18n.t('status.seeding')
         };
-        return map[status] || '未知';
+        return map[status] || TWC.i18n.t('times.unknown');
     }
 
     function getStatusClass(status) {
@@ -160,14 +161,14 @@ TWC.utils = (function() {
             } else {
                 var lowerLine = line.toLowerCase();
                 if (lowerLine.substring(0, 5) === 'ws://' || lowerLine.substring(0, 6) === 'wss://') {
-                    errors.push('第 ' + (i + 1) + ' 行: WebSocket 协议 (' + line.substring(0, line.indexOf(':') + 2) + ') 不受 Transmission 支持，请移除');
+                    errors.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': WebSocket (' + line.substring(0, line.indexOf(':') + 2) + ') ' + TWC.i18n.t('dialog.tracker.no_ws_support'));
                 } else if (lowerLine.substring(0, 6) === 'tcp://') {
-                    errors.push('第 ' + (i + 1) + ' 行: tcp:// 不是有效的 Tracker 协议，请使用 http://、https:// 或 udp://');
+                    errors.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': tcp:// ' + TWC.i18n.t('dialog.tracker.no_tcp_support'));
                 } else if (lowerLine.indexOf('://') > 0) {
                     var scheme = line.substring(0, line.indexOf('://') + 3);
-                    errors.push('第 ' + (i + 1) + ' 行: 不支持的协议 ' + scheme + '，仅支持 http://、https://、udp://');
+                    errors.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': ' + TWC.i18n.t('dialog.tracker.unsupported_scheme').replace('{scheme}', scheme));
                 } else {
-                    errors.push('第 ' + (i + 1) + ' 行: 无效的 Tracker URL，必须以 http://、https:// 或 udp:// 开头');
+                    errors.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': ' + TWC.i18n.t('dialog.tracker.invalid_format'));
                 }
             }
         }
@@ -213,7 +214,7 @@ TWC.utils = (function() {
     function copyToClipboard(text) {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(text).then(function() {
-                TWC.ui.showToast('已复制到剪贴板', 'success');
+                TWC.ui.showToast(TWC.i18n.t('status.copied'), 'success');
             }).catch(function() {
                 fallbackCopy(text);
             });
@@ -231,9 +232,9 @@ TWC.utils = (function() {
         textarea.select();
         try {
             document.execCommand('copy');
-            TWC.ui.showToast('已复制到剪贴板', 'success');
+            TWC.ui.showToast(TWC.i18n.t('status.copied'), 'success');
         } catch (e) {
-            TWC.ui.showToast('复制失败', 'error');
+            TWC.ui.showToast(TWC.i18n.t('status.copy_failed') || 'Copy failed', 'error');
         }
         document.body.removeChild(textarea);
     }
@@ -255,10 +256,10 @@ TWC.utils = (function() {
         var hours = Math.floor((seconds % 86400) / 3600);
         var minutes = Math.floor((seconds % 3600) / 60);
         var parts = [];
-        if (days > 0) parts.push(days + '天');
-        if (hours > 0) parts.push(hours + '时');
-        if (minutes > 0) parts.push(minutes + '分');
-        return parts.join('') || '< 1分';
+        if (days > 0) parts.push(days + TWC.i18n.t('times.day'));
+        if (hours > 0) parts.push(hours + TWC.i18n.t('times.hour'));
+        if (minutes > 0) parts.push(minutes + TWC.i18n.t('times.min'));
+        return parts.join('') || ('< 1' + TWC.i18n.t('times.min'));
     }
 
     function parseAltSpeedTime(minutes) {
@@ -276,17 +277,17 @@ TWC.utils = (function() {
 
     function getDayMaskText(mask) {
         var days = [];
-        if (mask & 1) days.push('周日');
-        if (mask & 2) days.push('周一');
-        if (mask & 4) days.push('周二');
-        if (mask & 8) days.push('周三');
-        if (mask & 16) days.push('周四');
-        if (mask & 32) days.push('周五');
-        if (mask & 64) days.push('周六');
-        if (mask === 127) return '每天';
-        if (mask === 62) return '工作日';
-        if (mask === 65) return '周末';
-        return days.join('、') || '无';
+        if (mask & 1) days.push(TWC.i18n.t('days.sun'));
+        if (mask & 2) days.push(TWC.i18n.t('days.mon'));
+        if (mask & 4) days.push(TWC.i18n.t('days.tue'));
+        if (mask & 8) days.push(TWC.i18n.t('days.wed'));
+        if (mask & 16) days.push(TWC.i18n.t('days.thu'));
+        if (mask & 32) days.push(TWC.i18n.t('days.fri'));
+        if (mask & 64) days.push(TWC.i18n.t('days.sat'));
+        if (mask === 127) return TWC.i18n.t('days.every');
+        if (mask === 62) return TWC.i18n.t('days.work');
+        if (mask === 65) return TWC.i18n.t('days.weekend');
+        return days.join('、') || TWC.i18n.t('days.none');
     }
 
     function escapeHtml(str) {
@@ -349,43 +350,43 @@ TWC.utils = (function() {
 
     function getEncryptionText(enc) {
         var map = {
-            'required': '强制加密',
-            'preferred': '首选加密',
-            'tolerated': '允许明文'
+            'required': TWC.i18n.t('dialog.settings.enc_required') || 'Required',
+            'preferred': TWC.i18n.t('dialog.settings.enc_preferred') || 'Preferred',
+            'tolerated': TWC.i18n.t('dialog.settings.enc_tolerated') || 'Tolerated'
         };
         return map[enc] || enc;
     }
 
     function getPriorityText(priority) {
         var map = {
-            '-1': '低',
-            '0': '正常',
-            '1': '高'
+            '-1': TWC.i18n.t('detail.settings.priority_low'),
+            '0': TWC.i18n.t('detail.settings.priority_normal'),
+            '1': TWC.i18n.t('detail.settings.priority_high')
         };
-        return map[String(priority)] || '正常';
+        return map[String(priority)] || TWC.i18n.t('detail.settings.priority_normal');
     }
 
     function getFilePriorityText(priority) {
-        var map = { '-1': '低', '0': '正常', '1': '高' };
-        return map[String(priority)] || '正常';
+        var map = { '-1': TWC.i18n.t('detail.settings.priority_low'), '0': TWC.i18n.t('detail.settings.priority_normal'), '1': TWC.i18n.t('detail.settings.priority_high') };
+        return map[String(priority)] || TWC.i18n.t('detail.settings.priority_normal');
     }
 
     function getSeedRatioModeText(mode) {
         var map = {
-            0: '使用全局设置',
-            1: '使用自定义值',
-            2: '不限制'
+            0: TWC.i18n.t('dialog.add.default'),
+            1: TWC.i18n.t('dialog.label.source_custom'),
+            2: TWC.i18n.t('dialog.add.unlimited')
         };
-        return map[mode] || '未知';
+        return map[mode] || TWC.i18n.t('times.unknown');
     }
 
     function getSeedIdleModeText(mode) {
         var map = {
-            0: '使用全局设置',
-            1: '使用自定义值',
-            2: '不限制'
+            0: TWC.i18n.t('dialog.add.default'),
+            1: TWC.i18n.t('dialog.label.source_custom'),
+            2: TWC.i18n.t('dialog.add.unlimited')
         };
-        return map[mode] || '未知';
+        return map[mode] || TWC.i18n.t('times.unknown');
     }
 
     return {

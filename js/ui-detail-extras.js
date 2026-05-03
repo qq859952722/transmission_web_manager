@@ -4,47 +4,55 @@ TWC.uiDetailExtras = (function() {
 
     function renderPeers(t) {
         if (!t.peers || t.peers.length === 0) {
-            $('#detail-content').html('<div class="twc-empty">无Peer连接</div>');
+            $('#detail-content').html('<div class="twc-empty">' + TWC.i18n.t('detail.peers.empty') + '</div>');
             return;
         }
 
         var html = '<table class="twc-peer-table">' +
             '<thead><tr>' +
-            '<th style="min-width:80px">国家</th>' +
-            '<th>IP 地址</th>' +
-            '<th>端口</th>' +
-            '<th>客户端</th>' +
-            '<th>进度</th>' +
-            '<th>下载速度</th>' +
-            '<th>上传速度</th>' +
-            '<th>已下载</th>' +
-            '<th>已上传</th>' +
-            '<th>标识</th>' +
-            '<th>来源</th>' +
-            '<th>连接时间</th>' +
-            '<th>加密</th>' +
-            '<th>协议</th>' +
+            '<th style="min-width:80px">' + TWC.i18n.t('detail.peers.country') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.address') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.port') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.client') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.progress') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.rate_to_client') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.rate_to_peer') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.downloaded') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.uploaded') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.flags') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.source') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.connection') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.encryption') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.protocol') + '</th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < t.peers.length; i++) {
             var p = t.peers[i];
-            var flags = p.flagStr || '';
+            var flags = p.flagStr || p.flag_str || '';
             var source = _getSourceText(p);
             var countryHtml = _getCountryDisplay(p.address);
-            var encText = p.isEncrypted ? '是' : '否';
-            var protoText = p.isUTP ? 'uTP' : 'TCP';
-            var connTime = p.connectionType || '-';
+            var isEnc = p.isEncrypted !== undefined ? p.isEncrypted : p.is_encrypted;
+            var isUtp = p.isUTP !== undefined ? p.isUTP : p.is_utp;
+            var encText = isEnc ? TWC.i18n.t('common.yes') : TWC.i18n.t('common.no');
+            var protoText = isUtp ? 'uTP' : 'TCP';
+            var connTime = p.connectionType || p.connection_type || '-';
+            var cName = p.clientName || p.client_name || '';
+            var rClient = p.rateToClient !== undefined ? p.rateToClient : (p.rate_to_client || 0);
+            var rPeer = p.rateToPeer !== undefined ? p.rateToPeer : (p.rate_to_peer || 0);
+            var cChoked = p.clientIsChoked !== undefined ? p.clientIsChoked : p.client_is_choked;
+            var bClient = p.bytesToClient !== undefined ? p.bytesToClient : (p.bytes_to_client || 0);
+            var bPeer = p.bytesToPeer !== undefined ? p.bytesToPeer : (p.bytes_to_peer || 0);
 
             html += '<tr>' +
                 '<td>' + countryHtml + '</td>' +
                 '<td class="text-mono">' + TWC.utils.escapeHtml(p.address) + '</td>' +
                 '<td class="text-mono">' + p.port + '</td>' +
-                '<td title="' + TWC.utils.escapeHtml(p.clientName || '') + '">' + TWC.utils.escapeHtml(TWC.utils.truncateText(p.clientName, 20)) + '</td>' +
+                '<td title="' + TWC.utils.escapeHtml(cName) + '">' + TWC.utils.escapeHtml(TWC.utils.truncateText(cName, 20)) + '</td>' +
                 '<td>' + _renderPeerProgress(p.progress) + '</td>' +
-                '<td class="text-mono">' + (p.rateToClient > 0 ? '<span class="text-info">' + TWC.utils.formatSpeed(p.rateToClient) + '</span>' : '-') + '</td>' +
-                '<td class="text-mono">' + (p.rateToPeer > 0 ? '<span class="text-success">' + TWC.utils.formatSpeed(p.rateToPeer) + '</span>' : '-') + '</td>' +
-                '<td class="text-mono">' + (p.clientIsChoked ? '-' : TWC.utils.formatBytes(p.bytesToClient || 0)) + '</td>' +
-                '<td class="text-mono">' + TWC.utils.formatBytes(p.bytesToPeer || 0) + '</td>' +
+                '<td class="text-mono">' + (rClient > 0 ? '<span class="text-info">' + TWC.utils.formatSpeed(rClient) + '</span>' : '-') + '</td>' +
+                '<td class="text-mono">' + (rPeer > 0 ? '<span class="text-success">' + TWC.utils.formatSpeed(rPeer) + '</span>' : '-') + '</td>' +
+                '<td class="text-mono">' + (cChoked ? '-' : TWC.utils.formatBytes(bClient)) + '</td>' +
+                '<td class="text-mono">' + TWC.utils.formatBytes(bPeer) + '</td>' +
                 '<td><span title="' + _getFlagsTooltip(flags) + '">' + TWC.utils.escapeHtml(flags) + '</span></td>' +
                 '<td>' + source + '</td>' +
                 '<td>' + connTime + '</td>' +
@@ -55,44 +63,44 @@ TWC.uiDetailExtras = (function() {
 
         html += '</tbody></table>';
 
-        if (t.peersFrom) {
+        if (t.peers_from) {
             html += '<div class="twc-peer-summary">' +
-                '<div class="twc-peer-summary-title">Peer 来源统计</div>' +
+                '<div class="twc-peer-summary-title">' + TWC.i18n.t('detail.peers.source_stats') + '</div>' +
                 '<div class="twc-peer-summary-grid">' +
-                _peerSourceItem('Tracker', t.peersFrom.fromTracker || 0) +
-                _peerSourceItem('DHT', t.peersFrom.fromDht || 0) +
-                _peerSourceItem('PEX', t.peersFrom.fromPex || 0) +
-                _peerSourceItem('入站连接', t.peersFrom.fromIncoming || 0) +
-                _peerSourceItem('LPD', t.peersFrom.fromLpd || 0) +
-                _peerSourceItem('LTEP', t.peersFrom.fromLtep || 0) +
-                _peerSourceItem('缓存', t.peersFrom.fromCache || 0) +
+                _peerSourceItem(TWC.i18n.t('detail.peers.source_tracker'), t.peers_from.fromTracker || 0) +
+                _peerSourceItem(TWC.i18n.t('dialog.settings.dht'), t.peers_from.fromDht || 0) +
+                _peerSourceItem(TWC.i18n.t('dialog.settings.pex'), t.peers_from.fromPex || 0) +
+                _peerSourceItem(TWC.i18n.t('detail.peers.getting'), t.peers_from.fromIncoming || 0) +
+                _peerSourceItem(TWC.i18n.t('dialog.settings.lpd'), t.peers_from.fromLpd || 0) +
+                _peerSourceItem(TWC.i18n.t('detail.peers.source_ltep'), t.peers_from.fromLtep || 0) +
+                _peerSourceItem(TWC.i18n.t('detail.peers.source_cache'), t.peers_from.fromCache || 0) +
                 '</div></div>';
         }
 
         html += '<div class="twc-peer-flags-legend">' +
-            '<div class="twc-peer-summary-title">标识说明</div>' +
+            '<div class="twc-peer-summary-title">' + TWC.i18n.t('detail.peers.flags_legend') + '</div>' +
             '<div class="twc-flags-grid">' +
-            _flagItem('D', '目前正在下载') +
-            _flagItem('d', '对方拒绝我们的下载请求') +
-            _flagItem('U', '目前正在上传') +
-            _flagItem('u', '对方拒绝我们的上传请求') +
-            _flagItem('K', '对方已撤回拒绝下载') +
-            _flagItem('?', '对方已撤回拒绝上传') +
-            _flagItem('E', '加密连接') +
-            _flagItem('H', '对方是超级做种') +
-            _flagItem('X', '通过PEX发现') +
-            _flagItem('I', '通过DHT发现') +
-            _flagItem('T', '通过uTP连接') +
-            _flagItem('L', '通过LSD发现') +
-            _flagItem('S', '对方正在忽略我们') +
+            _flagItem('D', TWC.i18n.t('detail.peers.flag_D')) +
+            _flagItem('d', TWC.i18n.t('detail.peers.flag_d')) +
+            _flagItem('U', TWC.i18n.t('detail.peers.flag_U')) +
+            _flagItem('u', TWC.i18n.t('detail.peers.flag_u')) +
+            _flagItem('K', TWC.i18n.t('detail.peers.flag_K')) +
+            _flagItem('?', TWC.i18n.t('detail.peers.flag_?')) +
+            _flagItem('E', TWC.i18n.t('detail.peers.flag_E')) +
+            _flagItem('H', TWC.i18n.t('detail.peers.flag_H')) +
+            _flagItem('X', TWC.i18n.t('detail.peers.flag_X')) +
+            _flagItem('I', TWC.i18n.t('detail.peers.flag_I')) +
+            _flagItem('T', TWC.i18n.t('detail.peers.flag_T')) +
+            _flagItem('L', TWC.i18n.t('detail.peers.flag_L')) +
+            _flagItem('S', TWC.i18n.t('detail.peers.flag_S')) +
             '</div></div>';
 
         $('#detail-content').html(html);
     }
 
     function _getCountryDisplay(ip) {
-        if (TWC.geoip.isPrivateIP(ip)) {
-            return '<span class="twc-country-lan" title="局域网">LAN</span>';
+        if (TWC.geoip.is_privateIP(ip)) {
+            return '<span class="twc-country-lan" title="' + TWC.i18n.t('peer.lan') + '">LAN</span>';
         }
 
         if (TWC.geoip.isLoaded()) {
@@ -107,16 +115,16 @@ TWC.uiDetailExtras = (function() {
             }
         }
 
-        return '<span class="twc-country-unknown" title="未知">-</span>';
+        return '<span class="twc-country-unknown" title="' + TWC.i18n.t('times.unknown') + '">-</span>';
     }
 
     function _getSourceText(p) {
         var parts = [];
-        if (p.isIncoming) parts.push('入站');
-        if (p.isUTP) parts.push('uTP');
-        if (p.isEncrypted) parts.push('加密');
-        if (p.isUploading) parts.push('上传中');
-        if (p.isDownloading) parts.push('下载中');
+        if (p.is_incoming !== undefined ? p.is_incoming : p.isIncoming) parts.push(TWC.i18n.t('detail.peers.getting'));
+        if (p.is_utp !== undefined ? p.is_utp : p.isUTP) parts.push(TWC.i18n.t('dialog.settings.utp'));
+        if (p.is_encrypted !== undefined ? p.is_encrypted : p.isEncrypted) parts.push(TWC.i18n.t('detail.peers.encryption'));
+        if (p.is_uploading_to !== undefined ? p.is_uploading_to : p.isUploading) parts.push(TWC.i18n.t('sidebar.status_seeding'));
+        if (p.is_downloading_from !== undefined ? p.is_downloading_from : p.isDownloading) parts.push(TWC.i18n.t('sidebar.status_downloading'));
         return parts.length > 0 ? parts.join('/') : '-';
     }
 
@@ -146,15 +154,14 @@ TWC.uiDetailExtras = (function() {
     }
 
     function _getFlagsTooltip(flags) {
-        var map = {
-            'D': '正在下载', 'd': '拒绝下载', 'U': '正在上传', 'u': '拒绝上传',
-            'K': '撤回拒绝下载', '?': '撤回拒绝上传', 'E': '加密', 'H': '超级做种',
-            'X': 'PEX发现', 'I': 'DHT发现', 'T': 'uTP', 'L': 'LSD发现', 'S': '忽略'
-        };
         var tips = [];
         for (var i = 0; i < flags.length; i++) {
             var c = flags[i];
-            tips.push(c + ': ' + (map[c] || '未知'));
+            var mapped = TWC.i18n.t('peer_flags.' + c);
+            if (mapped === 'peer_flags.' + c) { // If missing translation, use Unknown
+                mapped = TWC.i18n.t('peer.unknown_country');
+            }
+            tips.push(c + ': ' + mapped);
         }
         return tips.join('\n');
     }
@@ -169,13 +176,13 @@ TWC.uiDetailExtras = (function() {
             '</div>' +
             '<div style="width:200px;flex-shrink:0">' +
             '<div class="twc-stat-grid" style="grid-template-columns:1fr">' +
-            _statCard('当前下载速度', TWC.utils.formatSpeed(t.rateDownload), 'text-info') +
-            _statCard('当前上传速度', TWC.utils.formatSpeed(t.rateUpload), 'text-success') +
-            _statCard('总下载量', TWC.utils.formatBytes(t.downloadedEver), '') +
-            _statCard('总上传量', TWC.utils.formatBytes(t.uploadedEver), '') +
-            _statCard('分享率', '<span class="' + TWC.utils.getRatioClass(t.uploadRatio) + '">' + TWC.utils.formatRatio(t.uploadRatio) + '</span>', '') +
-            _statCard('累计下载时间', TWC.utils.formatDuration(t.secondsDownloading), '') +
-            _statCard('累计做种时间', TWC.utils.formatDuration(t.secondsSeeding), '') +
+            _statCard(TWC.i18n.t('detail.speed.current_download'), TWC.utils.formatSpeed(t.rate_download), 'text-info') +
+            _statCard(TWC.i18n.t('detail.speed.current_upload'), TWC.utils.formatSpeed(t.rate_upload), 'text-success') +
+            _statCard(TWC.i18n.t('detail.speed.total_download'), TWC.utils.formatBytes(t.downloaded_ever), '') +
+            _statCard(TWC.i18n.t('detail.speed.total_upload'), TWC.utils.formatBytes(t.uploaded_ever), '') +
+            _statCard(TWC.i18n.t('detail.speed.ratio'), '<span class="' + TWC.utils.getRatioClass(t.upload_ratio) + '">' + TWC.utils.formatRatio(t.upload_ratio) + '</span>', '') +
+            _statCard(TWC.i18n.t('detail.speed.download_time'), TWC.utils.formatDuration(t.seconds_downloading), '') +
+            _statCard(TWC.i18n.t('detail.speed.seed_time'), TWC.utils.formatDuration(t.seconds_seeding), '') +
             '</div>' +
             '</div>' +
             '</div>';
@@ -194,80 +201,91 @@ TWC.uiDetailExtras = (function() {
     function renderSettings(t) {
         var html = '<div class="twc-config-grid">' +
             '<div class="twc-form-group">' +
-            '<label>下载限速</label>' +
+            '<label>' + TWC.i18n.t('detail.settings.download_limit') + '</label>' +
             '<div style="display:flex;gap:4px;align-items:center">' +
-            '<input type="checkbox" id="ts-dl-limited"' + (t.downloadLimited ? ' checked' : '') + ' style="accent-color:var(--color-primary-500)" />' +
-            '<input type="number" class="twc-input" id="ts-dl-limit" value="' + (t.downloadLimit || 0) + '" style="width:80px" min="0" /> KB/s' +
+            '<input type="checkbox" id="ts-dl-limited"' + (t.download_limited ? ' checked' : '') + ' style="accent-color:var(--color-primary-500)" />' +
+            '<input type="number" class="twc-input" id="ts-dl-limit" value="' + (t.download_limit || 0) + '" style="width:80px" min="0" /> KB/s' +
+            '</div>' +
+            '</div>' +
+ 
+            '<div class="twc-form-group">' +
+            '<label>' + TWC.i18n.t('detail.settings.upload_limit') + '</label>' +
+            '<div style="display:flex;gap:4px;align-items:center">' +
+            '<input type="checkbox" id="ts-ul-limited"' + (t.upload_limited ? ' checked' : '') + ' style="accent-color:var(--color-primary-500)" />' +
+            '<input type="number" class="twc-input" id="ts-ul-limit" value="' + (t.upload_limit || 0) + '" style="width:80px" min="0" /> KB/s' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>上传限速</label>' +
-            '<div style="display:flex;gap:4px;align-items:center">' +
-            '<input type="checkbox" id="ts-ul-limited"' + (t.uploadLimited ? ' checked' : '') + ' style="accent-color:var(--color-primary-500)" />' +
-            '<input type="number" class="twc-input" id="ts-ul-limit" value="' + (t.uploadLimit || 0) + '" style="width:80px" min="0" /> KB/s' +
-            '</div>' +
-            '</div>' +
-
-            '<div class="twc-form-group">' +
-            '<label>带宽优先级</label>' +
+            '<label>' + TWC.i18n.t('detail.settings.priority') + '</label>' +
             '<select class="twc-select" id="ts-priority">' +
-            '<option value="-1"' + (t.bandwidthPriority === -1 ? ' selected' : '') + '>低</option>' +
-            '<option value="0"' + (t.bandwidthPriority === 0 ? ' selected' : '') + '>正常</option>' +
-            '<option value="1"' + (t.bandwidthPriority === 1 ? ' selected' : '') + '>高</option>' +
+            '<option value="-1"' + (t.bandwidth_priority === -1 ? ' selected' : '') + '>' + TWC.i18n.t('detail.settings.priority_low') + '</option>' +
+            '<option value="0"' + (t.bandwidth_priority === 0 ? ' selected' : '') + '>' + TWC.i18n.t('detail.settings.priority_normal') + '</option>' +
+            '<option value="1"' + (t.bandwidth_priority === 1 ? ' selected' : '') + '>' + TWC.i18n.t('detail.settings.priority_high') + '</option>' +
             '</select>' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>最大连接Peer数</label>' +
-            '<input type="number" class="twc-input" id="ts-peer-limit" value="' + (t.maxConnectedPeers || 50) + '" min="1" />' +
+            '<label>' + TWC.i18n.t('dialog.add.peer_limit') + '</label>' +
+            '<input type="number" class="twc-input" id="ts-peer-limit" value="' + (t.max_connected_peers || 50) + '" min="1" />' +
             '</div>' +
-
+ 
             '<div class="twc-form-group">' +
-            '<label>分享率模式</label>' +
+            '<label>' + TWC.i18n.t('detail.settings.seed_ratio') + ' ' + TWC.i18n.t('dialog.label.source_custom').split('+')[0] + '</label>' +
             '<select class="twc-select" id="ts-ratio-mode">' +
-            '<option value="0"' + (t.seedRatioMode === 0 ? ' selected' : '') + '>使用全局设置</option>' +
-            '<option value="1"' + (t.seedRatioMode === 1 ? ' selected' : '') + '>使用自定义值</option>' +
-            '<option value="2"' + (t.seedRatioMode === 2 ? ' selected' : '') + '>不限制</option>' +
+            '<option value="0"' + (t.seed_ratio_mode === 0 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.add.default') + '</option>' +
+            '<option value="1"' + (t.seed_ratio_mode === 1 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.label.source_custom') + '</option>' +
+            '<option value="2"' + (t.seed_ratio_mode === 2 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.add.unlimited') + '</option>' +
             '</select>' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>分享率限制</label>' +
-            '<input type="number" class="twc-input" id="ts-ratio-limit" value="' + (t.seedRatioLimit || 2.0) + '" step="0.1" min="0" />' +
+            '<label>' + TWC.i18n.t('detail.settings.seed_ratio') + '</label>' +
+            '<input type="number" class="twc-input" id="ts-ratio-limit" value="' + (t.seed_ratio_limit || 2.0) + '" step="0.1" min="0" />' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>做种空闲模式</label>' +
+            '<label>' + TWC.i18n.t('detail.settings.seed_idle') + ' ' + TWC.i18n.t('dialog.label.source_custom').split('+')[0] + '</label>' +
             '<select class="twc-select" id="ts-idle-mode">' +
-            '<option value="0"' + (t.seedIdleMode === 0 ? ' selected' : '') + '>使用全局设置</option>' +
-            '<option value="1"' + (t.seedIdleMode === 1 ? ' selected' : '') + '>使用自定义值</option>' +
-            '<option value="2"' + (t.seedIdleMode === 2 ? ' selected' : '') + '>不限制</option>' +
+            '<option value="0"' + (t.seed_idle_mode === 0 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.add.default') + '</option>' +
+            '<option value="1"' + (t.seed_idle_mode === 1 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.label.source_custom') + '</option>' +
+            '<option value="2"' + (t.seed_idle_mode === 2 ? ' selected' : '') + '>' + TWC.i18n.t('dialog.add.unlimited') + '</option>' +
             '</select>' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>做种空闲超时(分钟)</label>' +
-            '<input type="number" class="twc-input" id="ts-idle-limit" value="' + (t.seedIdleLimit || 30) + '" min="0" />' +
+            '<label>' + TWC.i18n.t('detail.settings.seed_idle') + ' (' + TWC.i18n.t('times.min') + ')</label>' +
+            '<input type="number" class="twc-input" id="ts-idle-limit" value="' + (t.seed_idle_limit || 30) + '" min="0" />' +
+            '</div>' +
+ 
+            '<div class="twc-form-group">' +
+            '<label>' + TWC.i18n.t('dialog.add.group') + '</label>' +
+            '<select class="twc-select" id="ts-group"><option value="">' + TWC.i18n.t('dialog.add.group_default') + '</option>';
+
+        var groups = TWC.config.getGroups() || [];
+        for (var gi = 0; gi < groups.length; gi++) {
+            html += '<option value="' + TWC.utils.escapeAttr(groups[gi].name) + '"' + (t.group === groups[gi].name ? ' selected' : '') + '>' + TWC.utils.escapeHtml(groups[gi].name) + '</option>';
+        }
+        html += '</select>' +
             '</div>' +
 
             '<div class="twc-form-group">' +
-            '<label>遵守会话限速</label>' +
-            '<div class="twc-toggle' + (t.honorsSessionLimits ? ' active' : '') + '" id="ts-honors-limits">' +
+            '<label>' + TWC.i18n.t('toolbar.auto_refresh') + '</label>' +
+            '<div class="twc-toggle' + (t.honors_session_limits ? ' active' : '') + '" id="ts-honors-limits">' +
             '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div>' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-form-group full-width">' +
-            '<label>下载目录</label>' +
+            '<label>' + TWC.i18n.t('detail.general.download_dir') + '</label>' +
             '<div style="display:flex;gap:4px">' +
-            '<input type="text" class="twc-input" id="ts-download-dir" value="' + TWC.utils.escapeHtml(t.downloadDir || '') + '" />' +
-            '<button class="twc-btn primary" id="ts-change-dir-btn" style="white-space:nowrap">移动</button>' +
+            '<input type="text" class="twc-input" id="ts-download-dir" value="' + TWC.utils.escapeHtml(t.download_dir || '') + '" />' +
+            '<button class="twc-btn primary" id="ts-change-dir-btn" style="white-space:nowrap">' + TWC.i18n.t('detail.settings.move') + '</button>' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-form-group full-width" style="margin-top:8px">' +
-            '<button class="twc-btn primary" id="ts-save-btn">保存设置</button>' +
+            '<button class="twc-btn primary" id="ts-save-btn">' + TWC.i18n.t('detail.settings.save') + '</button>' +
             '</div>' +
             '</div>';
 
@@ -276,25 +294,30 @@ TWC.uiDetailExtras = (function() {
         $('#ts-save-btn').on('click', function() {
             var torrentIds = TWC.torrent.getSelectedIds();
             var props = {
-                downloadLimited: $('#ts-dl-limited').is(':checked'),
-                downloadLimit: parseInt($('#ts-dl-limit').val()) || 0,
-                uploadLimited: $('#ts-ul-limited').is(':checked'),
-                uploadLimit: parseInt($('#ts-ul-limit').val()) || 0,
-                bandwidthPriority: parseInt($('#ts-priority').val()),
+                download_limited: $('#ts-dl-limited').is(':checked'),
+                download_limit: parseInt($('#ts-dl-limit').val()) || 0,
+                upload_limited: $('#ts-ul-limited').is(':checked'),
+                upload_limit: parseInt($('#ts-ul-limit').val()) || 0,
+                bandwidth_priority: parseInt($('#ts-priority').val()),
                 peerLimit: parseInt($('#ts-peer-limit').val()) || 50,
-                seedRatioMode: parseInt($('#ts-ratio-mode').val()),
-                seedRatioLimit: parseFloat($('#ts-ratio-limit').val()) || 2.0,
-                seedIdleMode: parseInt($('#ts-idle-mode').val()),
-                seedIdleLimit: parseInt($('#ts-idle-limit').val()) || 30,
-                honorsSessionLimits: $('#ts-honors-limits').hasClass('active')
+                seed_ratio_mode: parseInt($('#ts-ratio-mode').val()),
+                seed_ratio_limit: parseFloat($('#ts-ratio-limit').val()) || 2.0,
+                seed_idle_mode: parseInt($('#ts-idle-mode').val()),
+                seed_idle_limit: parseInt($('#ts-idle-limit').val()) || 30,
+                honors_session_limits: $('#ts-honors-limits').hasClass('active')
             };
+
+            var selectedGroup = $('#ts-group').val() || '';
+            if (selectedGroup) {
+                props.group = selectedGroup;
+            }
 
             TWC.rpc.setTorrent(torrentIds, props, function(success) {
                 if (success) {
-                    TWC.ui.showToast('设置已保存', 'success');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.save_success'), 'success');
                     TWC.ui.refreshData(true);
                 } else {
-                    TWC.ui.showToast('保存失败', 'error');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.settings.save_failed'), 'error');
                 }
             });
         });
@@ -304,10 +327,10 @@ TWC.uiDetailExtras = (function() {
             var newDir = $('#ts-download-dir').val();
             TWC.rpc.setTorrentLocation(torrentIds, newDir, true, function(success) {
                 if (success) {
-                    TWC.ui.showToast('已移动到: ' + newDir, 'success');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.change_dir.success') + ': ' + newDir, 'success');
                     TWC.ui.refreshData(true);
                 } else {
-                    TWC.ui.showToast('移动失败', 'error');
+                    TWC.ui.showToast(TWC.i18n.t('dialog.change_dir.failed'), 'error');
                 }
             });
         });
@@ -375,12 +398,12 @@ TWC.uiDetailExtras = (function() {
         ctx.fillStyle = textColor;
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('下载', padding.left + 14, h - 8);
+        ctx.fillText(TWC.i18n.t('detail.speed.download'), padding.left + 14, h - 8);
 
         ctx.fillStyle = uploadColor;
         ctx.fillRect(padding.left + 50, h - 12, 10, 3);
         ctx.fillStyle = textColor;
-        ctx.fillText('上传', padding.left + 64, h - 8);
+        ctx.fillText(TWC.i18n.t('detail.speed.upload'), padding.left + 64, h - 8);
     }
 
     function _drawLine(ctx, data, maxVal, color, padding, chartW, chartH) {

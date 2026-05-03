@@ -14,6 +14,7 @@ TWC.torrent = (function() {
     var _trackerGroups = {};
     var _dirGroups = {};
     var _labelGroups = {};
+    var _UNLABELED_KEY = '__unlabeled__';
     var _statusCounts = {all:0, downloading:0, seeding:0, stopped:0, checking:0, active:0, error:0, queued:0};
     var _listeners = [];
     var _isFirstLoad = true;
@@ -46,6 +47,7 @@ TWC.torrent = (function() {
 
                 if (oldTorrent) {
                     _removeFromIndex(oldTorrent, t.id);
+                    t = Object.assign({}, oldTorrent, t);
                 }
 
                 _torrents[t.id] = t;
@@ -74,9 +76,9 @@ TWC.torrent = (function() {
         if (isError(t)) _statusCounts.error--;
         if (isQueued(t)) _statusCounts.queued--;
 
-        if (t.trackerStats) {
-            for (var i = 0; i < t.trackerStats.length; i++) {
-                var domain = TWC.utils.getTrackerDomain(t.trackerStats[i].announce);
+        if (t.tracker_stats) {
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                var domain = TWC.utils.getTrackerDomain(t.tracker_stats[i].announce);
                 if (domain && _trackerGroups[domain]) {
                     var idx = _trackerGroups[domain].indexOf(id);
                     if (idx !== -1) _trackerGroups[domain].splice(idx, 1);
@@ -85,10 +87,10 @@ TWC.torrent = (function() {
             }
         }
 
-        if (t.downloadDir && _dirGroups[t.downloadDir]) {
-            var dirIdx = _dirGroups[t.downloadDir].indexOf(id);
-            if (dirIdx !== -1) _dirGroups[t.downloadDir].splice(dirIdx, 1);
-            if (_dirGroups[t.downloadDir].length === 0) delete _dirGroups[t.downloadDir];
+        if (t.download_dir && _dirGroups[t.download_dir]) {
+            var dirIdx = _dirGroups[t.download_dir].indexOf(id);
+            if (dirIdx !== -1) _dirGroups[t.download_dir].splice(dirIdx, 1);
+            if (_dirGroups[t.download_dir].length === 0) delete _dirGroups[t.download_dir];
         }
 
         if (t.labels && t.labels.length > 0) {
@@ -99,10 +101,10 @@ TWC.torrent = (function() {
                     if (_labelGroups[t.labels[j]].length === 0) delete _labelGroups[t.labels[j]];
                 }
             }
-        } else if (_labelGroups['未标签']) {
-            var noLabelIdx = _labelGroups['未标签'].indexOf(id);
-            if (noLabelIdx !== -1) _labelGroups['未标签'].splice(noLabelIdx, 1);
-            if (_labelGroups['未标签'].length === 0) delete _labelGroups['未标签'];
+        } else if (_labelGroups[_UNLABELED_KEY]) {
+            var noLabelIdx = _labelGroups[_UNLABELED_KEY].indexOf(id);
+            if (noLabelIdx !== -1) _labelGroups[_UNLABELED_KEY].splice(noLabelIdx, 1);
+            if (_labelGroups[_UNLABELED_KEY].length === 0) delete _labelGroups[_UNLABELED_KEY];
         }
     }
 
@@ -149,9 +151,9 @@ TWC.torrent = (function() {
     }
 
     function _indexTracker(t) {
-        if (!t.trackerStats) return;
-        for (var i = 0; i < t.trackerStats.length; i++) {
-            var domain = TWC.utils.getTrackerDomain(t.trackerStats[i].announce);
+        if (!t.tracker_stats) return;
+        for (var i = 0; i < t.tracker_stats.length; i++) {
+            var domain = TWC.utils.getTrackerDomain(t.tracker_stats[i].announce);
             if (!domain) continue;
             if (!_trackerGroups[domain]) {
                 _trackerGroups[domain] = [];
@@ -163,8 +165,8 @@ TWC.torrent = (function() {
     }
 
     function _indexDir(t) {
-        if (!t.downloadDir) return;
-        var dir = t.downloadDir;
+        if (!t.download_dir) return;
+        var dir = t.download_dir;
         if (!_dirGroups[dir]) {
             _dirGroups[dir] = [];
         }
@@ -175,11 +177,11 @@ TWC.torrent = (function() {
 
     function _indexLabel(t) {
         if (!t.labels || t.labels.length === 0) {
-            if (!_labelGroups['未标签']) {
-                _labelGroups['未标签'] = [];
+            if (!_labelGroups[_UNLABELED_KEY]) {
+                _labelGroups[_UNLABELED_KEY] = [];
             }
-            if (_labelGroups['未标签'].indexOf(t.id) === -1) {
-                _labelGroups['未标签'].push(t.id);
+            if (_labelGroups[_UNLABELED_KEY].indexOf(t.id) === -1) {
+                _labelGroups[_UNLABELED_KEY].push(t.id);
             }
             return;
         }
@@ -211,7 +213,7 @@ TWC.torrent = (function() {
     }
 
     function isActive(t) {
-        return (t.rateDownload > 0 || t.rateUpload > 0);
+        return (t.rate_download > 0 || t.rate_upload > 0);
     }
 
     function isError(t) {
@@ -271,17 +273,17 @@ TWC.torrent = (function() {
         if (_searchText) {
             var search = _searchText.toLowerCase();
             var name = (t.name || '').toLowerCase();
-            var hash = (t.hashString || '').toLowerCase();
+            var hash = (t.hash_string || '').toLowerCase();
             var comment = (t.comment || '').toLowerCase();
             var creator = (t.creator || '').toLowerCase();
-            var downloadDir = (t.downloadDir || '').toLowerCase();
+            var download_dir = (t.download_dir || '').toLowerCase();
             var group = (t.group || '').toLowerCase();
 
             if (name.indexOf(search) === -1 &&
                 hash.indexOf(search) === -1 &&
                 comment.indexOf(search) === -1 &&
                 creator.indexOf(search) === -1 &&
-                downloadDir.indexOf(search) === -1 &&
+                download_dir.indexOf(search) === -1 &&
                 group.indexOf(search) === -1) {
                 var hasMatchingLabel = false;
                 if (t.labels && t.labels.length > 0) {
@@ -452,10 +454,18 @@ TWC.torrent = (function() {
         return _labelGroups;
     }
 
+    function getUnlabeledKey() {
+        return _UNLABELED_KEY;
+    }
+
+    function getUnlabeledCount() {
+        return _labelGroups[_UNLABELED_KEY] ? _labelGroups[_UNLABELED_KEY].length : 0;
+    }
+
     function getAllLabels() {
         var labels = [];
         for (var key in _labelGroups) {
-            if (key !== '未标签') {
+            if (key !== _UNLABELED_KEY) {
                 labels.push(key);
             }
         }
@@ -510,11 +520,11 @@ TWC.torrent = (function() {
         var ids = Object.keys(_torrents);
         for (var i = 0; i < ids.length; i++) {
             var t = _torrents[ids[i]];
-            totalDownload += t.rateDownload || 0;
-            totalUpload += t.rateUpload || 0;
-            totalPeers += t.peersConnected || 0;
-            totalDownloaded += t.downloadedEver || 0;
-            totalUploaded += t.uploadedEver || 0;
+            totalDownload += t.rate_download || 0;
+            totalUpload += t.rate_upload || 0;
+            totalPeers += t.peers_connected || 0;
+            totalDownloaded += t.downloaded_ever || 0;
+            totalUploaded += t.uploaded_ever || 0;
         }
         return {
             downloadSpeed: totalDownload,
@@ -558,6 +568,9 @@ TWC.torrent = (function() {
         isChecking: isChecking,
         isActive: isActive,
         isError: isError,
-        isQueued: isQueued
+        isQueued: isQueued,
+        isSequential: isSequential,
+        getUnlabeledKey: getUnlabeledKey,
+        getUnlabeledCount: getUnlabeledCount
     };
 })();

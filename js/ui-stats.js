@@ -18,7 +18,7 @@ TWC.uiStats = (function() {
         var html = '<div class="twc-stats-page">' +
 
             '<div class="twc-stats-section">' +
-            '<div class="twc-stats-section-title">实时速度</div>' +
+            '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.speed_title') + '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card twc-stat-wide">' +
             '<canvas id="global-speed-chart" style="width:100%;height:180px"></canvas>' +
@@ -26,101 +26,101 @@ TWC.uiStats = (function() {
             '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">当前下载</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.speed.current_download') + '</div>' +
             '<div class="stat-value text-info">' + TWC.utils.formatSpeed(globalStats.downloadSpeed) + '</div>' +
             '</div>' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">当前上传</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.speed.current_upload') + '</div>' +
             '<div class="stat-value text-success">' + TWC.utils.formatSpeed(globalStats.uploadSpeed) + '</div>' +
             '</div>' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-stats-section">' +
-            '<div class="twc-stats-section-title">累计统计</div>' +
+            '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.cumulative_title') + '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">累计下载</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.general.downloaded') + '</div>' +
             '<div class="stat-value">' + TWC.utils.formatBytes(cumulative.downloadedBytes || 0) + '</div>' +
             '<div class="stat-sub">' + TWC.utils.formatDuration(cumulative.secondsActive || 0) + '</div>' +
             '</div>' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">累计上传</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.general.uploaded') + '</div>' +
             '<div class="stat-value">' + TWC.utils.formatBytes(cumulative.uploadedBytes || 0) + '</div>' +
-            '<div class="stat-sub">平均速度 ' + TWC.utils.formatSpeed(cumulative.secondsActive > 0 ? (cumulative.uploadedBytes || 0) / cumulative.secondsActive : 0) + '</div>' +
+            '<div class="stat-sub">' + TWC.i18n.t('stats.avg_speed') + ' ' + TWC.utils.formatSpeed(cumulative.secondsActive > 0 ? (cumulative.uploadedBytes || 0) / cumulative.secondsActive : 0) + '</div>' +
             '</div>' +
             '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">累计分享率</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.general.ratio') + '</div>' +
             '<div class="stat-value">' + _formatCumulativeRatio(cumulative) + '</div>' +
             '</div>' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">累计文件数</div>' +
-            '<div class="stat-value">' + TWC.utils.formatNumber(cumulative.fileCount || 0) + '</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('stats.file_count') + '</div>' +
+            '<div class="stat-value">' + TWC.utils.formatNumber(cumulative.file_count || 0) + '</div>' +
             '</div>' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-stats-section">' +
-            '<div class="twc-stats-section-title">本次会话</div>' +
+            '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.current_title') + '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">本次下载</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.general.downloaded') + '</div>' +
             '<div class="stat-value">' + TWC.utils.formatBytes(current.downloadedBytes || 0) + '</div>' +
             '<div class="stat-sub">' + TWC.utils.formatDuration(current.secondsActive || 0) + '</div>' +
             '</div>' +
             '<div class="twc-stat-card">' +
-            '<div class="stat-label">本次上传</div>' +
+            '<div class="stat-label">' + TWC.i18n.t('detail.general.uploaded') + '</div>' +
             '<div class="stat-value">' + TWC.utils.formatBytes(current.uploadedBytes || 0) + '</div>' +
-            '<div class="stat-sub">平均速度 ' + TWC.utils.formatSpeed(current.secondsActive > 0 ? (current.uploadedBytes || 0) / current.secondsActive : 0) + '</div>' +
+            '<div class="stat-sub">' + TWC.i18n.t('stats.avg_speed') + ' ' + TWC.utils.formatSpeed(current.secondsActive > 0 ? (current.uploadedBytes || 0) / current.secondsActive : 0) + '</div>' +
             '</div>' +
             '</div>' +
             '</div>' +
 
             '<div class="twc-stats-section">' +
-            '<div class="twc-stats-section-title">种子状态分布</div>' +
+            '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.torrent_stats') + '</div>' +
             '<div class="twc-stats-row">' +
             '<div class="twc-stat-card twc-stat-wide">' +
             _renderStatusBarChart(counts) +
             '</div>' +
             '</div>' +
             '<div class="twc-stats-grid">' +
-            _miniStat('全部', counts.all, '') +
-            _miniStat('下载中', counts.downloading, 'text-info') +
-            _miniStat('做种中', counts.seeding, 'text-success') +
-            _miniStat('已停止', counts.stopped, 'text-muted') +
-            _miniStat('校验中', counts.checking, 'text-warning') +
-            _miniStat('活跃', counts.active, 'text-info') +
-            _miniStat('错误', counts.error, 'text-danger') +
-            _miniStat('排队中', counts.queued, 'text-muted') +
+            _miniStat(TWC.i18n.t('filter.all'), counts.all, '') +
+            _miniStat(TWC.i18n.t('status.downloading'), counts.downloading, 'text-info') +
+            _miniStat(TWC.i18n.t('status.seeding'), counts.seeding, 'text-success') +
+            _miniStat(TWC.i18n.t('status.stopped'), counts.stopped, 'text-muted') +
+            _miniStat(TWC.i18n.t('status.checking'), counts.checking, 'text-warning') +
+            _miniStat(TWC.i18n.t('filter.active'), counts.active, 'text-info') +
+            _miniStat(TWC.i18n.t('filter.error'), counts.error, 'text-danger') +
+            _miniStat(TWC.i18n.t('status.download_wait'), counts.queued, 'text-muted') +
             '</div>' +
             '</div>' +
 
             '<div class="twc-stats-section">' +
-            '<div class="twc-stats-section-title">系统信息</div>' +
+            '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.sys_info') + '</div>' +
             '<div class="twc-stats-info-grid">' +
-            _infoRow('Transmission 版本', session.version || '-') +
-            _infoRow('RPC 版本', session['rpc-version'] || '-') +
-            _infoRow('RPC 语义版本', session['rpc-version-semver'] || '-') +
-            _infoRow('配置目录', session['config-dir'] || '-') +
-            _infoRow('默认下载目录', session['download-dir'] || '-') +
-            _infoRow('可用空间', session['download-dir-free-space'] ? TWC.utils.formatBytes(session['download-dir-free-space']) : '-') +
-            _infoRow('监听端口', session['peer-port'] || '-') +
-            _infoRow('端口转发', session['port-forwarding-enabled'] ? '启用' : '禁用') +
-            _infoRow('DHT', session['dht-enabled'] ? '启用' : '禁用') +
-            _infoRow('PEX', session['pex-enabled'] ? '启用' : '禁用') +
-            _infoRow('LPD', session['lpd-enabled'] ? '启用' : '禁用') +
-            _infoRow('uTP', session['utp-enabled'] ? '启用' : '禁用') +
-            _infoRow('加密', TWC.utils.getEncryptionText(session.encryption) || '-') +
-            _infoRow('备用限速', session['alt-speed-enabled'] ? '已启用' : '未启用') +
+            _infoRow(TWC.i18n.t('dialog.about.version'), session.version || '-') +
+            _infoRow(TWC.i18n.t('dialog.about.rpc_version'), session['rpc-version'] || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.rpc_semver') || 'RPC Semantic Version', session['rpc-version-semver'] || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.config_dir') || 'Config Dir', session['config-dir'] || '-') +
+            _infoRow(TWC.i18n.t('dialog.add.download_dir'), session['download-dir'] || '-') +
+            _infoRow(TWC.i18n.t('stats.free_space'), session['download-dir-free-space'] ? TWC.utils.formatBytes(session['download-dir-free-space']) : '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.listen_port') || 'Peer Port', session['peer-port'] || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.port_forwarding') || 'Port Forwarding', session['port-forwarding-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.dht'), session['dht-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.pex'), session['pex-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.lpd'), session['lpd-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.utp'), session['utp-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('detail.peers.encryption'), TWC.utils.getEncryptionText(session.encryption) || '-') +
+            _infoRow(TWC.i18n.t('toolbar.alt_speed'), session['alt-speed-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
             '</div>' +
             '</div>' +
 
             '</div>';
 
         TWC.ui.showModal(html, {
-            title: '全局统计',
+            title: TWC.i18n.t('stats.title'),
             size: 'xl'
         });
 
@@ -130,12 +130,12 @@ TWC.uiStats = (function() {
     function _renderStatusBarChart(counts) {
         var total = counts.all || 1;
         var segments = [
-            { label: '下载', count: counts.downloading, color: 'var(--color-primary-500)' },
-            { label: '做种', count: counts.seeding, color: 'var(--color-success-500)' },
-            { label: '停止', count: counts.stopped, color: '#6b7280' },
-            { label: '校验', count: counts.checking, color: 'var(--color-warning-500)' },
-            { label: '错误', count: counts.error, color: 'var(--color-danger-500)' },
-            { label: '排队', count: counts.queued, color: '#8b5cf6' }
+            { label: TWC.i18n.t('columns.downloaded'), count: counts.downloading, color: 'var(--color-primary-500)' },
+            { label: TWC.i18n.t('columns.uploaded'), count: counts.seeding, color: 'var(--color-success-500)' },
+            { label: TWC.i18n.t('status.stopped'), count: counts.stopped, color: '#6b7280' },
+            { label: TWC.i18n.t('status.checking'), count: counts.checking, color: 'var(--color-warning-500)' },
+            { label: TWC.i18n.t('filter.error'), count: counts.error, color: 'var(--color-danger-500)' },
+            { label: TWC.i18n.t('status.download_wait'), count: counts.queued, color: '#8b5cf6' }
         ];
 
         var html = '<div style="display:flex;height:24px;border-radius:4px;overflow:hidden;margin-bottom:8px">';
@@ -212,7 +212,7 @@ TWC.uiStats = (function() {
             ctx.fillStyle = textColor;
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('等待数据...', w / 2, h / 2);
+            ctx.fillText(TWC.i18n.t('status.loading'), w / 2, h / 2);
             return;
         }
 
@@ -247,12 +247,12 @@ TWC.uiStats = (function() {
         ctx.fillStyle = textColor;
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('下载', padding.left + 14, h - 10);
+        ctx.fillText(TWC.i18n.t('detail.speed.download'), padding.left + 14, h - 10);
 
         ctx.fillStyle = uploadColor;
         ctx.fillRect(padding.left + 55, h - 14, 10, 3);
         ctx.fillStyle = textColor;
-        ctx.fillText('上传', padding.left + 69, h - 10);
+        ctx.fillText(TWC.i18n.t('detail.speed.upload'), padding.left + 69, h - 10);
     }
 
     function _drawChartLine(ctx, data, maxVal, color, padding, chartW, chartH) {

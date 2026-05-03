@@ -521,15 +521,15 @@ TWC.geoip = (function() {
         return _loaded;
     }
 
-    function isPrivateIP(ip) {
+    function is_privateIP(ip) {
         if (!ip) return true;
 
         if (ip.includes(':')) {
             var mappedIPv4 = _extractIPv4FromIPv6(ip);
             if (mappedIPv4) {
-                return isPrivateIP(mappedIPv4);
+                return is_privateIP(mappedIPv4);
             }
-            return _isPrivateIPv6(ip);
+            return _is_privateIPv6(ip);
         }
 
         var parts = ip.split('.');
@@ -544,7 +544,7 @@ TWC.geoip = (function() {
         return false;
     }
 
-    function _isPrivateIPv6(ip) {
+    function _is_privateIPv6(ip) {
         var lowerIp = ip.toLowerCase();
         if (lowerIp === '::1') return true;
         if (lowerIp === '::') return true;
@@ -575,6 +575,6 @@ TWC.geoip = (function() {
         getCountryFlagHtml: getCountryFlagHtml,
         hasFlag: hasFlag,
         isLoaded: isLoaded,
-        isPrivateIP: isPrivateIP
+        is_privateIP: is_privateIP
     };
 })();

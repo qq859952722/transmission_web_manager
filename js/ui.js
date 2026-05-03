@@ -18,6 +18,7 @@ TWC.ui = (function() {
 
     function init() {
         _loadUIConfig();
+        TWC.i18n.init(); // Initialize i18n first
         TWC.theme.init();
         _renderLayout();
         _bindEvents();
@@ -56,7 +57,7 @@ TWC.ui = (function() {
         if (!_detailPanelVisible) {
             $('#detail-panel').addClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
-            $('#btn-detail-collapse').attr('title', '展开详情面板');
+            $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
         }
         if (!_sidebarVisible) {
             $('#sidebar').addClass('collapsed');
@@ -73,6 +74,8 @@ TWC.ui = (function() {
         $('#btn-remove').off('click').on('click', function() { _actionOnSelected('remove'); });
         $('#btn-queue-up').off('click').on('click', function() { _actionOnSelected('queueUp'); });
         $('#btn-queue-down').off('click').on('click', function() { _actionOnSelected('queueDown'); });
+        $('#btn-queue-top').off('click').on('click', function() { _actionOnSelected('queueTop'); });
+        $('#btn-queue-bottom').off('click').on('click', function() { _actionOnSelected('queueBottom'); });
         $('#btn-alt-speed').off('click').on('click', _toggleAltSpeed);
         $('#btn-refresh').off('click').on('click', function() { _doRefresh(true); });
         $('#btn-auto-refresh').off('click').on('click', _toggleAutoRefresh);
@@ -91,6 +94,10 @@ TWC.ui = (function() {
             _refreshInterval = parseInt($(this).val());
             TWC.utils.storageSet('twc-refresh-interval', _refreshInterval);
             _startRefresh();
+        });
+
+        $('#select-lang').off('change').on('change', function() {
+            TWC.i18n.setLanguage($(this).val());
         });
 
         $(document).off('click.detailtab').on('click', '.twc-detail-tab', function() {
@@ -174,25 +181,25 @@ TWC.ui = (function() {
         switch (action) {
             case 'start':
                 TWC.rpc.startTorrents(ids, function(success) {
-                    if (success) showToast('已开始 ' + ids.length + ' 个种子', 'success');
+                    if (success) showToast(TWC.i18n.t('status.started').replace('{n}', ids.length), 'success');
                     postActionRefresh();
                 });
                 break;
             case 'startNow':
                 TWC.rpc.startNowTorrents(ids, function(success) {
-                    if (success) showToast('已立即开始 ' + ids.length + ' 个种子', 'success');
+                    if (success) showToast(TWC.i18n.t('status.started_now').replace('{n}', ids.length), 'success');
                     postActionRefresh();
                 });
                 break;
             case 'stop':
                 TWC.rpc.stopTorrents(ids, function(success) {
-                    if (success) showToast('已暂停 ' + ids.length + ' 个种子', 'success');
+                    if (success) showToast(TWC.i18n.t('status.paused').replace('{n}', ids.length), 'success');
                     postActionRefresh();
                 });
                 break;
             case 'reannounce':
                 TWC.rpc.reannounceTorrents(ids, function(success) {
-                    if (success) showToast('已重新宣告', 'success');
+                    if (success) showToast(TWC.i18n.t('status.reannounced'), 'success');
                     postActionRefresh();
                 });
                 break;
@@ -201,9 +208,9 @@ TWC.ui = (function() {
                     if (success) {
                         if (ids.length === 1) {
                             var t = TWC.torrent.getTorrent(ids[0]);
-                            showToast('已开始校验: ' + (t ? t.name : ids.length + ' 个种子'), 'success');
+                            showToast(TWC.i18n.t('status.checking_torrent').replace('{name}', (t ? t.name : ids.length)), 'success');
                         } else {
-                            showToast('已开始校验 ' + ids.length + ' 个种子', 'success');
+                            showToast(TWC.i18n.t('status.checking_multi').replace('{n}', ids.length), 'success');
                         }
                     }
                     postActionRefresh();
@@ -218,6 +225,12 @@ TWC.ui = (function() {
             case 'queueDown':
                 TWC.rpc.queueMoveDown(ids, function() { postActionRefresh(); });
                 break;
+            case 'queueTop':
+                TWC.rpc.queueMoveTop(ids, function() { postActionRefresh(); });
+                break;
+            case 'queueBottom':
+                TWC.rpc.queueMoveBottom(ids, function() { postActionRefresh(); });
+                break;
         }
     }
 
@@ -225,7 +238,7 @@ TWC.ui = (function() {
         var current = TWC.config.getSessionValue('alt-speed-enabled');
         TWC.config.saveSession({ 'alt-speed-enabled': !current }, function(success) {
             if (success) {
-                showToast(!current ? '已启用备用限速' : '已关闭备用限速', 'success');
+                showToast(!current ? TWC.i18n.t('status.alt_speed_on') : TWC.i18n.t('status.alt_speed_off'), 'success');
                 _updateAltSpeedButton();
                 _updateAltSpeedStatus();
             }
@@ -244,9 +257,9 @@ TWC.ui = (function() {
     function _updateAltSpeedStatus() {
         var altSpeed = TWC.config.getSessionValue('alt-speed-enabled');
         if (altSpeed) {
-            $('#stat-alt-speed-text').text('⏱ 限速开').removeClass('stat-alt-speed-off').addClass('stat-alt-speed-on');
+            $('#stat-alt-speed-text').text('⏱ ' + TWC.i18n.t('dialog.settings.enabled')).removeClass('stat-alt-speed-off').addClass('stat-alt-speed-on');
         } else {
-            $('#stat-alt-speed-text').text('限速关').removeClass('stat-alt-speed-on').addClass('stat-alt-speed-off');
+            $('#stat-alt-speed-text').text(TWC.i18n.t('dialog.settings.disabled')).removeClass('stat-alt-speed-on').addClass('stat-alt-speed-off');
         }
     }
 
@@ -277,11 +290,11 @@ TWC.ui = (function() {
         if (_detailPanelVisible) {
             $('#detail-panel').removeClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 9 12 15 18 9"/>');
-            $('#btn-detail-collapse').attr('title', '折叠详情面板');
+            $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
         } else {
             $('#detail-panel').addClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
-            $('#btn-detail-collapse').attr('title', '展开详情面板');
+            $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
         }
         TWC.utils.storageSet('twc-detail-visible', _detailPanelVisible);
     }
@@ -289,7 +302,7 @@ TWC.ui = (function() {
     function _updateToolbarState() {
         var ids = TWC.torrent.getSelectedIds();
         var hasSelection = ids.length > 0;
-        $('#btn-start, #btn-start-now, #btn-pause, #btn-reannounce, #btn-verify, #btn-remove, #btn-queue-up, #btn-queue-down')
+        $('#btn-start, #btn-start-now, #btn-pause, #btn-reannounce, #btn-verify, #btn-remove, #btn-queue-up, #btn-queue-down, #btn-queue-top, #btn-queue-bottom')
             .prop('disabled', !hasSelection);
     }
 
@@ -391,6 +404,8 @@ TWC.ui = (function() {
         }
     }
 
+    var _groupsLoaded = false;
+
     function _fullRefresh() {
         TWC.rpc.getTorrents(null, TWC.rpc.LIST_FIELDS, function(torrents, removed, success, error) {
             if (success) {
@@ -400,6 +415,10 @@ TWC.ui = (function() {
             }
             _finishRefresh();
         });
+        if (!_groupsLoaded) {
+            _groupsLoaded = true;
+            TWC.config.loadGroups();
+        }
     }
 
     function _hybridRefresh() {
@@ -447,9 +466,9 @@ TWC.ui = (function() {
         $('#stat-download-speed').text(TWC.utils.formatSpeed(stats.downloadSpeed));
         $('#stat-upload-speed').text(TWC.utils.formatSpeed(stats.uploadSpeed));
 
-        var countText = '种子: ' + counts.all;
-        if (counts.downloading > 0) countText += ' | 下载: ' + counts.downloading;
-        if (counts.seeding > 0) countText += ' | 做种: ' + counts.seeding;
+        var countText = TWC.i18n.t('status.torrents').replace('{n}', counts.all);
+        if (counts.downloading > 0) countText += ' | ' + TWC.i18n.t('sidebar.status_downloading') + ': ' + counts.downloading;
+        if (counts.seeding > 0) countText += ' | ' + TWC.i18n.t('sidebar.status_seeding') + ': ' + counts.seeding;
         $('#stat-torrent-count').text(countText);
 
         $('#stat-errors').text(counts.error > 0 ? counts.error : '0');
@@ -480,11 +499,11 @@ TWC.ui = (function() {
         var now = Date.now();
         if (now - _freeSpaceLastUpdated < 30000) return; // 至少30秒更新一次
         
-        var downloadDir = TWC.config.getSessionValue('download-dir');
-        if (downloadDir) {
-            TWC.rpc.getFreeSpace(downloadDir, function(freeBytes, totalBytes, path, success) {
+        var download_dir = TWC.config.getSessionValue('download-dir');
+        if (download_dir) {
+            TWC.rpc.getFreeSpace(download_dir, function(freeBytes, totalBytes, path, success) {
                 if (success && freeBytes >= 0) {
-                    $('#stat-free-space').text('可用空间: ' + TWC.utils.formatBytes(freeBytes));
+                    $('#stat-free-space').text(TWC.i18n.t('stats.free_space') + ': ' + TWC.utils.formatBytes(freeBytes));
                     _freeSpaceLastUpdated = Date.now();
                 }
             });
@@ -497,27 +516,27 @@ TWC.ui = (function() {
     function _updateConnectionStatus(connected) {
         if (connected) {
             $('#stat-conn-icon').css('background', 'var(--color-success-500)');
-            $('#stat-conn-text').text('✓ 已连接').css('color', 'var(--color-success-500)');
+            $('#stat-conn-text').text('✓ ' + TWC.i18n.t('status.connected')).css('color', 'var(--color-success-500)');
         } else {
             $('#stat-conn-icon').css('background', 'var(--color-danger-500)');
-            $('#stat-conn-text').text('✗ 已断开').css('color', 'var(--color-danger-500)');
+            $('#stat-conn-text').text('✗ ' + TWC.i18n.t('status.disconnected')).css('color', 'var(--color-danger-500)');
         }
     }
 
     function _updatePortStatus() {
         if (_portTestInProgress) return;
         _portTestInProgress = true;
-        $('#stat-port-text').text('检测中...').removeClass('stat-port-unknown stat-port-closed stat-port-open').addClass('stat-port-unknown');
+        $('#stat-port-text').text(TWC.i18n.t('status.connecting')).removeClass('stat-port-unknown stat-port-closed stat-port-open').addClass('stat-port-unknown');
         TWC.rpc.testPort(function(isOpen, success) {
             _portTestInProgress = false;
             if (success) {
                 if (isOpen) {
-                    $('#stat-port-text').text('✓ 端口开放').removeClass('stat-port-unknown stat-port-closed').addClass('stat-port-open');
+                    $('#stat-port-text').text('✓ ' + TWC.i18n.t('status.port_ok')).removeClass('stat-port-unknown stat-port-closed').addClass('stat-port-open');
                 } else {
-                    $('#stat-port-text').text('✗ 端口关闭').removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
+                    $('#stat-port-text').text('✗ ' + TWC.i18n.t('status.port_closed')).removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
                 }
             } else {
-                $('#stat-port-text').text('? 检测失败').removeClass('stat-port-open stat-port-closed').addClass('stat-port-unknown');
+                $('#stat-port-text').text('? ' + TWC.i18n.t('status.disconnected')).removeClass('stat-port-open stat-port-closed').addClass('stat-port-unknown');
             }
         });
     }

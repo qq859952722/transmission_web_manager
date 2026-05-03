@@ -12,13 +12,12 @@ TWC.rpc = (function() {
 
     var TORRENT_FIELDS = [
         'id', 'name', 'status', 'hashString', 'totalSize',
-        'percentDone', 'remaining', 'leftUntilDone',
+        'percentDone', 'leftUntilDone',
         'eta', 'etaIdle',
         'rateDownload', 'rateUpload',
         'downloadedEver', 'uploadedEver',
         'corruptEver',
         'peersConnected', 'peersSendingToUs', 'peersGettingFromUs',
-        'seeders', 'leechers',
         'addedDate', 'doneDate', 'startDate', 'activityDate', 'editDate',
         'trackers', 'trackerStats',
         'files', 'fileStats',
@@ -28,7 +27,8 @@ TWC.rpc = (function() {
         'isStalled', 'isFinished', 'isPrivate',
         'labels', 'magnetLink',
         'downloadDir',
-        'pieceCount', 'pieceSize',
+        'pieceCount', 'pieceSize', 'pieces',
+        'torrentFile', 'file-count',
         'recheckProgress',
         'uploadRatio',
         'webseeds', 'webseedsSendingToUs',
@@ -79,13 +79,13 @@ TWC.rpc = (function() {
         'files', 'fileStats',
         'peers', 'peersFrom',
         'comment', 'creator', 'dateCreated',
-        'isPrivate', 'pieceCount', 'pieceSize',
-        'hashString', 'magnetLink',
+        'isPrivate', 'pieceCount', 'pieceSize', 'pieces',
+        'hashString', 'magnetLink', 'torrentFile',
         'webseeds', 'webseedsSendingToUs',
-        'maxConnectedPeers',
+        'maxConnectedPeers', 'file-count',
         'corruptEver', 'secondsDownloading', 'secondsSeeding',
         'startDate', 'editDate', 'source', 'primary-mime-type',
-        'desiredAvailable', 'haveUnchecked', 'remaining',
+        'desiredAvailable', 'haveUnchecked',
         'downloadLimited', 'downloadLimit',
         'uploadLimited', 'uploadLimit',
         'bandwidthPriority',
@@ -118,20 +118,168 @@ TWC.rpc = (function() {
         'rpc-whitelist', 'rpc-whitelist-enabled',
         'script-torrent-added-enabled', 'script-torrent-added-filename',
         'script-torrent-done-enabled', 'script-torrent-done-filename',
+        'script-torrent-done-seeding-enabled', 'script-torrent-done-seeding-filename',
         'seed-queue-enabled', 'seed-queue-size',
         'seedRatioLimit', 'seedRatioLimited',
         'speed-limit-down', 'speed-limit-down-enabled',
         'speed-limit-up', 'speed-limit-up-enabled',
         'start-added-torrents', 'trash-original-torrent-files',
         'units', 'utp-enabled', 'version',
-        'rpc-version', 'rpc-version-minimum', 'rpc-version-semver'
+        'rpc-version', 'rpc-version-minimum', 'rpc-version-semver',
+        'preferred_transports', 'tcp-enabled', 'sequential_download',
+        'session-id', 'reqq'
     ];
+
+    var _camelToSnakeMap = {
+        'hashString': 'hash_string',
+        'rateDownload': 'rate_download',
+        'rateUpload': 'rate_upload',
+        'percentDone': 'percent_done',
+        'percentComplete': 'percent_complete',
+        'totalSize': 'total_size',
+        'leftUntilDone': 'left_until_done',
+        'desiredAvailable': 'desired_available',
+        'downloadDir': 'download_dir',
+        'dateCreated': 'date_created',
+        'errorString': 'error_string',
+        'etaIdle': 'eta_idle',
+        'fileCount': 'file_count',
+        'isFinished': 'is_finished',
+        'isPrivate': 'is_private',
+        'isStalled': 'is_stalled',
+        'magnetLink': 'magnet_link',
+        'manualAnnounceTime': 'manual_announce_time',
+        'maxConnectedPeers': 'max_connected_peers',
+        'metadataPercentComplete': 'metadata_percent_complete',
+        'haveValid': 'have_valid',
+        'haveUnchecked': 'have_unchecked',
+        'peersConnected': 'peers_connected',
+        'peersGettingFromUs': 'peers_getting_from_us',
+        'peersSendingToUs': 'peers_sending_to_us',
+        'pieceCount': 'piece_count',
+        'pieceSize': 'piece_size',
+        'queuePosition': 'queue_position',
+        'recheckProgress': 'recheck_progress',
+        'secondsDownloading': 'seconds_downloading',
+        'secondsSeeding': 'seconds_seeding',
+        'seedIdleLimit': 'seed_idle_limit',
+        'seedIdleMode': 'seed_idle_mode',
+        'seedRatioLimit': 'seed_ratio_limit',
+        'seedRatioMode': 'seed_ratio_mode',
+        'seedRatioLimited': 'seed_ratio_limited',
+        'sizeWhenDone': 'size_when_done',
+        'startDate': 'start_date',
+        'addedDate': 'added_date',
+        'doneDate': 'done_date',
+        'activityDate': 'activity_date',
+        'editDate': 'edit_date',
+        'uploadedEver': 'uploaded_ever',
+        'downloadedEver': 'downloaded_ever',
+        'corruptEver': 'corrupt_ever',
+        'uploadLimit': 'upload_limit',
+        'uploadLimited': 'upload_limited',
+        'downloadLimit': 'download_limit',
+        'downloadLimited': 'download_limited',
+        'uploadRatio': 'upload_ratio',
+        'bandwidthPriority': 'bandwidth_priority',
+        'honorsSessionLimits': 'honors_session_limits',
+        'webseedsSendingToUs': 'webseeds_sending_to_us',
+        'fileStats': 'file_stats',
+        'trackerStats': 'tracker_stats',
+        'torrentFile': 'torrent_file',
+        'file-count': 'file_count',
+        'primary-mime-type': 'primary_mime_type',
+        'peersFrom': 'peers_from',
+        'isUTP': 'is_utp',
+        'isEncrypted': 'is_encrypted',
+        'isDownloadingFrom': 'is_downloading_from',
+        'isUploadingTo': 'is_uploading_to',
+        'isIncoming': 'is_incoming',
+        'clientIsChoked': 'client_is_choked',
+        'clientIsInterested': 'client_is_interested',
+        'peerIsChoked': 'peer_is_choked',
+        'peerIsInterested': 'peer_is_interested',
+        'flagStr': 'flag_str',
+        'rateToClient': 'rate_to_client',
+        'rateToPeer': 'rate_to_peer',
+        'clientName': 'client_name',
+        'isBackup': 'is_backup',
+        'announceState': 'announce_state',
+        'downloadCount': 'download_count',
+        'hasAnnounced': 'has_announced',
+        'hasScraped': 'has_scraped',
+        'lastAnnouncePeerCount': 'last_announce_peer_count',
+        'lastAnnounceResult': 'last_announce_result',
+        'lastAnnounceStartTime': 'last_announce_start_time',
+        'lastAnnounceSucceeded': 'last_announce_succeeded',
+        'lastAnnounceTime': 'last_announce_time',
+        'lastAnnounceTimedOut': 'last_announce_timed_out',
+        'lastScrapeResult': 'last_scrape_result',
+        'lastScrapeStartTime': 'last_scrape_start_time',
+        'lastScrapeSucceeded': 'last_scrape_succeeded',
+        'lastScrapeTime': 'last_scrape_time',
+        'lastScrapeTimedOut': 'last_scrape_timed_out',
+        'leecherCount': 'leecher_count',
+        'nextAnnounceTime': 'next_announce_time',
+        'nextScrapeTime': 'next_scrape_time',
+        'scrapeState': 'scrape_state',
+        'seederCount': 'seeder_count',
+        'activeTorrentCount': 'active_torrent_count',
+        'pausedTorrentCount': 'paused_torrent_count',
+        'torrentCount': 'torrent_count',
+        'downloadSpeed': 'download_speed',
+        'uploadSpeed': 'upload_speed',
+        'bytesToClient': 'bytes_to_client',
+        'bytesToPeer': 'bytes_to_peer',
+        'connectionType': 'connection_type',
+        'peerIsEncrypted': 'peer_is_encrypted',
+        'bytesCompleted': 'bytes_completed'
+    };
+
+    function _convertResponseKeys(obj, depth) {
+        if (depth === undefined) depth = 0;
+        if (depth > 5 || !obj || typeof obj !== 'object') return obj;
+
+        if (Array.isArray(obj)) {
+            var newArr = [];
+            for (var i = 0; i < obj.length; i++) {
+                newArr.push(_convertResponseKeys(obj[i], depth + 1));
+            }
+            return newArr;
+        }
+
+        var result = {};
+        for (var key in obj) {
+            if (!obj.hasOwnProperty(key)) continue;
+            var newKey = _camelToSnakeMap[key] || key;
+            var val = obj[key];
+            if (val && typeof val === 'object') {
+                val = _convertResponseKeys(val, depth + 1);
+            }
+            result[newKey] = val;
+        }
+        return result;
+    }
 
     function _exec(method, arguments_, callback, _409RetryCount) {
         _409RetryCount = _409RetryCount || 0;
+        var rpcVersion = (TWC.config && TWC.config.getSessionValue('rpc-version')) || 0;
+        var isLegacy = rpcVersion > 0 && rpcVersion < 16;
+
+        var requestMethod = method;
+        var requestArgs = arguments_ || {};
+
+        if (isLegacy) {
+            requestMethod = TWC.legacy.adaptMethod(method);
+            requestArgs = TWC.legacy.adaptArguments(requestArgs);
+            if (requestArgs.fields) {
+                requestArgs.fields = TWC.legacy.adaptFields(requestArgs.fields);
+            }
+        }
+
         var requestData = {
-            method: method,
-            arguments: arguments_ || {}
+            method: requestMethod,
+            arguments: requestArgs
         };
 
         var ajaxOptions = {
@@ -144,13 +292,47 @@ TWC.rpc = (function() {
             success: function(data) {
                 _retryCount = 0;
                 _isConnected = true;
+
+                if (isLegacy && data.arguments && data.arguments.torrents) {
+                    for (var i = 0; i < data.arguments.torrents.length; i++) {
+                        data.arguments.torrents[i] = TWC.legacy.adaptResponse(data.arguments.torrents[i]);
+                    }
+                }
+
+                if (!isLegacy && data.arguments) {
+                    if (data.arguments.torrents) {
+                        var convertedTorrents = [];
+                        for (var ti = 0; ti < data.arguments.torrents.length; ti++) {
+                            convertedTorrents.push(_convertResponseKeys(data.arguments.torrents[ti]));
+                        }
+                        data.arguments.torrents = convertedTorrents;
+                    }
+
+                    if (method === 'torrent-add') {
+                        if (data.arguments['torrent-added']) {
+                            data.arguments['torrent-added'] = _convertResponseKeys(data.arguments['torrent-added']);
+                        }
+                        if (data.arguments['torrent-duplicate']) {
+                            data.arguments['torrent-duplicate'] = _convertResponseKeys(data.arguments['torrent-duplicate']);
+                        }
+                    }
+
+                    if (method === 'torrent-rename-path' && data.arguments) {
+                        data.arguments = _convertResponseKeys(data.arguments);
+                    }
+
+                    if (method === 'session-stats' && data.arguments) {
+                        data.arguments = _convertResponseKeys(data.arguments);
+                    }
+                }
+
                 if (callback) callback(data, true);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 if (textStatus === 'abort') {
                     return;
                 }
-                
+
                 if (jqXHR.status === 409) {
                     var newSessionId = jqXHR.getResponseHeader('X-Transmission-Session-Id');
                     if (newSessionId && _409RetryCount < 3) {
@@ -159,19 +341,19 @@ TWC.rpc = (function() {
                         return;
                     }
                 }
-                
+
                 if (jqXHR.status === 401) {
                     _isConnected = false;
-                    if (callback) callback({result: '认证失败'}, false);
+                    if (callback) callback({result: TWC.i18n.t('status.auth_failed') || 'Authentication failed'}, false);
                     return;
                 }
-                
+
                 if (jqXHR.status >= 400 && jqXHR.status < 500) {
                     _isConnected = false;
-                    if (callback) callback({result: '请求错误: ' + jqXHR.status}, false);
+                    if (callback) callback({result: TWC.i18n.t('status.request_error') || ('Request error: ' + jqXHR.status)}, false);
                     return;
                 }
-                
+
                 if (jqXHR.status === 0 && textStatus === 'timeout') {
                     _retryCount++;
                     if (_retryCount <= _maxRetries) {
@@ -181,10 +363,10 @@ TWC.rpc = (function() {
                         return;
                     }
                     _isConnected = false;
-                    if (callback) callback({result: '连接超时'}, false);
+                    if (callback) callback({result: TWC.i18n.t('status.timeout') || 'Connection timeout'}, false);
                     return;
                 }
-                
+
                 _retryCount++;
                 if (_retryCount <= _maxRetries) {
                     var delay = _retryDelay * Math.pow(2, _retryCount - 1);
@@ -194,7 +376,7 @@ TWC.rpc = (function() {
                 } else {
                     _retryCount = 0;
                     _isConnected = false;
-                    if (callback) callback({result: '连接失败: ' + (errorThrown || textStatus)}, false);
+                    if (callback) callback({result: TWC.i18n.t('status.connection_failed') || ('Connection failed: ' + (errorThrown || textStatus))}, false);
                 }
             }
         };
@@ -236,7 +418,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments.torrents, data.arguments.removed || [], true);
             } else {
-                callback([], [], false, data ? data.result : '请求失败');
+                callback([], [], false, data ? data.result : TWC.i18n.t('status.request_failed') || 'Request failed');
             }
         });
     }
@@ -250,7 +432,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments.torrents, data.arguments.removed, true);
             } else {
-                callback([], [], false, data ? data.result : '请求失败');
+                callback([], [], false, data ? data.result : TWC.i18n.t('status.request_failed') || 'Request failed');
             }
         });
     }
@@ -298,8 +480,8 @@ TWC.rpc = (function() {
         if (options['download-dir']) args['download-dir'] = options['download-dir'];
         if (options.paused !== undefined) args.paused = options.paused;
         if (options.cookies) args.cookies = options.cookies;
-        if (options['peer-limit']) args.peer_limit = options['peer-limit'];
-        if (options.bandwidthPriority !== undefined) args.bandwidth_priority = options.bandwidthPriority;
+        if (options['peer-limit']) args['peer-limit'] = options['peer-limit'];
+        if (options.bandwidthPriority !== undefined) args.bandwidthPriority = options.bandwidthPriority;
         if (options.labels) args.labels = options.labels;
         if (options.files_wanted) args['files-wanted'] = options.files_wanted;
         if (options.files_unwanted) args['files-unwanted'] = options.files_unwanted;
@@ -312,35 +494,38 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 var added = data.arguments['torrent-added'];
                 var duplicate = data.arguments['torrent-duplicate'];
+                if (added && options.group) {
+                    setTorrent([added.id], { group: options.group });
+                }
                 callback(true, added, duplicate);
             } else {
-                callback(false, null, null, data ? data.result : '添加失败');
+                callback(false, null, null, data ? data.result : TWC.i18n.t('status.add_failed') || 'Add failed');
             }
         });
     }
 
     var _torrentSetKeyMap = {
-        downloadLimited: 'download_limited',
-        downloadLimit: 'download_limit',
-        uploadLimited: 'upload_limited',
-        uploadLimit: 'upload_limit',
-        bandwidthPriority: 'bandwidth_priority',
-        peerLimit: 'peer_limit',
-        seedRatioMode: 'seed_ratio_mode',
-        seedRatioLimit: 'seed_ratio_limit',
-        seedIdleMode: 'seed_idle_mode',
-        seedIdleLimit: 'seed_idle_limit',
-        honorsSessionLimits: 'honors_session_limits',
+        downloadLimited: 'downloadLimited',
+        downloadLimit: 'downloadLimit',
+        uploadLimited: 'uploadLimited',
+        uploadLimit: 'uploadLimit',
+        bandwidthPriority: 'bandwidthPriority',
+        peerLimit: 'peer-limit',
+        seedRatioMode: 'seedRatioMode',
+        seedRatioLimit: 'seedRatioLimit',
+        seedIdleMode: 'seedIdleMode',
+        seedIdleLimit: 'seedIdleLimit',
+        honorsSessionLimits: 'honorsSessionLimits',
         sequential_download: 'sequential_download',
         labels: 'labels',
-        trackerAdd: 'tracker_add',
-        trackerRemove: 'tracker_remove',
-        trackerReplace: 'tracker_replace',
-        filesWanted: 'files_wanted',
-        filesUnwanted: 'files_unwanted',
-        priorityHigh: 'priority_high',
-        priorityLow: 'priority_low',
-        priorityNormal: 'priority_normal'
+        trackerAdd: 'trackerAdd',
+        trackerRemove: 'trackerRemove',
+        trackerReplace: 'trackerReplace',
+        filesWanted: 'files-wanted',
+        filesUnwanted: 'files-unwanted',
+        priorityHigh: 'priority-high',
+        priorityLow: 'priority-low',
+        priorityNormal: 'priority-normal'
     };
 
     function setTorrent(ids, properties, callback) {
@@ -372,7 +557,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(true, data.arguments);
             } else {
-                callback(false, null, data ? data.result : '重命名失败');
+                callback(false, null, data ? data.result : TWC.i18n.t('status.rename_failed') || 'Rename failed');
             }
         });
     }
@@ -410,7 +595,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments, true);
             } else {
-                callback(null, false, data ? data.result : '获取会话失败');
+                callback(null, false, data ? data.result : TWC.i18n.t('status.session_failed') || 'Session get failed');
             }
         });
     }
@@ -426,7 +611,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments, true);
             } else {
-                callback(null, false, data ? data.result : '获取统计失败');
+                callback(null, false, data ? data.result : TWC.i18n.t('status.stats_failed') || 'Stats get failed');
             }
         });
     }
@@ -436,7 +621,7 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments['blocklist-size'], true);
             } else {
-                callback(0, false, data ? data.result : '更新失败');
+                callback(0, false, data ? data.result : TWC.i18n.t('status.update_failed') || 'Update failed');
             }
         });
     }
@@ -446,7 +631,11 @@ TWC.rpc = (function() {
             if (success && data && data.result === 'success') {
                 callback(data.arguments['port-is-open'], true);
             } else {
-                callback(false, false, data ? data.result : '测试失败');
+                var errMsg = '';
+                if (data && data.result && data.result !== 'success') {
+                    errMsg = data.result;
+                }
+                callback(false, false, errMsg || TWC.i18n.t('status.test_failed') || 'Test failed');
             }
         });
     }
@@ -454,9 +643,11 @@ TWC.rpc = (function() {
     function getFreeSpace(path, callback) {
         _exec('free-space', {path: path}, function(data, success) {
             if (success && data && data.result === 'success') {
-                callback(data.arguments['size-bytes'], data.arguments['total-size'], data.arguments.path, true);
+                var freeBytes = data.arguments['size-bytes'] !== undefined ? data.arguments['size-bytes'] : data.arguments.size_bytes;
+                var totalBytes = data.arguments['total-size'] !== undefined ? data.arguments['total-size'] : data.arguments.total_size;
+                callback(freeBytes, totalBytes, data.arguments.path, true);
             } else {
-                callback(-1, -1, path, false, data ? data.result : '查询失败');
+                callback(-1, -1, path, false, data ? data.result : TWC.i18n.t('status.query_failed') || 'Query failed');
             }
         });
     }
@@ -469,15 +660,16 @@ TWC.rpc = (function() {
 
     function getGroups(callback) {
         var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
-        if (rpcVersion < 17) {
-            callback([], false, '当前 Transmission 版本不支持带宽组（需要 4.0+）');
+        if (rpcVersion > 0 && rpcVersion < 17) {
+            callback([], false, TWC.i18n.t('status.group_unsupported') || 'Bandwidth groups require Transmission 4.0+');
             return;
         }
         _exec('group-get', {}, function(data, success) {
             if (success && data && data.result === 'success') {
-                callback(data.arguments.group, true);
+                var groups = data.arguments.group || data.arguments.groups || [];
+                callback(groups, true);
             } else {
-                callback([], false, data ? data.result : '获取分组失败');
+                callback([], false, data ? data.result : TWC.i18n.t('status.group_failed') || 'Group get failed');
             }
         });
     }
@@ -495,7 +687,7 @@ TWC.rpc = (function() {
                 callback(true, data.arguments);
             } else {
                 _isConnected = false;
-                callback(false, data ? data.result : '连接失败');
+                callback(false, data ? data.result : TWC.i18n.t('status.connection_failed') || 'Connection failed');
             }
         });
     }
