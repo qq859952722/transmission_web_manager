@@ -236,14 +236,14 @@ TWC.uiDetail = (function() {
 
         var props = {};
         var localPriority;
-        if (priority === -1) {
+        if (priority === -2) {
             props.filesUnwanted = indices;
             localPriority = -2;
-        } else if (priority === 2) {
+        } else if (priority === 1) {
             props.filesWanted = indices;
             props.priorityHigh = indices;
             localPriority = 1;
-        } else if (priority === 1) {
+        } else if (priority === 0) {
             props.filesWanted = indices;
             props.priorityNormal = indices;
             localPriority = 0;

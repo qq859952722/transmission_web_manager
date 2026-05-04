@@ -557,7 +557,7 @@
 | 字段 (4.1.x snake\_case) | 字段 (老版本)       | 类型      | 说明                              | 本项目实现 |
 | ---------------------- | -------------- | ------- | ------------------------------- | ----- |
 | `port_is_open`         | `port-is-open` | boolean | 端口是否开放                          | ✅     |
-| `ip_protocol`          | —              | string  | IP 协议版本 (4.1.x+, `ipv4`/`ipv6`) | ❌ 未使用 |
+| `ip_protocol`          | —              | string  | IP 协议版本 (4.1.x+, `ipv4`/`ipv6`) | ✅ 请求+响应 |
 
 ### 9.2 free\_space 字段
 
@@ -661,7 +661,7 @@
 | `torrent_set.tracker_list`                   | 新 Tracker 列表格式 (替代 trackerAdd/Remove/Replace) | 高   |
 | `torrent_set.sequential_download_from_piece` | 顺序下载起始分片                                      | 低   |
 | `torrent_add.sequential_download_from_piece` | 顺序下载起始分片                                      | 低   |
-| `port_test.ip_protocol`                      | IPv4/IPv6 选择                                  | 中   |
+| `port_test.ip_protocol`                      | IPv4/IPv6 选择（已实现，状态栏+设置对话框）                  | ~~中~~ ✅ |
 | `session_get.units`                          | 单位配置                                          | 低   |
 | `peers 子对象完整字段`                              | client\_is\_choked 等未展示字段                     | 低   |
 | JSON-RPC 2.0 协议支持                            | 项目当前使用旧协议格式，未实现 JSON-RPC 2.0 请求               | 中   |

@@ -178,9 +178,19 @@ TWC.uiDialogConfig = (function() {
         }
 
         if (tabId === 'blocklist') {
+            var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
+            var ipProtocolSelect = '';
+            if (rpcVersion >= 19) {
+                ipProtocolSelect = '<select id="ip-protocol-select" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px">' +
+                    '<option value="">' + TWC.i18n.t('dialog.settings.ip_protocol_auto') + '</option>' +
+                    '<option value="ipv4">IPv4</option>' +
+                    '<option value="ipv6">IPv6</option>' +
+                    '</select>';
+            }
             html += '<div style="margin-top:12px">' +
                 '<button class="twc-btn" id="update-blocklist-btn">' + TWC.i18n.t('dialog.settings.update_blocklist') + '</button>' +
                 '<button class="twc-btn" id="test-port-btn" style="margin-left:8px">' + TWC.i18n.t('dialog.settings.test_port') + '</button>' +
+                ipProtocolSelect +
                 '<span id="port-test-result" style="margin-left:8px;font-size:12px"></span></div>';
         }
 
@@ -215,15 +225,21 @@ TWC.uiDialogConfig = (function() {
             });
 
             $('#test-port-btn').on('click', function() {
+                var ipProtocol = $('#ip-protocol-select').val() || '';
                 $('#port-test-result').text(TWC.i18n.t('dialog.settings.testing')).removeClass('text-success text-danger');
-                TWC.config.checkPort(function(isOpen, success) {
+                TWC.config.checkPort(function(isOpen, success, ipProtocolResult, errMsg) {
                     if (success) {
-                        $('#port-test-result').text(isOpen ? (TWC.i18n.t('dialog.settings.port_open') + ' ✓') : (TWC.i18n.t('dialog.settings.port_closed') + ' ✕'))
+                        var resultText = isOpen ? (TWC.i18n.t('dialog.settings.port_open') + ' ✓') : (TWC.i18n.t('dialog.settings.port_closed') + ' ✕');
+                        if (ipProtocolResult) {
+                            resultText += ' (' + ipProtocolResult.toUpperCase() + ')';
+                        }
+                        $('#port-test-result').text(resultText)
                             .addClass(isOpen ? 'text-success' : 'text-danger');
                     } else {
-                        $('#port-test-result').text(TWC.i18n.t('dialog.settings.test_failed')).addClass('text-danger');
+                        var failText = errMsg || TWC.i18n.t('dialog.settings.test_failed');
+                        $('#port-test-result').text(failText + ' ✕').addClass('text-danger');
                     }
-                });
+                }, ipProtocol || undefined);
             });
         }
 

@@ -512,6 +512,9 @@ TWC.ui = (function() {
 
     var _portTestTimer = null;
     var _portTestInProgress = false;
+    var _portTestTimeoutTimer = null;
+    var _portTestTimedOut = false;
+    var _PORT_TEST_TIMEOUT = 60000;
 
     function _updateConnectionStatus(connected) {
         if (connected) {
@@ -526,8 +529,23 @@ TWC.ui = (function() {
     function _updatePortStatus() {
         if (_portTestInProgress) return;
         _portTestInProgress = true;
+        _portTestTimedOut = false;
+        if (_portTestTimeoutTimer) clearTimeout(_portTestTimeoutTimer);
+        _portTestTimeoutTimer = setTimeout(function() {
+            if (_portTestInProgress) {
+                _portTestInProgress = false;
+                _portTestTimedOut = true;
+                $('#stat-port-text').text('✗ ' + (TWC.i18n.t('status.port_test_timeout') || 'Timeout')).removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
+            }
+        }, _PORT_TEST_TIMEOUT);
         $('#stat-port-text').text(TWC.i18n.t('status.connecting')).removeClass('stat-port-unknown stat-port-closed stat-port-open').addClass('stat-port-unknown');
-        TWC.rpc.testPort(function(isOpen, success) {
+        $('#stat-ip-protocol').hide();
+        TWC.rpc.testPort(function(isOpen, success, ipProtocol, ipProtocolFromError) {
+            if (_portTestTimeoutTimer) { clearTimeout(_portTestTimeoutTimer); _portTestTimeoutTimer = null; }
+            if (_portTestTimedOut) return;
+            var effectiveIpProtocol = ipProtocol || ipProtocolFromError || '';
+            var errMsg = (!success && typeof ipProtocolFromError === 'string' && ipProtocolFromError) ? ipProtocol : '';
+            if (!success && errMsg) effectiveIpProtocol = ipProtocolFromError || '';
             _portTestInProgress = false;
             if (success) {
                 if (isOpen) {
@@ -535,8 +553,15 @@ TWC.ui = (function() {
                 } else {
                     $('#stat-port-text').text('✗ ' + TWC.i18n.t('status.port_closed')).removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
                 }
+                if (effectiveIpProtocol) {
+                    $('#stat-ip-protocol').text(effectiveIpProtocol.toUpperCase()).show();
+                }
             } else {
-                $('#stat-port-text').text('? ' + TWC.i18n.t('status.disconnected')).removeClass('stat-port-open stat-port-closed').addClass('stat-port-unknown');
+                var errorText = errMsg || TWC.i18n.t('status.port_test_failed') || 'Test Failed';
+                $('#stat-port-text').text('✗ ' + errorText).removeClass('stat-port-open stat-port-closed').addClass('stat-port-closed');
+                if (effectiveIpProtocol) {
+                    $('#stat-ip-protocol').text(effectiveIpProtocol.toUpperCase()).show();
+                }
             }
         });
     }

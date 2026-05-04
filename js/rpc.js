@@ -627,16 +627,39 @@ TWC.rpc = (function() {
         });
     }
 
-    function testPort(callback) {
-        _exec('port-test', {}, function(data, success) {
+    function _translatePortTestError(errMsg) {
+        if (!errMsg) return TWC.i18n.t('status.test_failed') || 'Test failed';
+        var lower = errMsg.toLowerCase();
+        if (lower.indexOf('no response') !== -1) {
+            return TWC.i18n.t('status.port_test_no_response') || 'No Response';
+        }
+        if (lower.indexOf('couldn\'t test port') !== -1) {
+            return TWC.i18n.t('status.port_test_failed') || 'Couldn\'t test port';
+        }
+        return errMsg;
+    }
+
+    function testPort(callback, ipProtocol) {
+        var args = {};
+        var rpcVersion = (TWC.config && TWC.config.getSessionValue('rpc-version')) || 0;
+        if (ipProtocol && rpcVersion >= 19) {
+            args.ip_protocol = ipProtocol;
+        }
+        _exec('port-test', args, function(data, success) {
             if (success && data && data.result === 'success') {
-                callback(data.arguments['port-is-open'], true);
+                var portIsOpen = data.arguments['port-is-open'] !== undefined ? data.arguments['port-is-open'] : data.arguments.port_is_open;
+                var ipProtocolResult = data.arguments.ip_protocol || data.arguments['ip-protocol'] || '';
+                callback(portIsOpen, true, ipProtocolResult);
             } else {
                 var errMsg = '';
+                var ipProtocolResult = '';
                 if (data && data.result && data.result !== 'success') {
-                    errMsg = data.result;
+                    errMsg = _translatePortTestError(data.result);
+                    if (data.arguments) {
+                        ipProtocolResult = data.arguments.ip_protocol || data.arguments['ip-protocol'] || '';
+                    }
                 }
-                callback(false, false, errMsg || TWC.i18n.t('status.test_failed') || 'Test failed');
+                callback(false, false, errMsg, ipProtocolResult);
             }
         });
     }

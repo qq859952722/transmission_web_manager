@@ -159,6 +159,7 @@ TWC.uiLayout = (function() {
             '<div class="twc-status-item" id="stat-port-status" title="' + TWC.i18n.t('dialog.settings.test_port') + '">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>' +
             '<span id="stat-port-text" class="stat-port-unknown">' + TWC.i18n.t('dialog.settings.testing') + '</span>' +
+            '<span id="stat-ip-protocol" class="stat-ip-protocol" style="display:none;margin-left:4px;font-size:11px;padding:1px 5px;border-radius:3px;background:var(--bg-tertiary);color:var(--text-secondary)"></span>' +
             '</div>' +
             '<div class="twc-status-item" id="stat-free-space" title="' + TWC.i18n.t('stats.free_space') + '"></div>' +
             '<div class="twc-status-item" id="stat-version" title="' + TWC.i18n.t('dialog.about.version') + '"></div>' +

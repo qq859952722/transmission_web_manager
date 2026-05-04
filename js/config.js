@@ -6,6 +6,7 @@ TWC.config = (function() {
     var _freeSpace = -1;
     var _totalSpace = -1;
     var _isPortOpen = null;
+    var _ipProtocol = '';
     var _blocklistSize = 0;
     var _groups = [];
     var _listeners = [];
@@ -255,12 +256,21 @@ TWC.config = (function() {
         });
     }
 
-    function checkPort(callback) {
-        TWC.rpc.testPort(function(isOpen, success) {
+    function checkPort(callback, ipProtocol) {
+        TWC.rpc.testPort(function(isOpen, success, ipProtocolResult, ipProtocolFromError) {
+            var errMsg = '';
+            if (!success && typeof ipProtocolFromError === 'string' && ipProtocolFromError) {
+                errMsg = ipProtocolResult;
+                ipProtocolResult = ipProtocolFromError;
+            } else if (!success) {
+                errMsg = ipProtocolResult || '';
+                ipProtocolResult = ipProtocolFromError || '';
+            }
             _isPortOpen = isOpen;
-            _notifyListeners('port-tested', isOpen);
-            if (callback) callback(isOpen, success);
-        });
+            _ipProtocol = ipProtocolResult || '';
+            _notifyListeners('port-tested', { isOpen: isOpen, ipProtocol: _ipProtocol, errMsg: errMsg });
+            if (callback) callback(isOpen, success, _ipProtocol, errMsg);
+        }, ipProtocol);
     }
 
     function updateBlocklist(callback) {
@@ -317,6 +327,10 @@ TWC.config = (function() {
 
     function isPortOpen() {
         return _isPortOpen;
+    }
+
+    function getIpProtocol() {
+        return _ipProtocol;
     }
 
     function getGroups() {
@@ -392,6 +406,7 @@ TWC.config = (function() {
         getSessionStats: getSessionStats,
         getFreeSpace: getFreeSpace,
         isPortOpen: isPortOpen,
+        getIpProtocol: getIpProtocol,
         getGroups: getGroups,
         getConfigTabs: getConfigTabs,
         getConfigItems: getConfigItems,
