@@ -2,8 +2,7 @@
 
 一个现代化、功能丰富的 Transmission BitTorrent 客户端 Web 管理界面，采用纯前端架构，支持桌面端和移动端。全面适配 Transmission 4.1.x (JSON-RPC 2.0 / RPC semver 6.0.1)，同时兼容 Transmission 3.0+ 旧版协议。
 
-<!-- 截图：桌面端主界面概览 -->
-![桌面端主界面](screenshots/desktop-overview.png)
+![桌面端主界面](docs/screenshots/主页面1.jpeg)
 
 ---
 
@@ -57,14 +56,7 @@
 | **速度** | 实时速度折线图（Canvas 绘制）、累计统计、分享率 |
 | **设置** | 单种子限速、带宽优先级、最大连接数、分享率模式、做种空闲超时、下载目录移动 |
 
-<!-- 截图：详情面板 - 基本信息 -->
-![详情面板 - 基本信息](screenshots/detail-info.png)
-
-<!-- 截图：详情面板 - Peer 列表（含国旗） -->
-![详情面板 - Peer 列表](screenshots/detail-peers.png)
-
-<!-- 截图：详情面板 - 速度图表 -->
-![详情面板 - 速度图表](screenshots/detail-speed.png)
+![详情面板](docs/screenshots/主页面2.jpeg)
 
 ### 筛选与搜索
 
@@ -75,8 +67,7 @@
 - 实时搜索：支持名称、Hash、标签、注释、创建者、目录、分组等多字段匹配
 - 多维度筛选条件组合
 
-<!-- 截图：侧边栏筛选 -->
-![侧边栏筛选](screenshots/sidebar-filter.png)
+![侧边栏筛选](docs/screenshots/主页面3.jpeg)
 
 ### 用户界面
 
@@ -89,10 +80,6 @@
 - 虚拟滚动（种子数 > 500 自动启用）
 - Toast 消息通知与进度提示
 - 模态对话框系统
-
-<!-- 截图：明暗主题对比 -->
-![亮色主题](screenshots/theme-light.png)
-![暗色主题](screenshots/theme-dark.png)
 
 ### 状态栏
 
@@ -113,8 +100,7 @@
 - 种子状态分布条形图
 - 系统信息总览
 
-<!-- 截图：全局统计页面 -->
-![全局统计](screenshots/stats.png)
+![全局统计](docs/screenshots/全局统计.jpeg)
 
 ### 设置管理
 
@@ -134,8 +120,7 @@
 | 脚本 | 种子添加/完成脚本 |
 | 高级 | 默认 Tracker、只读信息（版本/RPC版本/配置目录） |
 
-<!-- 截图：设置对话框 -->
-![设置对话框](screenshots/settings.png)
+![设置对话框](docs/screenshots/设置.jpeg)
 
 ### GeoIP 国家识别
 
@@ -160,28 +145,19 @@
 
 ### 桌面端
 
-<!-- 截图：桌面端 - 种子列表 -->
-![桌面端 - 种子列表](screenshots/desktop-torrent-list.png)
+![主界面](docs/screenshots/主页面1.jpeg)
 
-<!-- 截图：桌面端 - 添加种子对话框 -->
-![桌面端 - 添加种子](screenshots/desktop-add-torrent.png)
+![详情面板](docs/screenshots/主页面2.jpeg)
 
-<!-- 截图：桌面端 - 右键菜单 -->
-![桌面端 - 右键菜单](screenshots/desktop-context-menu.png)
+![侧边栏筛选](docs/screenshots/主页面3.jpeg)
 
-### 移动端
+![主界面](docs/screenshots/主页面5.jpeg)
 
-<!-- 截图：移动端 - 种子列表 -->
-![移动端 - 种子列表](screenshots/mobile-list.png)
+![添加种子](docs/screenshots/添加任务.jpeg)
 
-<!-- 截图：移动端 - 种子详情 -->
-![移动端 - 种子详情](screenshots/mobile-detail.png)
+![全局统计](docs/screenshots/全局统计.jpeg)
 
-<!-- 截图：移动端 - 速度管理 -->
-![移动端 - 速度管理](screenshots/mobile-speed.png)
-
-<!-- 截图：移动端 - 统计页面 -->
-![移动端 - 统计](screenshots/mobile-stats.png)
+![设置对话框](docs/screenshots/设置.jpeg)
 
 ---
 
@@ -220,9 +196,6 @@ docker run -d \
 3. 通过 URL 参数 `?rpc=` 指定 RPC 地址
 4. 支持 HTTP Basic 认证
 5. 自动处理 CSRF Token（X-Transmission-Session-Id）
-
-<!-- 截图：登录界面 -->
-![登录界面](screenshots/login.png)
 
 ---
 
@@ -289,7 +262,8 @@ transmission-web-manager/
 │   ├── logo.svg                # 项目 Logo
 │   └── geo/
 │       └── dbip-country-lite-*.mmdb  # GeoIP 数据库
-├── screenshots/                # 截图目录
+├── docs/
+│   └── screenshots/            # 截图目录
 └── LICENSE                     # Apache License 2.0
 ```
 
