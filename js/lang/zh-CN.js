@@ -185,7 +185,29 @@ var TWC_LANG_ZH = {
             "detail_client": "客户端信息"
         },
         "trackers": {
-            "downloader_count": "下载者"
+            "downloader_count": "下载者",
+            "backup": "备用",
+            "detail_btn": "查看详情",
+            "detail_basic": "基本信息",
+            "detail_host": "主机",
+            "detail_sitename": "站点名称",
+            "detail_tier": "层级 (Tier)",
+            "detail_scrape_url": "刮取 URL",
+            "detail_announce": "宣告 (Announce)",
+            "detail_has_announced": "已宣告",
+            "detail_last_announce": "上次宣告",
+            "detail_announce_result": "宣告结果",
+            "detail_announce_timed_out": "宣告超时",
+            "detail_announce_start_time": "宣告开始时间",
+            "detail_announce_peer_count": "宣告返回 Peer 数",
+            "detail_scrape": "刮取 (Scrape)",
+            "detail_has_scraped": "已刮取",
+            "detail_last_scrape": "上次刮取",
+            "detail_next_scrape": "下次刮取",
+            "detail_scrape_result": "刮取结果",
+            "detail_scrape_timed_out": "刮取超时",
+            "detail_scrape_start_time": "刮取开始时间",
+            "detail_stats": "统计"
         }
     },
     "dialog": {

@@ -185,7 +185,29 @@ var TWC_LANG_EN = {
             "detail_client": "Client Info"
         },
         "trackers": {
-            "downloader_count": "Downloaders"
+            "downloader_count": "Downloaders",
+            "backup": "Backup",
+            "detail_btn": "View Details",
+            "detail_basic": "Basic Info",
+            "detail_host": "Host",
+            "detail_sitename": "Site Name",
+            "detail_tier": "Tier",
+            "detail_scrape_url": "Scrape URL",
+            "detail_announce": "Announce",
+            "detail_has_announced": "Has Announced",
+            "detail_last_announce": "Last Announce",
+            "detail_announce_result": "Announce Result",
+            "detail_announce_timed_out": "Announce Timed Out",
+            "detail_announce_start_time": "Announce Start Time",
+            "detail_announce_peer_count": "Announce Peer Count",
+            "detail_scrape": "Scrape",
+            "detail_has_scraped": "Has Scraped",
+            "detail_last_scrape": "Last Scrape",
+            "detail_next_scrape": "Next Scrape",
+            "detail_scrape_result": "Scrape Result",
+            "detail_scrape_timed_out": "Scrape Timed Out",
+            "detail_scrape_start_time": "Scrape Start Time",
+            "detail_stats": "Statistics"
         }
     },
     "dialog": {

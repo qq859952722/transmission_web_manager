@@ -234,7 +234,12 @@ TWC.rpc = (function() {
         'bytesToPeer': 'bytes_to_peer',
         'connectionType': 'connection_type',
         'peerIsEncrypted': 'peer_is_encrypted',
-        'bytesCompleted': 'bytes_completed'
+        'bytesCompleted': 'bytes_completed',
+        'trackerList': 'tracker_list',
+        'host': 'host',
+        'tier': 'tier',
+        'sitename': 'sitename',
+        'scrape': 'scrape'
     };
 
     function _convertResponseKeys(obj, depth) {
@@ -519,9 +524,7 @@ TWC.rpc = (function() {
         honorsSessionLimits: 'honorsSessionLimits',
         sequential_download: 'sequential_download',
         labels: 'labels',
-        trackerAdd: 'trackerAdd',
-        trackerRemove: 'trackerRemove',
-        trackerReplace: 'trackerReplace',
+        trackerList: 'trackerList',
         filesWanted: 'files-wanted',
         filesUnwanted: 'files-unwanted',
         priorityHigh: 'priority-high',

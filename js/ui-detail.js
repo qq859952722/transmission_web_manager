@@ -268,11 +268,15 @@ TWC.uiDetail = (function() {
         });
     }
 
+    var _trackerDataCache = [];
+
     function _renderTrackers(t) {
         if (!t.tracker_stats || t.tracker_stats.length === 0) {
             $('#detail-content').html('<div class="twc-empty">' + TWC.i18n.t('status.no_trackers') + '</div>');
             return;
         }
+
+        _trackerDataCache = t.tracker_stats;
 
         var html = '<table class="twc-tracker-table">' +
             '<thead><tr>' +
@@ -286,6 +290,7 @@ TWC.uiDetail = (function() {
             '<th>' + TWC.i18n.t('detail.general.done_date') + '</th>' +
             '<th>' + TWC.i18n.t('detail.general.left') + '</th>' +
             '<th>' + TWC.i18n.t('detail.general.downloaded') + '</th>' +
+            '<th></th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < t.tracker_stats.length; i++) {
@@ -302,10 +307,11 @@ TWC.uiDetail = (function() {
             var lastAnnounce = tr.last_announce_time > 0 ? TWC.utils.formatTimestamp(tr.last_announce_time) : '-';
             var nextAnnounce = tr.next_announce_time > 0 ? TWC.utils.formatTimestamp(tr.next_announce_time) : '-';
             var announceResult = tr.last_announce_succeeded ? TWC.i18n.t('dialog.settings.testing').replace('...', '') : TWC.utils.escapeHtml(tr.last_announce_result || '-');
+            var backupTag = tr.is_backup ? ' <span style="font-size:10px;color:var(--text-muted);background:var(--bg-secondary);padding:0 4px;border-radius:3px">' + TWC.i18n.t('detail.trackers.backup') + '</span>' : '';
 
             html += '<tr>' +
                 '<td>' + (i + 1) + '</td>' +
-                '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis" title="' + TWC.utils.escapeHtml(tr.announce) + '">' + TWC.utils.escapeHtml(tr.announce) + '</td>' +
+                '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis" title="' + TWC.utils.escapeHtml(tr.announce) + '">' + TWC.utils.escapeHtml(tr.announce) + backupTag + '</td>' +
                 '<td>' + stateText + '</td>' +
                 '<td>' + (tr.seeder_count >= 0 ? tr.seeder_count : '-') + '</td>' +
                 '<td>' + (tr.leecher_count >= 0 ? tr.leecher_count : '-') + '</td>' +
@@ -314,6 +320,7 @@ TWC.uiDetail = (function() {
                 '<td>' + announceResult + '</td>' +
                 '<td>' + nextAnnounce + '</td>' +
                 '<td>' + (tr.download_count >= 0 ? tr.download_count : '-') + '</td>' +
+                '<td><button class="twc-peer-detail-btn" data-tracker-idx="' + i + '" title="' + TWC.i18n.t('detail.trackers.detail_btn') + '">ⓘ</button></td>' +
                 '</tr>';
         }
 
@@ -331,6 +338,139 @@ TWC.uiDetail = (function() {
         var selectedIds = TWC.torrent.getSelectedIds();
         $('#tracker-add-btn').on('click', function() { TWC.uiDialog.showAddTracker(selectedIds); });
         $('#tracker-replace-btn').on('click', function() { TWC.uiDialog.showReplaceTracker(selectedIds); });
+
+        $(document).off('click.twcTrackerDetail').on('click.twcTrackerDetail', '.twc-tracker-table .twc-peer-detail-btn', function() {
+            var idx = parseInt($(this).attr('data-tracker-idx'));
+            if (idx >= 0 && idx < _trackerDataCache.length) {
+                _showTrackerDetail(_trackerDataCache[idx]);
+            }
+        });
+    }
+
+    function _showTrackerDetail(tr) {
+        var existing = document.getElementById('twc-peer-detail-overlay');
+        if (existing) existing.remove();
+
+        function boolTag(val) {
+            return val ? '<span class="twc-peer-tag twc-peer-tag-yes">' + TWC.i18n.t('common.yes') + '</span>' :
+                         '<span class="twc-peer-tag twc-peer-tag-no">' + TWC.i18n.t('common.no') + '</span>';
+        }
+
+        function detailRow(label, value) {
+            return '<div class="twc-peer-detail-row"><span class="twc-peer-detail-label">' + label + '</span><span class="twc-peer-detail-value">' + value + '</span></div>';
+        }
+
+        function timeOrDash(ts) {
+            return ts > 0 ? TWC.utils.formatTimestamp(ts) : '-';
+        }
+
+        function countOrDash(val) {
+            return (val !== undefined && val >= 0) ? val : '-';
+        }
+
+        var announceStateText = '';
+        switch (tr.announce_state) {
+            case 0: announceStateText = TWC.i18n.t('status.stopped'); break;
+            case 1: announceStateText = TWC.i18n.t('status.check_wait'); break;
+            case 2: announceStateText = TWC.i18n.t('sidebar.status_queued'); break;
+            case 3: announceStateText = TWC.i18n.t('sidebar.status_active'); break;
+            default: announceStateText = TWC.i18n.t('times.unknown'); break;
+        }
+
+        var scrapeStateText = '';
+        switch (tr.scrape_state) {
+            case 0: scrapeStateText = TWC.i18n.t('status.stopped'); break;
+            case 1: scrapeStateText = TWC.i18n.t('sidebar.status_queued'); break;
+            case 2: scrapeStateText = TWC.i18n.t('sidebar.status_active'); break;
+            default: scrapeStateText = TWC.i18n.t('times.unknown'); break;
+        }
+
+        var announceResultHtml = tr.last_announce_succeeded ?
+            '<span style="color:var(--color-success-500)">' + TWC.i18n.t('dialog.settings.testing').replace('...', '') + '</span>' :
+            '<span style="color:var(--color-danger-500)">' + TWC.utils.escapeHtml(tr.last_announce_result || '-') + '</span>';
+
+        var scrapeResultHtml = tr.last_scrape_succeeded ?
+            '<span style="color:var(--color-success-500)">' + TWC.i18n.t('dialog.settings.testing').replace('...', '') + '</span>' :
+            '<span style="color:var(--color-danger-500)">' + TWC.utils.escapeHtml(tr.last_scrape_result || '-') + '</span>';
+
+        var html = '<div class="twc-peer-detail-overlay" id="twc-peer-detail-overlay">' +
+            '<div class="twc-peer-detail-glass">' +
+            '<div class="twc-peer-detail-header">' +
+            '<div class="twc-peer-detail-title" style="font-size:13px;word-break:break-all">' + TWC.utils.escapeHtml(tr.announce) + '</div>' +
+            '<button class="twc-peer-detail-close" id="twc-tracker-detail-close">&times;</button>' +
+            '</div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.trackers.detail_basic') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            detailRow(TWC.i18n.t('detail.trackers.detail_host'), '<span class="text-mono">' + TWC.utils.escapeHtml(tr.host || '-') + '</span>') +
+            detailRow(TWC.i18n.t('detail.trackers.detail_sitename'), TWC.utils.escapeHtml(tr.sitename || '-')) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_tier'), tr.tier !== undefined ? tr.tier : '-') +
+            detailRow(TWC.i18n.t('detail.trackers.backup'), boolTag(tr.is_backup)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_scrape_url'), '<span class="text-mono" style="font-size:10px;word-break:break-all">' + TWC.utils.escapeHtml(tr.scrape || '-') + '</span>') +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.trackers.detail_announce') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            detailRow(TWC.i18n.t('detail.general.status'), announceStateText) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_has_announced'), boolTag(tr.has_announced)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_last_announce'), timeOrDash(tr.last_announce_time)) +
+            detailRow(TWC.i18n.t('detail.general.left'), timeOrDash(tr.next_announce_time)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_announce_result'), announceResultHtml) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_announce_timed_out'), boolTag(tr.last_announce_timed_out)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_announce_start_time'), timeOrDash(tr.last_announce_start_time)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_announce_peer_count'), countOrDash(tr.last_announce_peer_count)) +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.trackers.detail_scrape') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            detailRow(TWC.i18n.t('detail.general.status'), scrapeStateText) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_has_scraped'), boolTag(tr.has_scraped)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_last_scrape'), timeOrDash(tr.last_scrape_time)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_next_scrape'), timeOrDash(tr.next_scrape_time)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_scrape_result'), scrapeResultHtml) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_scrape_timed_out'), boolTag(tr.last_scrape_timed_out)) +
+            detailRow(TWC.i18n.t('detail.trackers.detail_scrape_start_time'), timeOrDash(tr.last_scrape_start_time)) +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.trackers.detail_stats') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            detailRow(TWC.i18n.t('columns.seeds'), countOrDash(tr.seeder_count)) +
+            detailRow(TWC.i18n.t('columns.peers'), countOrDash(tr.leecher_count)) +
+            detailRow(TWC.i18n.t('detail.trackers.downloader_count'), countOrDash(tr.downloader_count)) +
+            detailRow(TWC.i18n.t('detail.general.downloaded'), countOrDash(tr.download_count)) +
+            '</div></div>' +
+
+            '</div></div>';
+
+        $('body').append(html);
+
+        requestAnimationFrame(function() {
+            var overlay = document.getElementById('twc-peer-detail-overlay');
+            if (overlay) overlay.classList.add('twc-peer-detail-visible');
+        });
+
+        $(document).off('click.twcTrackerDetailClose').on('click.twcTrackerDetailClose', '#twc-tracker-detail-close, #twc-peer-detail-overlay', function(e) {
+            if (e.target.id === 'twc-peer-detail-overlay' || e.target.id === 'twc-tracker-detail-close') {
+                _closeTrackerDetail();
+            }
+        });
+
+        $(document).off('keydown.twcTrackerDetail').on('keydown.twcTrackerDetail', function(e) {
+            if (e.key === 'Escape') _closeTrackerDetail();
+        });
+    }
+
+    function _closeTrackerDetail() {
+        var overlay = document.getElementById('twc-peer-detail-overlay');
+        if (overlay) {
+            overlay.classList.remove('twc-peer-detail-visible');
+            setTimeout(function() { overlay.remove(); }, 300);
+        }
+        $(document).off('click.twcTrackerDetailClose keydown.twcTrackerDetail');
     }
 
     function _getSeederCount(t) {

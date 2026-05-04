@@ -159,7 +159,7 @@
 | `peers_from`             | `peersFrom`           | object    | Peer 来源统计                                              | ✅ 详情  |
 | `trackers`               | `trackers`            | array     | Tracker 列表                                             | ✅ 详情  |
 | `tracker_stats`          | `trackerStats`        | array     | Tracker 统计信息                                           | ✅ 详情  |
-| `tracker_list`           | `trackerList`         | string    | Tracker URL 列表 (RPC 17+, 替代 trackerAdd/Remove/Replace) | ✅ 详情 (数据已请求，与 Tracker Tab 融合) |
+| `tracker_list`           | `trackerList`         | string    | Tracker URL 列表 (RPC 17+, 替代 trackerAdd/Remove/Replace) | ✅ 详情 (已实现增删改操作) |
 | `webseeds`               | `webseeds`            | string\[] | Web 种子列表 (**DEPRECATED**, 用 webseeds\_ex 替代)           | ✅ 详情  |
 | `webseeds_ex`            | —                     | array     | Web 种子扩展信息 (4.2.0+)                                    | ❌ 未使用 |
 | `webseeds_sending_to_us` | `webseedsSendingToUs` | number    | 正在下载的 Web 种子                                           | ✅ 详情  |
@@ -267,8 +267,8 @@
 | ---------------------- | ------------------ | ------- | -------------- | ----- |
 | `announce`             | `announce`         | string  | 宣告 URL         | ✅ 详情  |
 | `id`                   | `id`               | integer | Tracker ID     | ✅ 详情  |
-| `scrape`               | `scrape`           | string  | 刮取 URL         | ❌ 未使用 |
-| `sitename`             | `sitename`         | string  | 站点名称 (RPC 17+) | ✅ 详情  |
+| `scrape`               | `scrape`           | string  | 刮取 URL         | ✅ 详情弹窗 |
+| `sitename`             | `sitename`         | string  | 站点名称 (RPC 17+) | ✅ 详情弹窗 |
 | `tier`                 | `tier`             | number  | 层级             | ✅ 详情  |
 
 ### 4.4 tracker\_stats 对象字段
@@ -276,33 +276,33 @@
 | 字段 (4.1.x snake\_case)     | 字段 (老版本 camelCase)      | 类型      | 说明                | 本项目使用 |
 | -------------------------- | ----------------------- | ------- | ----------------- | ----- |
 | `announce`                 | `announce`              | string  | 宣告 URL            | ✅ 详情  |
-| `announce_state`           | `announceState`         | number  | 宣告状态              | ❌ 未使用 |
+| `announce_state`           | `announceState`         | number  | 宣告状态              | ✅ 详情/弹窗 |
 | `download_count`           | `downloadCount`         | number  | 下载次数              | ✅ 详情      |
 | `downloader_count`         | `downloader_count`      | number  | 下载者数 (4.1.x+)     | ✅ 详情      |
-| `has_announced`            | `hasAnnounced`          | boolean | 是否已宣告             | ❌ 未使用 |
-| `has_scraped`              | `hasScraped`            | boolean | 是否已刮取             | ❌ 未使用 |
-| `host`                     | `host`                  | string  | 主机名               | ✅ 详情  |
+| `has_announced`            | `hasAnnounced`          | boolean | 是否已宣告             | ✅ 详情弹窗 |
+| `has_scraped`              | `hasScraped`            | boolean | 是否已刮取             | ✅ 详情弹窗 |
+| `host`                     | `host`                  | string  | 主机名               | ✅ 详情/弹窗 |
 | `id`                       | `id`                    | integer | Tracker ID        | ✅ 详情  |
-| `is_backup`                | `isBackup`              | boolean | 是否备用 Tracker      | ❌ 未使用 |
-| `last_announce_peer_count` | `lastAnnouncePeerCount` | number  | 上次宣告 Peer 数       | ✅ 详情  |
-| `last_announce_result`     | `lastAnnounceResult`    | string  | 上次宣告结果            | ✅ 详情  |
-| `last_announce_start_time` | `lastAnnounceStartTime` | number  | 上次宣告开始时间          | ❌ 未使用 |
-| `last_announce_succeeded`  | `lastAnnounceSucceeded` | boolean | 上次宣告是否成功          | ✅ 详情  |
-| `last_announce_time`       | `lastAnnounceTime`      | number  | 上次宣告时间            | ✅ 详情  |
-| `last_announce_timed_out`  | `lastAnnounceTimedOut`  | boolean | 上次宣告是否超时          | ✅ 详情  |
-| `last_scrape_result`       | `lastScrapeResult`      | string  | 上次刮取结果            | ❌ 未使用 |
-| `last_scrape_start_time`   | `lastScrapeStartTime`   | number  | 上次刮取开始时间          | ❌ 未使用 |
-| `last_scrape_succeeded`    | `lastScrapeSucceeded`   | boolean | 上次刮取是否成功          | ❌ 未使用 |
-| `last_scrape_time`         | `lastScrapeTime`        | number  | 上次刮取时间            | ❌ 未使用 |
-| `last_scrape_timed_out`    | `lastScrapeTimedOut`    | boolean | 上次刮取是否超时          | ❌ 未使用 |
-| `leecher_count`            | `leecherCount`          | number  | 下载者数 (tracker 报告) | ✅ 详情  |
-| `seeder_count`             | `seederCount`           | number  | 做种者数 (tracker 报告) | ✅ 详情  |
-| `next_announce_time`       | `nextAnnounceTime`      | number  | 下次宣告时间            | ✅ 详情  |
-| `next_scrape_time`         | `nextScrapeTime`        | number  | 下次刮取时间            | ❌ 未使用 |
-| `scrape`                   | `scrape`                | string  | 刮取 URL            | ❌ 未使用 |
-| `scrape_state`             | `scrapeState`           | number  | 刮取状态              | ❌ 未使用 |
-| `sitename`                 | `sitename`              | string  | 站点名称 (RPC 17+)    | ✅ 详情  |
-| `tier`                     | `tier`                  | number  | 层级                | ✅ 详情  |
+| `is_backup`                | `isBackup`              | boolean | 是否备用 Tracker      | ✅ 详情/弹窗 |
+| `last_announce_peer_count` | `lastAnnouncePeerCount` | number  | 上次宣告 Peer 数       | ✅ 详情/弹窗 |
+| `last_announce_result`     | `lastAnnounceResult`    | string  | 上次宣告结果            | ✅ 详情/弹窗 |
+| `last_announce_start_time` | `lastAnnounceStartTime` | number  | 上次宣告开始时间          | ✅ 详情弹窗 |
+| `last_announce_succeeded`  | `lastAnnounceSucceeded` | boolean | 上次宣告是否成功          | ✅ 详情/弹窗 |
+| `last_announce_time`       | `lastAnnounceTime`      | number  | 上次宣告时间            | ✅ 详情/弹窗 |
+| `last_announce_timed_out`  | `lastAnnounceTimedOut`  | boolean | 上次宣告是否超时          | ✅ 详情弹窗 |
+| `last_scrape_result`       | `lastScrapeResult`      | string  | 上次刮取结果            | ✅ 详情弹窗 |
+| `last_scrape_start_time`   | `lastScrapeStartTime`   | number  | 上次刮取开始时间          | ✅ 详情弹窗 |
+| `last_scrape_succeeded`    | `lastScrapeSucceeded`   | boolean | 上次刮取是否成功          | ✅ 详情弹窗 |
+| `last_scrape_time`         | `lastScrapeTime`        | number  | 上次刮取时间            | ✅ 详情弹窗 |
+| `last_scrape_timed_out`    | `lastScrapeTimedOut`    | boolean | 上次刮取是否超时          | ✅ 详情弹窗 |
+| `leecher_count`            | `leecherCount`          | number  | 下载者数 (tracker 报告) | ✅ 详情/弹窗 |
+| `seeder_count`             | `seederCount`           | number  | 做种者数 (tracker 报告) | ✅ 详情/弹窗 |
+| `next_announce_time`       | `nextAnnounceTime`      | number  | 下次宣告时间            | ✅ 详情/弹窗 |
+| `next_scrape_time`         | `nextScrapeTime`        | number  | 下次刮取时间            | ✅ 详情弹窗 |
+| `scrape`                   | `scrape`                | string  | 刮取 URL            | ✅ 详情弹窗 |
+| `scrape_state`             | `scrapeState`           | number  | 刮取状态              | ✅ 详情弹窗 |
+| `sitename`                 | `sitename`              | string  | 站点名称 (RPC 17+)    | ✅ 详情/弹窗 |
+| `tier`                     | `tier`                  | number  | 层级                | ✅ 详情/弹窗 |
 
 ### 4.5 files 对象字段
 
@@ -658,7 +658,7 @@
 | `torrent_get.bytes_completed`                | 各文件已完成字节数                                     | 低   |
 | `torrent_get.availability`                   | 分片可用性统计（已实现，分片Tab可用性视图）                       | ~~中~~ ✅ |
 | `torrent_get.webseeds_ex`                    | Web 种子扩展信息 (4.2.0+)                           | 低   |
-| `torrent_set.tracker_list`                   | 新 Tracker 列表格式 (替代 trackerAdd/Remove/Replace) | 高   |
+| `torrent_set.tracker_list`                   | 新 Tracker 列表格式 (替代 trackerAdd/Remove/Replace) | ~~高~~ ✅ |
 | `torrent_set.sequential_download_from_piece` | 顺序下载起始分片                                      | 低   |
 | `torrent_add.sequential_download_from_piece` | 顺序下载起始分片                                      | 低   |
 | `port_test.ip_protocol`                      | IPv4/IPv6 选择（已实现，状态栏+设置对话框）                  | ~~中~~ ✅ |

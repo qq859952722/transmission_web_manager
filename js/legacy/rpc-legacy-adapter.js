@@ -57,7 +57,11 @@ TWC.legacy = (function() {
         'file_stats': 'fileStats',
         'tracker_stats': 'trackerStats',
         'peers_from': 'peersFrom',
-        'sequential_download': 'sequential_download'
+        'sequential_download': 'sequential_download',
+        'tracker_list': 'trackerList',
+        'tracker_add': 'trackerAdd',
+        'tracker_remove': 'trackerRemove',
+        'tracker_replace': 'trackerReplace'
     };
 
     var _trackerFieldMap = {

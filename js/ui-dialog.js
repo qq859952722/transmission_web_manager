@@ -394,6 +394,22 @@ TWC.uiDialog = (function() {
         });
     }
 
+    function _buildTrackerListString(t) {
+        if (!t || !t.tracker_stats || t.tracker_stats.length === 0) return '';
+        var lines = [];
+        var currentTier = -1;
+        for (var i = 0; i < t.tracker_stats.length; i++) {
+            var tr = t.tracker_stats[i];
+            var tier = tr.tier !== undefined ? tr.tier : 0;
+            if (i > 0 && tier !== currentTier) {
+                lines.push('');
+            }
+            lines.push(tr.announce);
+            currentTier = tier;
+        }
+        return lines.join('\n');
+    }
+
     function showAddTracker(ids) {
         var html = '<div class="twc-form-group"><label>' + TWC.i18n.t('dialog.tracker.add_label') + '</label>' +
             '<textarea class="twc-input" id="add-tracker-input" rows="5" style="height:auto;resize:vertical" placeholder="udp://tracker.example.com:1337/announce\nhttps://tracker2.example.com/announce"></textarea>' +
@@ -416,9 +432,9 @@ TWC.uiDialog = (function() {
         });
 
         $('#add-tracker-submit').on('click', function() {
-            var trackerList = $('#add-tracker-input').val().trim();
-            if (!trackerList) return;
-            var result = TWC.utils.validateTrackerList(trackerList);
+            var newTrackers = $('#add-tracker-input').val().trim();
+            if (!newTrackers) return;
+            var result = TWC.utils.validateTrackerList(newTrackers);
             if (!result.valid) {
                 TWC.ui.showToast(result.errors[0], 'warning');
                 return;
@@ -427,7 +443,12 @@ TWC.uiDialog = (function() {
                 TWC.ui.showToast(TWC.i18n.t('dialog.trackers.enter_url'), 'warning');
                 return;
             }
-            TWC.rpc.setTorrent(ids, { trackerAdd: result.urls }, function(s) {
+
+            var t = TWC.torrent.getTorrent(ids[0]);
+            var existingList = _buildTrackerListString(t);
+            var combinedList = existingList ? existingList + '\n\n' + newTrackers : newTrackers;
+
+            TWC.rpc.setTorrent(ids, { trackerList: combinedList }, function(s) {
                 if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.add_success'), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.add_failed'), 'error'); }
             });
@@ -483,7 +504,7 @@ TWC.uiDialog = (function() {
             '<div class="twc-tracker-list" style="max-height:300px;overflow-y:auto">';
         for (var i = 0; i < t.tracker_stats.length; i++) {
             html += '<label class="twc-checkbox" style="display:block;margin-bottom:4px">' +
-                '<input type="checkbox" class="remove-tracker-check" data-tracker-id="' + t.tracker_stats[i].id + '" /> ' +
+                '<input type="checkbox" class="remove-tracker-check" data-tracker-url="' + TWC.utils.escapeHtml(t.tracker_stats[i].announce) + '" /> ' +
                 TWC.utils.escapeHtml(t.tracker_stats[i].announce) +
                 '</label>';
         }
@@ -493,14 +514,32 @@ TWC.uiDialog = (function() {
         TWC.ui.showModal(html, { title: TWC.i18n.t('context.remove_tracker'), size: 'md', footer: footer });
 
         $('#remove-tracker-submit').on('click', function() {
-            var trackerIdsToRemove = [];
+            var trackerUrlsToRemove = [];
             $('.remove-tracker-check:checked').each(function() {
-                trackerIdsToRemove.push(parseInt($(this).data('tracker-id')));
+                trackerUrlsToRemove.push($(this).data('tracker-url'));
             });
-            if (trackerIdsToRemove.length === 0) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.select_remove'), 'warning'); return; }
+            if (trackerUrlsToRemove.length === 0) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.select_remove'), 'warning'); return; }
 
-            TWC.rpc.setTorrent(ids, { trackerRemove: trackerIdsToRemove }, function(s) {
-                if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.remove_success').replace('{n}', trackerIdsToRemove.length), 'success'); TWC.ui.refreshData(true); }
+            var t = TWC.torrent.getTorrent(ids[0]);
+            var existingList = _buildTrackerListString(t);
+            if (!existingList) { TWC.ui.hideModal(); return; }
+
+            var lines = existingList.split('\n');
+            var filtered = [];
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) { filtered.push(''); continue; }
+                var shouldRemove = false;
+                for (var j = 0; j < trackerUrlsToRemove.length; j++) {
+                    if (line === trackerUrlsToRemove[j]) { shouldRemove = true; break; }
+                }
+                if (!shouldRemove) filtered.push(lines[i]);
+            }
+
+            var newTrackerList = filtered.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+            TWC.rpc.setTorrent(ids, { trackerList: newTrackerList }, function(s) {
+                if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.remove_success').replace('{n}', trackerUrlsToRemove.length), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.remove_failed'), 'error'); }
             });
             TWC.ui.hideModal();
@@ -551,14 +590,21 @@ TWC.uiDialog = (function() {
             var t = TWC.torrent.getTorrent(ids[0]);
             if (!t || !t.tracker_stats) return;
 
-            var replaceList = [];
-            for (var i = 0; i < t.tracker_stats.length; i++) {
-                if (t.tracker_stats[i].announce.indexOf(oldUrl) >= 0) replaceList.push([t.tracker_stats[i].id, newUrl]);
-            }
-            if (replaceList.length === 0) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.not_found'), 'warning'); return; }
+            var existingList = _buildTrackerListString(t);
+            if (!existingList) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.not_found'), 'warning'); return; }
 
-            TWC.rpc.setTorrent(ids, { trackerReplace: replaceList }, function(s) {
-                if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.replace_success').replace('{n}', replaceList.length), 'success'); TWC.ui.refreshData(true); }
+            var replaced = existingList;
+            var replaceCount = 0;
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                if (t.tracker_stats[i].announce.indexOf(oldUrl) >= 0) {
+                    replaced = replaced.replace(t.tracker_stats[i].announce, newUrl);
+                    replaceCount++;
+                }
+            }
+            if (replaceCount === 0) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.not_found'), 'warning'); return; }
+
+            TWC.rpc.setTorrent(ids, { trackerList: replaced }, function(s) {
+                if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.replace_success').replace('{n}', replaceCount), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.replace_failed'), 'error'); }
             });
             TWC.ui.hideModal();
