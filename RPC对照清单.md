@@ -3,7 +3,7 @@
 **项目**: Transmission Web Manager\
 **目标版本**: Transmission 4.1.x (RPC semver 6.0.1, rpc-version: 19)\
 **兼容版本**: Transmission 3.0+ (RPC 15-16)\
-**更新日期**: 2026-05-03\
+**更新日期**: 2026-05-04\
 **验证实例**: Transmission 4.1.1 @ 127.0.0.1:9091
 
 ***
@@ -159,7 +159,7 @@
 | `peers_from`             | `peersFrom`           | object    | Peer 来源统计                                              | ✅ 详情  |
 | `trackers`               | `trackers`            | array     | Tracker 列表                                             | ✅ 详情  |
 | `tracker_stats`          | `trackerStats`        | array     | Tracker 统计信息                                           | ✅ 详情  |
-| `tracker_list`           | `trackerList`         | string    | Tracker URL 列表 (RPC 17+, 替代 trackerAdd/Remove/Replace) | ❌ 未使用 |
+| `tracker_list`           | `trackerList`         | string    | Tracker URL 列表 (RPC 17+, 替代 trackerAdd/Remove/Replace) | ✅ 详情 (数据已请求，与 Tracker Tab 融合) |
 | `webseeds`               | `webseeds`            | string\[] | Web 种子列表 (**DEPRECATED**, 用 webseeds\_ex 替代)           | ✅ 详情  |
 | `webseeds_ex`            | —                     | array     | Web 种子扩展信息 (4.2.0+)                                    | ❌ 未使用 |
 | `webseeds_sending_to_us` | `webseedsSendingToUs` | number    | 正在下载的 Web 种子                                           | ✅ 详情  |
@@ -188,7 +188,7 @@
 | `bandwidth_priority`    | `bandwidthPriority`   | number  | 带宽优先级 (-1/0/1) | ✅ 详情    |
 | `honors_session_limits` | `honorsSessionLimits` | boolean | 是否遵循会话限速       | ✅ 详情    |
 | `max_connected_peers`   | `maxConnectedPeers`   | number  | 最大连接数          | ✅ 详情    |
-| `peer_limit`            | `peer-limit`          | number  | 最大 Peer 数      | ❌ 未使用   |
+| `peer_limit`            | `peer-limit`          | number  | 最大 Peer 数（与 max_connected_peers 同值） | ✅ 详情（通过 maxConnectedPeers） |
 
 ### 3.7 做种限制字段
 
@@ -206,16 +206,16 @@
 | `files`                | `files`        | array      | 文件列表                               | ✅ 详情  |
 | `file_stats`           | `fileStats`    | array      | 文件统计                               | ✅ 详情  |
 | `file_count`           | `file-count`   | number     | 文件数量 (RPC 17+)                     | ✅ 详情  |
-| `priorities`           | `priorities`   | array      | 文件优先级                              | ❌ 未使用 |
-| `wanted`               | `wanted`       | boolean\[] | 文件下载标记 (4.1.x 为 boolean, 老版本为 0/1) | ❌ 未使用 |
-| `availability`         | `availability` | array      | 分片可用性 (RPC 17+)                    | ❌ 未使用 |
+| `priorities`           | `priorities`   | array      | 文件优先级（与 fileStats.priority 重复）     | ✅ 详情（通过 fileStats） |
+| `wanted`               | `wanted`       | boolean\[] | 文件下载标记（与 fileStats.wanted 重复）      | ✅ 详情（通过 fileStats） |
+| `availability`         | `availability` | array      | 分片可用性 (RPC 17+)                    | ✅ 分片Tab |
 
 ### 3.9 其他字段
 
 | 字段 (4.1.x snake\_case)           | 字段 (老版本)                         | 类型      | 说明                | 本项目使用   |
 | -------------------------------- | -------------------------------- | ------- | ----------------- | ------- |
 | `download_dir`                   | `downloadDir`                    | string  | 下载目录              | ✅ 列表/详情 |
-| `queue_position`                 | `queuePosition`                  | number  | 队列位置              | ✅ 列表    |
+| `queue_position`                 | `queuePosition`                  | number  | 队列位置              | ✅ 列表/详情 |
 | `error`                          | `error`                          | number  | 错误代码 (0=无)        | ✅ 列表    |
 | `error_string`                   | `errorString`                    | string  | 错误信息              | ✅ 列表    |
 | `sequential_download`            | `sequential_download`            | boolean | 顺序下载 (4.1.x+)     | ✅ 详情    |
@@ -232,19 +232,19 @@
 | `address`              | `address`            | string  | IP 地址         | ✅ 详情/GeoIP |
 | `bytes_to_client`      | `bytesToClient`      | number  | 发送给我们的字节数     | ✅ 详情       |
 | `bytes_to_peer`        | `bytesToPeer`        | number  | 发送给 Peer 的字节数 | ✅ 详情       |
-| `client_is_choked`     | `clientIsChoked`     | boolean | 我们被阻塞         | ❌ 未使用      |
-| `client_is_interested` | `clientIsInterested` | boolean | 我们感兴趣         | ❌ 未使用      |
+| `client_is_choked`     | `clientIsChoked`     | boolean | 我们被阻塞         | ✅ 详情弹窗      |
+| `client_is_interested` | `clientIsInterested` | boolean | 我们感兴趣         | ✅ 详情弹窗      |
 | `client_name`          | `clientName`         | string  | 客户端名称         | ✅ 详情       |
 | `flag_str`             | `flagStr`            | string  | 状态标志字符串       | ✅ 详情       |
-| `is_downloading_from`  | `isDownloadingFrom`  | boolean | 正在从该 Peer 下载  | ❌ 未使用      |
-| `is_encrypted`         | `isEncrypted`        | boolean | 连接是否加密        | ✅ 详情       |
-| `is_incoming`          | `isIncoming`         | boolean | 是否入站连接        | ❌ 未使用      |
-| `is_uploading_to`      | `isUploadingTo`      | boolean | 正在上传给该 Peer   | ❌ 未使用      |
-| `is_utp`               | `isUTP`              | boolean | 是否 uTP 连接     | ❌ 未使用      |
-| `peer_id`              | `peer_id`            | string  | Peer ID       | ❌ 未使用      |
-| `peer_is_choked`       | `peerIsChoked`       | boolean | Peer 被阻塞      | ❌ 未使用      |
-| `peer_is_interested`   | `peerIsInterested`   | boolean | Peer 感兴趣      | ❌ 未使用      |
-| `port`                 | `port`               | number  | 端口号           | ❌ 未使用      |
+| `is_downloading_from`  | `isDownloadingFrom`  | boolean | 正在从该 Peer 下载  | ✅ 详情弹窗      |
+| `is_encrypted`         | `isEncrypted`        | boolean | 连接是否加密        | ✅ 详情/弹窗    |
+| `is_incoming`          | `isIncoming`         | boolean | 是否入站连接        | ✅ 详情弹窗      |
+| `is_uploading_to`      | `isUploadingTo`      | boolean | 正在上传给该 Peer   | ✅ 详情弹窗      |
+| `is_utp`               | `isUTP`              | boolean | 是否 uTP 连接     | ✅ 详情弹窗      |
+| `peer_id`              | `peer_id`            | string  | Peer ID       | ✅ 详情弹窗      |
+| `peer_is_choked`       | `peerIsChoked`       | boolean | Peer 被阻塞      | ✅ 详情弹窗      |
+| `peer_is_interested`   | `peerIsInterested`   | boolean | Peer 感兴趣      | ✅ 详情弹窗      |
+| `port`                 | `port`               | number  | 端口号           | ✅ 详情弹窗      |
 | `progress`             | `progress`           | double  | 进度 (0-1)      | ✅ 详情       |
 | `rate_to_client`       | `rateToClient`       | number  | 下载速度 (B/s)    | ✅ 详情       |
 | `rate_to_peer`         | `rateToPeer`         | number  | 上传速度 (B/s)    | ✅ 详情       |
@@ -253,7 +253,7 @@
 
 | 字段 (4.1.x snake\_case) | 字段 (老版本 camelCase) | 类型     | 说明             | 本项目使用 |
 | ---------------------- | ------------------ | ------ | -------------- | ----- |
-| `from_cache`           | `fromCache`        | number | 来自缓存 (RPC 17+) | ❌ 未使用 |
+| `from_cache`           | `fromCache`        | number | 来自缓存 (RPC 17+) | ✅ 详情 |
 | `from_dht`             | `fromDht`          | number | 来自 DHT         | ✅ 详情  |
 | `from_incoming`        | `fromIncoming`     | number | 来自入站连接         | ✅ 详情  |
 | `from_lpd`             | `fromLpd`          | number | 来自 LPD         | ✅ 详情  |
@@ -277,8 +277,8 @@
 | -------------------------- | ----------------------- | ------- | ----------------- | ----- |
 | `announce`                 | `announce`              | string  | 宣告 URL            | ✅ 详情  |
 | `announce_state`           | `announceState`         | number  | 宣告状态              | ❌ 未使用 |
-| `download_count`           | `downloadCount`         | number  | 下载次数              | ❌ 未使用 |
-| `downloader_count`         | `downloader_count`      | number  | 下载者数 (4.1.x+)     | ❌ 未使用 |
+| `download_count`           | `downloadCount`         | number  | 下载次数              | ✅ 详情      |
+| `downloader_count`         | `downloader_count`      | number  | 下载者数 (4.1.x+)     | ✅ 详情      |
 | `has_announced`            | `hasAnnounced`          | boolean | 是否已宣告             | ❌ 未使用 |
 | `has_scraped`              | `hasScraped`            | boolean | 是否已刮取             | ❌ 未使用 |
 | `host`                     | `host`                  | string  | 主机名               | ✅ 详情  |
@@ -368,11 +368,11 @@
 | `priority_high`                  | `priority-high`                  | array     | 高优先级文件                                          | ✅     |
 | `priority_low`                   | `priority-low`                   | array     | 低优先级文件                                          | ✅     |
 | `priority_normal`                | `priority-normal`                | array     | 普通优先级文件                                         | ✅     |
-| `queue_position`                 | `queuePosition`                  | number    | 队列位置                                            | ❌ 未使用 |
+| `queue_position`                 | `queuePosition`                  | number    | 队列位置                                            | ✅ 队列操作 |
 | `tracker_add`                    | `trackerAdd`                     | array     | 添加 Tracker (**DEPRECATED**, 用 tracker\_list 替代) | ✅     |
 | `tracker_remove`                 | `trackerRemove`                  | array     | 删除 Tracker (**DEPRECATED**, 用 tracker\_list 替代) | ✅     |
 | `tracker_replace`                | `trackerReplace`                 | array     | 替换 Tracker (**DEPRECATED**, 用 tracker\_list 替代) | ✅     |
-| `tracker_list`                   | `trackerList`                    | string    | Tracker URL 列表 (RPC 17+)                        | ❌ 未使用 |
+| `tracker_list`                   | `trackerList`                    | string    | Tracker URL 列表 (RPC 17+)                        | ✅ 详情 |
 
 ***
 
@@ -656,7 +656,7 @@
 | -------------------------------------------- | --------------------------------------------- | --- |
 | `torrent_get.format` (table 格式)              | 表格格式响应，更高效                                    | 低   |
 | `torrent_get.bytes_completed`                | 各文件已完成字节数                                     | 低   |
-| `torrent_get.availability`                   | 分片可用性统计                                       | 中   |
+| `torrent_get.availability`                   | 分片可用性统计（已实现，分片Tab可用性视图）                       | ~~中~~ ✅ |
 | `torrent_get.webseeds_ex`                    | Web 种子扩展信息 (4.2.0+)                           | 低   |
 | `torrent_set.tracker_list`                   | 新 Tracker 列表格式 (替代 trackerAdd/Remove/Replace) | 高   |
 | `torrent_set.sequential_download_from_piece` | 顺序下载起始分片                                      | 低   |

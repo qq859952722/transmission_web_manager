@@ -100,7 +100,13 @@ var TWC_LANG_ZH = {
             "file_count": "文件数量"
         },
         "pieces": {
-            "no_data": "暂无分片数据"
+            "no_data": "暂无分片数据",
+            "availability": "可用性",
+            "availability_high": "充足",
+            "availability_low": "稀缺",
+            "availability_none": "不可用",
+            "view_pieces": "完成度",
+            "view_availability": "可用性"
         },
         "speed": {
             "download": "下载速度",
@@ -164,7 +170,22 @@ var TWC_LANG_ZH = {
             "flag_I": "主动连入的连接",
             "flag_T": "使用 uTP 协议",
             "flag_L": "通过 LPD (本地发现) 发现",
-            "flag_S": "该 Peer 响应缓慢 (Snubbed)"
+            "flag_S": "该 Peer 响应缓慢 (Snubbed)",
+            "detail_btn": "详细信息",
+            "detail_connection": "连接信息",
+            "detail_incoming": "入站连接",
+            "detail_transfer": "传输信息",
+            "detail_downloading": "正在下载",
+            "detail_uploading": "正在上传",
+            "detail_choking": "阻塞状态",
+            "detail_client_choked": "我们被阻塞",
+            "detail_client_interested": "我们感兴趣",
+            "detail_peer_choked": "Peer 被阻塞",
+            "detail_peer_interested": "Peer 感兴趣",
+            "detail_client": "客户端信息"
+        },
+        "trackers": {
+            "downloader_count": "下载者"
         }
     },
     "dialog": {

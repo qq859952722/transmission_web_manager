@@ -19,7 +19,7 @@ TWC.uiList = (function() {
         { id: 'done_date', i18n: 'columns.done_date', width: 130, sortable: true, visible: false },
         { id: 'download_dir', i18n: 'columns.download_dir', width: 150, sortable: true, visible: false },
         { id: 'labels', i18n: 'columns.labels', width: 100, sortable: false, visible: false },
-        { id: 'queue_position', i18n: 'columns.queue', width: 50, sortable: true, visible: false, align: 'center' }
+        { id: 'queue_position', i18n: 'columns.queue', width: 50, sortable: true, visible: true, align: 'center' }
     ];
     var _lastShiftId = null;
     var _virtualScrollEnabled = false;

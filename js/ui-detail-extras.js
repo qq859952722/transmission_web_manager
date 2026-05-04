@@ -2,11 +2,15 @@ var TWC = TWC || {};
 
 TWC.uiDetailExtras = (function() {
 
+    var _peerDataCache = [];
+
     function renderPeers(t) {
         if (!t.peers || t.peers.length === 0) {
             $('#detail-content').html('<div class="twc-empty">' + TWC.i18n.t('detail.peers.empty') + '</div>');
             return;
         }
+
+        _peerDataCache = t.peers;
 
         var html = '<table class="twc-peer-table">' +
             '<thead><tr>' +
@@ -19,45 +23,37 @@ TWC.uiDetailExtras = (function() {
             '<th>' + TWC.i18n.t('detail.peers.rate_to_peer') + '</th>' +
             '<th>' + TWC.i18n.t('detail.peers.downloaded') + '</th>' +
             '<th>' + TWC.i18n.t('detail.peers.uploaded') + '</th>' +
-            '<th>' + TWC.i18n.t('detail.peers.flags') + '</th>' +
-            '<th>' + TWC.i18n.t('detail.peers.source') + '</th>' +
-            '<th>' + TWC.i18n.t('detail.peers.connection') + '</th>' +
-            '<th>' + TWC.i18n.t('detail.peers.encryption') + '</th>' +
             '<th>' + TWC.i18n.t('detail.peers.protocol') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.peers.flags') + '</th>' +
+            '<th></th>' +
             '</tr></thead><tbody>';
 
         for (var i = 0; i < t.peers.length; i++) {
             var p = t.peers[i];
             var flags = p.flagStr || p.flag_str || '';
-            var source = _getSourceText(p);
             var countryHtml = _getCountryDisplay(p.address);
-            var isEnc = p.isEncrypted !== undefined ? p.isEncrypted : p.is_encrypted;
-            var isUtp = p.isUTP !== undefined ? p.isUTP : p.is_utp;
-            var encText = isEnc ? TWC.i18n.t('common.yes') : TWC.i18n.t('common.no');
-            var protoText = isUtp ? 'uTP' : 'TCP';
-            var connTime = p.connectionType || p.connection_type || '-';
             var cName = p.clientName || p.client_name || '';
             var rClient = p.rateToClient !== undefined ? p.rateToClient : (p.rate_to_client || 0);
             var rPeer = p.rateToPeer !== undefined ? p.rateToPeer : (p.rate_to_peer || 0);
             var cChoked = p.clientIsChoked !== undefined ? p.clientIsChoked : p.client_is_choked;
             var bClient = p.bytesToClient !== undefined ? p.bytesToClient : (p.bytes_to_client || 0);
             var bPeer = p.bytesToPeer !== undefined ? p.bytesToPeer : (p.bytes_to_peer || 0);
+            var isUtp = p.isUTP !== undefined ? p.isUTP : p.is_utp;
+            var protoText = isUtp ? 'uTP' : 'TCP';
 
             html += '<tr>' +
                 '<td>' + countryHtml + '</td>' +
                 '<td class="text-mono">' + TWC.utils.escapeHtml(p.address) + '</td>' +
-                '<td class="text-mono">' + p.port + '</td>' +
+                '<td class="text-mono">' + (p.port || '-') + '</td>' +
                 '<td title="' + TWC.utils.escapeHtml(cName) + '">' + TWC.utils.escapeHtml(TWC.utils.truncateText(cName, 20)) + '</td>' +
                 '<td>' + _renderPeerProgress(p.progress) + '</td>' +
                 '<td class="text-mono">' + (rClient > 0 ? '<span class="text-info">' + TWC.utils.formatSpeed(rClient) + '</span>' : '-') + '</td>' +
                 '<td class="text-mono">' + (rPeer > 0 ? '<span class="text-success">' + TWC.utils.formatSpeed(rPeer) + '</span>' : '-') + '</td>' +
                 '<td class="text-mono">' + (cChoked ? '-' : TWC.utils.formatBytes(bClient)) + '</td>' +
                 '<td class="text-mono">' + TWC.utils.formatBytes(bPeer) + '</td>' +
-                '<td><span title="' + _getFlagsTooltip(flags) + '">' + TWC.utils.escapeHtml(flags) + '</span></td>' +
-                '<td>' + source + '</td>' +
-                '<td>' + connTime + '</td>' +
-                '<td>' + encText + '</td>' +
                 '<td>' + protoText + '</td>' +
+                '<td><span title="' + _getFlagsTooltip(flags) + '">' + TWC.utils.escapeHtml(flags) + '</span></td>' +
+                '<td><button class="twc-peer-detail-btn" data-peer-idx="' + i + '" title="' + TWC.i18n.t('detail.peers.detail_btn') + '">ⓘ</button></td>' +
                 '</tr>';
         }
 
@@ -96,6 +92,117 @@ TWC.uiDetailExtras = (function() {
             '</div></div>';
 
         $('#detail-content').html(html);
+
+        $(document).off('click.twcPeerDetail').on('click.twcPeerDetail', '.twc-peer-detail-btn', function() {
+            var idx = parseInt($(this).attr('data-peer-idx'));
+            if (idx >= 0 && idx < _peerDataCache.length) {
+                _showPeerDetail(_peerDataCache[idx]);
+            }
+        });
+    }
+
+    function _showPeerDetail(p) {
+        var existing = document.getElementById('twc-peer-detail-overlay');
+        if (existing) existing.remove();
+
+        var isEnc = p.isEncrypted !== undefined ? p.isEncrypted : p.is_encrypted;
+        var isUtp = p.isUTP !== undefined ? p.isUTP : p.is_utp;
+        var isIncoming = p.isIncoming !== undefined ? p.isIncoming : p.is_incoming;
+        var isDownloading = p.isDownloadingFrom !== undefined ? p.isDownloadingFrom : p.is_downloading_from;
+        var isUploading = p.isUploadingTo !== undefined ? p.isUploadingTo : p.is_uploading_to;
+        var clientChoked = p.clientIsChoked !== undefined ? p.clientIsChoked : p.client_is_choked;
+        var clientInterested = p.clientIsInterested !== undefined ? p.clientIsInterested : p.client_is_interested;
+        var peerChoked = p.peerIsChoked !== undefined ? p.peerIsChoked : p.peer_is_choked;
+        var peerInterested = p.peerIsInterested !== undefined ? p.peerIsInterested : p.peer_is_interested;
+        var rClient = p.rateToClient !== undefined ? p.rateToClient : (p.rate_to_client || 0);
+        var rPeer = p.rateToPeer !== undefined ? p.rateToPeer : (p.rate_to_peer || 0);
+        var bClient = p.bytesToClient !== undefined ? p.bytesToClient : (p.bytes_to_client || 0);
+        var bPeer = p.bytesToPeer !== undefined ? p.bytesToPeer : (p.bytes_to_peer || 0);
+        var cName = p.clientName || p.client_name || '-';
+        var flags = p.flagStr || p.flag_str || '-';
+        var countryHtml = _getCountryDisplay(p.address);
+
+        function boolTag(val) {
+            return val ? '<span class="twc-peer-tag twc-peer-tag-yes">' + TWC.i18n.t('common.yes') + '</span>' :
+                         '<span class="twc-peer-tag twc-peer-tag-no">' + TWC.i18n.t('common.no') + '</span>';
+        }
+
+        var html = '<div class="twc-peer-detail-overlay" id="twc-peer-detail-overlay">' +
+            '<div class="twc-peer-detail-glass">' +
+            '<div class="twc-peer-detail-header">' +
+            '<div class="twc-peer-detail-title">' + countryHtml + ' <span class="text-mono">' + TWC.utils.escapeHtml(p.address) + '</span></div>' +
+            '<button class="twc-peer-detail-close" id="twc-peer-detail-close">&times;</button>' +
+            '</div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.peers.detail_connection') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            _detailRow(TWC.i18n.t('detail.peers.port'), '<span class="text-mono">' + (p.port || '-') + '</span>') +
+            _detailRow(TWC.i18n.t('detail.peers.protocol'), isUtp ? 'uTP' : 'TCP') +
+            _detailRow(TWC.i18n.t('detail.peers.encryption'), boolTag(isEnc)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_incoming'), boolTag(isIncoming)) +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.peers.detail_transfer') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            _detailRow(TWC.i18n.t('detail.peers.progress'), _renderPeerProgress(p.progress)) +
+            _detailRow(TWC.i18n.t('detail.peers.rate_to_client'), rClient > 0 ? '<span class="text-info">' + TWC.utils.formatSpeed(rClient) + '</span>' : '-') +
+            _detailRow(TWC.i18n.t('detail.peers.rate_to_peer'), rPeer > 0 ? '<span class="text-success">' + TWC.utils.formatSpeed(rPeer) + '</span>' : '-') +
+            _detailRow(TWC.i18n.t('detail.peers.downloaded'), TWC.utils.formatBytes(bClient)) +
+            _detailRow(TWC.i18n.t('detail.peers.uploaded'), TWC.utils.formatBytes(bPeer)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_downloading'), boolTag(isDownloading)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_uploading'), boolTag(isUploading)) +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.peers.detail_choking') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            _detailRow(TWC.i18n.t('detail.peers.detail_client_choked'), boolTag(clientChoked)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_client_interested'), boolTag(clientInterested)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_peer_choked'), boolTag(peerChoked)) +
+            _detailRow(TWC.i18n.t('detail.peers.detail_peer_interested'), boolTag(peerInterested)) +
+            '</div></div>' +
+
+            '<div class="twc-peer-detail-section">' +
+            '<div class="twc-peer-detail-section-title">' + TWC.i18n.t('detail.peers.detail_client') + '</div>' +
+            '<div class="twc-peer-detail-grid">' +
+            _detailRow(TWC.i18n.t('detail.peers.client'), TWC.utils.escapeHtml(cName)) +
+            _detailRow(TWC.i18n.t('detail.peers.flags'), '<span title="' + _getFlagsTooltip(flags) + '">' + TWC.utils.escapeHtml(flags) + '</span>') +
+            _detailRow('Peer ID', '<span class="text-mono" style="font-size:10px;word-break:break-all">' + TWC.utils.escapeHtml(p.peer_id || '-') + '</span>') +
+            '</div></div>' +
+
+            '</div></div>';
+
+        $('body').append(html);
+
+        requestAnimationFrame(function() {
+            var overlay = document.getElementById('twc-peer-detail-overlay');
+            if (overlay) overlay.classList.add('twc-peer-detail-visible');
+        });
+
+        $(document).on('click.twcPeerDetailClose', '#twc-peer-detail-close, #twc-peer-detail-overlay', function(e) {
+            if (e.target.id === 'twc-peer-detail-overlay' || e.target.id === 'twc-peer-detail-close') {
+                _closePeerDetail();
+            }
+        });
+
+        $(document).on('keydown.twcPeerDetail', function(e) {
+            if (e.key === 'Escape') _closePeerDetail();
+        });
+    }
+
+    function _closePeerDetail() {
+        var overlay = document.getElementById('twc-peer-detail-overlay');
+        if (overlay) {
+            overlay.classList.remove('twc-peer-detail-visible');
+            setTimeout(function() { overlay.remove(); }, 300);
+        }
+        $(document).off('click.twcPeerDetailClose keydown.twcPeerDetail');
+    }
+
+    function _detailRow(label, value) {
+        return '<div class="twc-peer-detail-row"><span class="twc-peer-detail-label">' + label + '</span><span class="twc-peer-detail-value">' + value + '</span></div>';
     }
 
     function _getCountryDisplay(ip) {

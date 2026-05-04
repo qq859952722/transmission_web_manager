@@ -92,9 +92,10 @@ TWC.rpc = (function() {
         'seedRatioMode', 'seedRatioLimit',
         'seedIdleMode', 'seedIdleLimit',
         'honorsSessionLimits',
+        'queuePosition',
         'rateDownload', 'rateUpload',
         'downloadedEver', 'uploadedEver', 'uploadRatio',
-        'downloadDir'
+        'downloadDir', 'availability', 'trackerList'
     ];
 
     var SESSION_FIELDS = [

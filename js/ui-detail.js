@@ -94,6 +94,7 @@ TWC.uiDetail = (function() {
             [TWC.i18n.t('detail.general.source'), TWC.utils.escapeHtml(t.source || '-')],
             [TWC.i18n.t('detail.general.mime'), TWC.utils.escapeHtml(t['primary_mime_type'] || '-')],
             [TWC.i18n.t('detail.general.private'), t.is_private ? TWC.i18n.t('common.yes') : TWC.i18n.t('common.no')],
+            [TWC.i18n.t('columns.queue'), t.queue_position !== undefined ? t.queue_position : '-'],
             [TWC.i18n.t('detail.general.piece_count'), t.piece_count],
             [TWC.i18n.t('detail.general.piece_size'), TWC.utils.formatBytes(t.piece_size)],
             [TWC.i18n.t('detail.general.file_count'), t.file_count || '-'],
@@ -280,6 +281,7 @@ TWC.uiDetail = (function() {
             '<th>' + TWC.i18n.t('detail.general.status') + '</th>' +
             '<th>' + TWC.i18n.t('columns.seeds') + '</th>' +
             '<th>' + TWC.i18n.t('columns.peers') + '</th>' +
+            '<th>' + TWC.i18n.t('detail.trackers.downloader_count') + '</th>' +
             '<th>' + TWC.i18n.t('detail.general.activity') + '</th>' +
             '<th>' + TWC.i18n.t('detail.general.done_date') + '</th>' +
             '<th>' + TWC.i18n.t('detail.general.left') + '</th>' +
@@ -307,6 +309,7 @@ TWC.uiDetail = (function() {
                 '<td>' + stateText + '</td>' +
                 '<td>' + (tr.seeder_count >= 0 ? tr.seeder_count : '-') + '</td>' +
                 '<td>' + (tr.leecher_count >= 0 ? tr.leecher_count : '-') + '</td>' +
+                '<td>' + (tr.downloader_count >= 0 ? tr.downloader_count : '-') + '</td>' +
                 '<td>' + lastAnnounce + '</td>' +
                 '<td>' + announceResult + '</td>' +
                 '<td>' + nextAnnounce + '</td>' +
@@ -353,16 +356,16 @@ TWC.uiDetail = (function() {
     }
 
     function _renderPieces(t) {
-        var html = '<div style="padding:12px">';
+        var html = '<div class="twc-pieces-panel">';
 
-        html += '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;color:var(--text-secondary)">';
-        html += '<span>' + TWC.i18n.t('detail.general.piece_count') + ': <strong style="color:var(--text-primary)">' + (t.piece_count || '-') + '</strong></span>';
-        html += '<span>' + TWC.i18n.t('detail.general.piece_size') + ': <strong style="color:var(--text-primary)">' + TWC.utils.formatBytes(t.piece_size) + '</strong></span>';
-        html += '<span>' + TWC.i18n.t('detail.general.file_count') + ': <strong style="color:var(--text-primary)">' + (t.file_count || '-') + '</strong></span>';
+        html += '<div class="twc-pieces-stats-row">';
+        html += '<span>' + TWC.i18n.t('detail.general.piece_count') + ': <strong>' + (t.piece_count || '-') + '</strong></span>';
+        html += '<span>' + TWC.i18n.t('detail.general.piece_size') + ': <strong>' + TWC.utils.formatBytes(t.piece_size) + '</strong></span>';
+        html += '<span>' + TWC.i18n.t('detail.general.file_count') + ': <strong>' + (t.file_count || '-') + '</strong></span>';
         html += '</div>';
 
         if (!t.pieces || !t.piece_count || t.piece_count <= 0) {
-            html += '<div style="color:var(--text-muted);text-align:center;padding:20px">' +
+            html += '<div class="twc-pieces-empty">' +
                 (TWC.i18n.t('detail.pieces.no_data') || '暂无分片数据') + '</div>';
             html += '</div>';
             $('#detail-content').html(html);
@@ -385,26 +388,36 @@ TWC.uiDetail = (function() {
             }
 
             var pct = t.piece_count > 0 ? (completed / t.piece_count * 100).toFixed(1) : 0;
+            var availability = t.availability || [];
 
-            html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">';
-            html += '<div style="flex:1;height:22px;background:var(--bg-tertiary,#e5e7eb);border-radius:4px;overflow:hidden;position:relative">';
-            html += '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--color-success,#22c55e),var(--color-primary,#3b82f6));border-radius:4px;transition:width 0.3s"></div>';
-            html += '</div>';
-            html += '<span style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap">' + pct + '%</span>';
-            html += '</div>';
-
-            html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;font-size:12px">';
-            html += '<span style="display:flex;align-items:center;gap:4px;color:var(--text-secondary)">' +
-                '<span style="display:inline-block;width:12px;height:12px;background:var(--color-success,#22c55e);border-radius:2px;box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.2)"></span>' +
-                TWC.i18n.t('detail.general.pieces_done') + ': <strong>' + completed + '</strong></span>';
-            html += '<span style="display:flex;align-items:center;gap:4px;color:var(--text-secondary)">' +
-                '<span style="display:inline-block;width:12px;height:12px;background:var(--bg-tertiary,#d1d5db);border-radius:2px;box-shadow:inset 0 -1px 0 rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.15)"></span>' +
-                TWC.i18n.t('detail.general.pieces_pending') + ': <strong>' + (t.piece_count - completed) + '</strong></span>';
+            html += '<div class="twc-pieces-progress-row">';
+            html += '<div class="twc-pieces-progress-track"><div class="twc-pieces-progress-fill" style="width:' + pct + '%"></div></div>';
+            html += '<span class="twc-pieces-progress-pct">' + pct + '%</span>';
             html += '</div>';
 
-            var canvasWidth = $('#detail-content').width() - 28;
-            if (canvasWidth < 280) canvasWidth = 400;
-            var cellSize = t.piece_count > 8000 ? 3 : (t.piece_count > 3000 ? 4 : 5);
+            html += '<div class="twc-pieces-legend">';
+            html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:#3b82f6"></span>' + TWC.i18n.t('detail.general.pieces_done') + ': <strong>' + completed + '</strong></span>';
+            if (availability.length > 0) {
+                var availStats = { none: 0, low: 0, mid: 0, high: 0 };
+                for (var ai = 0; ai < availability.length; ai++) {
+                    if (pieceStates[ai]) continue;
+                    var av = availability[ai];
+                    if (av < 0 || av === 0) availStats.none++;
+                    else if (av === 1) availStats.low++;
+                    else if (av <= 3) availStats.mid++;
+                    else availStats.high++;
+                }
+                html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:#ef4444"></span>' + TWC.i18n.t('detail.pieces.availability_none') + ': <strong>' + availStats.none + '</strong></span>';
+                html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:#f59e0b"></span>' + TWC.i18n.t('detail.pieces.availability_low') + ': <strong>' + availStats.low + '</strong></span>';
+                html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:#84cc16"></span>' + TWC.i18n.t('detail.pieces.availability_high') + ': <strong>' + (availStats.mid + availStats.high) + '</strong></span>';
+            } else {
+                html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:var(--bg-tertiary,#d1d5db)"></span>' + TWC.i18n.t('detail.general.pieces_pending') + ': <strong>' + (t.piece_count - completed) + '</strong></span>';
+            }
+            html += '</div>';
+
+            var canvasWidth = $('#detail-content').width() - 48;
+            if (canvasWidth < 300) canvasWidth = 420;
+            var cellSize = t.piece_count > 8000 ? 6 : (t.piece_count > 3000 ? 7 : 8);
             var gap = 1;
             var step = cellSize + gap;
             var cols = Math.floor(canvasWidth / step);
@@ -414,7 +427,7 @@ TWC.uiDetail = (function() {
             var canvasH = rowCount * step - gap;
             if (canvasH < 10) canvasH = rowCount * step;
 
-            html += '<div style="background:var(--bg-secondary,#f3f4f6);border:1px solid var(--border-primary,#e5e7eb);border-radius:6px;padding:10px;overflow:hidden">';
+            html += '<div class="twc-pieces-canvas-frame">';
             html += '<canvas id="pieces-canvas" width="' + (cols * step - gap) + '" height="' + canvasH + '" ' +
                 'style="width:' + (cols * step - gap) + 'px;height:' + canvasH + 'px;display:block"></canvas>';
             html += '</div>';
@@ -423,6 +436,7 @@ TWC.uiDetail = (function() {
 
             _pendingPiecesRender = {
                 states: pieceStates,
+                availability: availability,
                 cols: cols,
                 cellSize: cellSize,
                 gap: gap,
@@ -432,7 +446,7 @@ TWC.uiDetail = (function() {
             $('#detail-content').html(html);
             _drawPiecesCanvas();
         } catch (e) {
-            html += '<div style="color:var(--text-muted);text-align:center;padding:20px">' +
+            html += '<div class="twc-pieces-empty">' +
                 (TWC.i18n.t('detail.pieces.no_data') || '暂无分片数据') + '</div>';
             html += '</div>';
             $('#detail-content').html(html);
@@ -449,7 +463,7 @@ TWC.uiDetail = (function() {
         if (!c) return;
         var ctx = c.getContext('2d');
         var styles = getComputedStyle(document.documentElement);
-        var doneColor = styles.getPropertyValue('--color-success').trim() || '#22c55e';
+        var doneColor = '#3b82f6';
         var pendingColor = styles.getPropertyValue('--bg-tertiary').trim() || '#d1d5db';
 
         ctx.clearRect(0, 0, c.width, c.height);
@@ -460,26 +474,35 @@ TWC.uiDetail = (function() {
             var x = col * p.step;
             var y = row * p.step;
             var s = p.cellSize;
+            var fillColor;
 
             if (p.states[i]) {
-                ctx.fillStyle = doneColor;
-                ctx.fillRect(x, y, s, s);
-                ctx.fillStyle = 'rgba(255,255,255,0.25)';
-                ctx.fillRect(x, y, s, 1);
-                ctx.fillRect(x, y, 1, s);
-                ctx.fillStyle = 'rgba(0,0,0,0.18)';
-                ctx.fillRect(x, y + s - 1, s, 1);
-                ctx.fillRect(x + s - 1, y, 1, s);
+                fillColor = doneColor;
+            } else if (p.availability && p.availability.length > i) {
+                var av = p.availability[i];
+                if (av < 0) {
+                    fillColor = pendingColor;
+                } else if (av === 0) {
+                    fillColor = '#ef4444';
+                } else if (av === 1) {
+                    fillColor = '#f59e0b';
+                } else if (av <= 3) {
+                    fillColor = '#84cc16';
+                } else {
+                    fillColor = '#22c55e';
+                }
             } else {
-                ctx.fillStyle = pendingColor;
-                ctx.fillRect(x, y, s, s);
-                ctx.fillStyle = 'rgba(255,255,255,0.12)';
-                ctx.fillRect(x, y, s, 1);
-                ctx.fillRect(x, y, 1, s);
-                ctx.fillStyle = 'rgba(0,0,0,0.08)';
-                ctx.fillRect(x, y + s - 1, s, 1);
-                ctx.fillRect(x + s - 1, y, 1, s);
+                fillColor = pendingColor;
             }
+
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(x, y, s, s);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(x, y, s, 1);
+            ctx.fillRect(x, y, 1, s);
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(x, y + s - 1, s, 1);
+            ctx.fillRect(x + s - 1, y, 1, s);
         }
     }
 

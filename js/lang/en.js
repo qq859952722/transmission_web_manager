@@ -100,7 +100,13 @@ var TWC_LANG_EN = {
             "file_count": "File Count"
         },
         "pieces": {
-            "no_data": "No piece data available"
+            "no_data": "No piece data available",
+            "availability": "Availability",
+            "availability_high": "Plentiful",
+            "availability_low": "Scarce",
+            "availability_none": "Unavailable",
+            "view_pieces": "Completion",
+            "view_availability": "Availability"
         },
         "speed": {
             "download": "Download Speed",
@@ -164,7 +170,22 @@ var TWC_LANG_EN = {
             "flag_I": "Incoming connection",
             "flag_T": "Peer is using uTP",
             "flag_L": "Peer was found through Local Peer Discovery (LPD)",
-            "flag_S": "Peer is snubbed"
+            "flag_S": "Peer is snubbed",
+            "detail_btn": "Details",
+            "detail_connection": "Connection",
+            "detail_incoming": "Incoming",
+            "detail_transfer": "Transfer",
+            "detail_downloading": "Downloading",
+            "detail_uploading": "Uploading",
+            "detail_choking": "Choking State",
+            "detail_client_choked": "We are choked",
+            "detail_client_interested": "We are interested",
+            "detail_peer_choked": "Peer is choked",
+            "detail_peer_interested": "Peer is interested",
+            "detail_client": "Client Info"
+        },
+        "trackers": {
+            "downloader_count": "Downloaders"
         }
     },
     "dialog": {
