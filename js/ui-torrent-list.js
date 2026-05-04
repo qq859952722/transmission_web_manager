@@ -559,6 +559,23 @@ TWC.uiList = (function() {
             if (t.tracker_stats && t.tracker_stats.length > 0) {
                 items.push({ label: TWC.i18n.t('context.remove_tracker'), action: 'removeTracker', onClick: function() { TWC.uiDialog.showRemoveTracker(ids); } });
             }
+        } else if (!single) {
+            var selectedTorrents = TWC.torrent.getSelectedTorrents();
+            items.push({ label: TWC.i18n.t('context.copy_magnets').replace('{n}', ids.length), action: 'copyMagnets', onClick: function() {
+                var links = [];
+                for (var i = 0; i < selectedTorrents.length; i++) {
+                    if (selectedTorrents[i].magnet_link) links.push(selectedTorrents[i].magnet_link);
+                }
+                TWC.utils.copyToClipboard(links.join('\n'));
+            } });
+            items.push({ label: TWC.i18n.t('context.copy_hashes').replace('{n}', ids.length), action: 'copyHashes', onClick: function() {
+                var hashes = [];
+                for (var i = 0; i < selectedTorrents.length; i++) {
+                    if (selectedTorrents[i].hash_string) hashes.push(selectedTorrents[i].hash_string);
+                }
+                TWC.utils.copyToClipboard(hashes.join('\n'));
+            } });
+            items.push({ separator: true });
         }
 
         items.push({ separator: true });

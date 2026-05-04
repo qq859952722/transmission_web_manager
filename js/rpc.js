@@ -59,7 +59,7 @@ TWC.rpc = (function() {
         'addedDate', 'doneDate', 'activityDate',
         'error', 'errorString',
         'isStalled', 'isFinished',
-        'labels', 'downloadDir',
+        'labels', 'magnetLink', 'downloadDir',
         'recheckProgress',
         'queuePosition',
         'downloadLimited', 'downloadLimit',

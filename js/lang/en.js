@@ -560,6 +560,8 @@ var TWC_LANG_EN = {
         "remove_tracker": "Remove Tracker",
         "copy_magnet": "Copy Magnet URL",
         "copy_hash": "Copy Hash",
+        "copy_magnets": "Copy {n} Magnet URLs",
+        "copy_hashes": "Copy {n} Hashes",
         "queue_top": "Move to Top",
         "queue_bottom": "Move to Bottom",
         "remove_data": "Remove with Data",

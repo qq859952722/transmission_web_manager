@@ -560,6 +560,8 @@ var TWC_LANG_ZH = {
         "remove_tracker": "移除 Tracker",
         "copy_magnet": "复制磁力链接",
         "copy_hash": "复制 Hash",
+        "copy_magnets": "复制 {n} 个磁力链接",
+        "copy_hashes": "复制 {n} 个 Hash",
         "queue_top": "移至顶部",
         "queue_bottom": "移至底部",
         "remove_data": "删除种子和数据",
