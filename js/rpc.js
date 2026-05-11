@@ -121,7 +121,7 @@ TWC.rpc = (function() {
         'script-torrent-done-enabled', 'script-torrent-done-filename',
         'script-torrent-done-seeding-enabled', 'script-torrent-done-seeding-filename',
         'seed-queue-enabled', 'seed-queue-size',
-        'seedRatioLimit', 'seedRatioLimited',
+        'seed_ratio_limit', 'seed_ratio_limited',
         'speed-limit-down', 'speed-limit-down-enabled',
         'speed-limit-up', 'speed-limit-up-enabled',
         'start-added-torrents', 'trash-original-torrent-files',
@@ -597,7 +597,8 @@ TWC.rpc = (function() {
         }
         _exec('session-get', args, function(data, success) {
             if (success && data && data.result === 'success') {
-                callback(data.arguments, true);
+                var converted = _convertResponseKeys(data.arguments);
+                callback(converted, true);
             } else {
                 callback(null, false, data ? data.result : TWC.i18n.t('status.session_failed') || 'Session get failed');
             }
