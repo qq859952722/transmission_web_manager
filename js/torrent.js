@@ -8,6 +8,7 @@ TWC.torrent = (function() {
     var _filterTracker = '';
     var _filterDir = '';
     var _filterLabel = '';
+    var _filterPrivacy = '';
     var _searchText = '';
     var _sortField = 'name';
     var _sortOrder = 'asc';
@@ -123,33 +124,6 @@ TWC.torrent = (function() {
         _indexLabel(t);
     }
 
-    function _rebuildIndex() {
-        _torrentIds = [];
-        _trackerGroups = {};
-        _dirGroups = {};
-        _labelGroups = {};
-        _statusCounts = {all:0, downloading:0, seeding:0, stopped:0, checking:0, active:0, error:0, queued:0};
-
-        var ids = Object.keys(_torrents);
-        for (var i = 0; i < ids.length; i++) {
-            var t = _torrents[ids[i]];
-            _torrentIds.push(t.id);
-            _statusCounts.all++;
-
-            if (isDownloading(t)) _statusCounts.downloading++;
-            if (isSeeding(t)) _statusCounts.seeding++;
-            if (isStopped(t)) _statusCounts.stopped++;
-            if (isChecking(t)) _statusCounts.checking++;
-            if (isActive(t)) _statusCounts.active++;
-            if (isError(t)) _statusCounts.error++;
-            if (isQueued(t)) _statusCounts.queued++;
-
-            _indexTracker(t);
-            _indexDir(t);
-            _indexLabel(t);
-        }
-    }
-
     function _indexTracker(t) {
         if (!t.tracker_stats) return;
         for (var i = 0; i < t.tracker_stats.length; i++) {
@@ -239,11 +213,46 @@ TWC.torrent = (function() {
             }
         }
 
-        results.sort(function(a, b) {
-            return _compare(a, b);
-        });
+        var field = _sortField;
+        var order = _sortOrder;
+        var isStringField = (field === 'name' || field === 'download_dir' || field === 'error_string' || field === 'hash_string');
+        results = _.orderBy(results, function(t) {
+            if (field === 'seeders') {
+                return _computeSeederCount(t);
+            }
+            if (field === 'leechers') {
+                return _computeLeecherCount(t);
+            }
+            var val = t[field];
+            if (val === undefined || val === null) return isStringField ? '' : 0;
+            return val;
+        }, [order]);
 
         return results;
+    }
+
+    function _computeSeederCount(t) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
+            var maxSeeders = -1;
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                var sc = t.tracker_stats[i].seeder_count;
+                if (sc > maxSeeders) maxSeeders = sc;
+            }
+            if (maxSeeders >= 0) return maxSeeders;
+        }
+        return -1;
+    }
+
+    function _computeLeecherCount(t) {
+        if (t.tracker_stats && t.tracker_stats.length > 0) {
+            var maxLeechers = -1;
+            for (var i = 0; i < t.tracker_stats.length; i++) {
+                var lc = t.tracker_stats[i].leecher_count;
+                if (lc > maxLeechers) maxLeechers = lc;
+            }
+            if (maxLeechers >= 0) return maxLeechers;
+        }
+        return -1;
     }
 
     function _matchFilter(t) {
@@ -269,6 +278,11 @@ TWC.torrent = (function() {
         if (_filterLabel) {
             var labelIds = _labelGroups[_filterLabel];
             if (!labelIds || labelIds.indexOf(t.id) === -1) return false;
+        }
+        if (_filterPrivacy) {
+            var isPrivate = t.is_private === true;
+            if (_filterPrivacy === 'private' && !isPrivate) return false;
+            if (_filterPrivacy === 'public' && isPrivate) return false;
         }
         if (_searchText) {
             var search = _searchText.toLowerCase();
@@ -300,23 +314,6 @@ TWC.torrent = (function() {
         return true;
     }
 
-    function _compare(a, b) {
-        var field = _sortField;
-        var order = _sortOrder === 'asc' ? 1 : -1;
-        var valA = a[field];
-        var valB = b[field];
-
-        if (field === 'name') {
-            return valA.localeCompare(valB, 'zh-CN') * order;
-        }
-        if (typeof valA === 'string') {
-            return valA.localeCompare(valB) * order;
-        }
-        if (valA === undefined || valA === null) valA = 0;
-        if (valB === undefined || valB === null) valB = 0;
-        return (valA - valB) * order;
-    }
-
     function setFilter(type, value) {
         switch (type) {
             case 'status':
@@ -345,6 +342,13 @@ TWC.torrent = (function() {
                     _filterLabel = '';
                 } else {
                     _filterLabel = value || '';
+                }
+                break;
+            case 'privacy':
+                if (_filterPrivacy === value) {
+                    _filterPrivacy = '';
+                } else {
+                    _filterPrivacy = value || '';
                 }
                 break;
             case 'search':
@@ -479,8 +483,24 @@ TWC.torrent = (function() {
             tracker: _filterTracker,
             dir: _filterDir,
             label: _filterLabel,
+            privacy: _filterPrivacy,
             search: _searchText
         };
+    }
+
+    function getPrivacyCounts() {
+        var publicCount = 0;
+        var privateCount = 0;
+        var ids = Object.keys(_torrents);
+        for (var i = 0; i < ids.length; i++) {
+            var t = _torrents[ids[i]];
+            if (t.is_private === true) {
+                privateCount++;
+            } else {
+                publicCount++;
+            }
+        }
+        return { public: publicCount, private: privateCount };
     }
 
     function onEvent(callback) {
@@ -558,6 +578,7 @@ TWC.torrent = (function() {
         getLabelGroups: getLabelGroups,
         getAllLabels: getAllLabels,
         getFilterState: getFilterState,
+        getPrivacyCounts: getPrivacyCounts,
         getGlobalStats: getGlobalStats,
         onEvent: onEvent,
         isFirstLoad: isFirstLoad,

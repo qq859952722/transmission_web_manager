@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transmission Web Control - 移动版</title>
     <link rel="stylesheet" href="css/mobile.css" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233b82f6'/%3E%3Cpath d='M16 48V24l8-8h16l8 8v24a4 4 0 01-4 4H20a4 4 0 01-4-4z' fill='none' stroke='white' stroke-width='2.5'/%3E%3Ccircle cx='32' cy='34' r='8' fill='none' stroke='white' stroke-width='2.5'/%3E%3Cpath d='M32 28v4' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
 </head>
 <body>
     <div class="m-loading" id="m-loading">
@@ -12,10 +13,30 @@
         <div style="margin-top:12px;font-size:13px;color:var(--text-muted)">正在连接...</div>
     </div>
 
+    <script src="js/vendor/lodash.min.js"></script>
+    <script src="js/vendor/idb.min.js"></script>
     <script src="js/jquery-3.7.1.min.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/db-cache.js"></script>
+    <script src="js/lang/zh-CN.js"></script>
+    <script src="js/lang/en.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/legacy/rpc-legacy-adapter.js"></script>
     <script src="js/rpc.js"></script>
     <script src="js/theme.js"></script>
+    <script>
+    document.addEventListener('alpine:init', function() {
+        Alpine.store('theme', {
+            mode: TWC.theme.getTheme(),
+            toggle: function() {
+                TWC.theme.toggle();
+                this.mode = TWC.theme.getTheme();
+            }
+        });
+    });
+    </script>
+    <script src="js/vendor/alpinejs.min.js" defer></script>
+    <script src="js/ui-history.js"></script>
     <script src="js/mobile.js"></script>
     <script src="js/mobile-views.js"></script>
     <script>

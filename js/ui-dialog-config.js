@@ -7,6 +7,20 @@ TWC.uiDialogConfig = (function() {
         var items = TWC.config.getConfigItems();
         var data = TWC.config.getSessionData();
 
+        window._twcConfigAlpineData = {};
+        for (var dk in data) {
+            window._twcConfigAlpineData[dk] = data[dk];
+        }
+        if (window.Alpine) {
+            Alpine.data('twcConfigData', function() {
+                var obj = {};
+                for (var k in window._twcConfigAlpineData) {
+                    obj[k] = window._twcConfigAlpineData[k];
+                }
+                return obj;
+            });
+        }
+
         var tabsHtml = '<div class="twc-config-tabs" id="config-tabs">';
         for (var i = 0; i < tabs.length; i++) {
             tabsHtml += '<div class="twc-config-tab' + (i === 0 ? ' active' : '') + '" data-config-tab="' + tabs[i].id + '">' + tabs[i].name + '</div>';
@@ -33,9 +47,17 @@ TWC.uiDialogConfig = (function() {
         });
 
         $('#config-save-btn').on('click', function() {
-            var defaultTrackers = $('[data-config-key="default-trackers"]').val();
-            if (defaultTrackers && defaultTrackers.trim()) {
-                var trackerResult = TWC.utils.validateTrackerList(defaultTrackers);
+            _syncAlpineData();
+            var alpineEl = document.querySelector('#config-content [x-data]');
+            var currentTrackers = window._twcConfigAlpineData.default_trackers;
+            if (alpineEl && window.Alpine) {
+                try {
+                    var ad = Alpine.$data(alpineEl);
+                    if (ad && ad.default_trackers !== undefined) currentTrackers = ad.default_trackers;
+                } catch(e) {}
+            }
+            if (currentTrackers && currentTrackers.trim) {
+                var trackerResult = TWC.utils.validateTrackerList(currentTrackers);
                 if (!trackerResult.valid) {
                     TWC.ui.showToast(TWC.i18n.t('dialog.tracker.invalid_warn'), 'warning');
                     return;
@@ -56,11 +78,16 @@ TWC.uiDialogConfig = (function() {
         });
 
         $('#config-reset-btn').on('click', function() {
+            window._twcConfigAlpineData = {};
+            for (var rk in data) {
+                window._twcConfigAlpineData[rk] = data[rk];
+            }
             _renderTab(currentTab, items, data);
         });
     }
 
     function _renderTab(tabId, items, data) {
+        _syncAlpineData();
         if (tabId === 'groups') {
             _renderGroupsTab();
             return;
@@ -71,7 +98,7 @@ TWC.uiDialogConfig = (function() {
             return;
         }
 
-        var html = '';
+        var html = '<div x-data="twcConfigData">';
         for (var g = 0; g < tabItems.length; g++) {
             var group = tabItems[g];
             html += '<div class="twc-config-section">';
@@ -81,17 +108,19 @@ TWC.uiDialogConfig = (function() {
             for (var i = 0; i < group.items.length; i++) {
                 var item = group.items[i];
                 var val = data[item.key];
-                html += '<div class="twc-form-group"' + (item.type === 'textarea' ? ' style="grid-column:1/-1"' : '') + '>';
+                var dependsAttr = item.depends ? ' :class="{\'twc-form-disabled\': !(' + item.depends + ')}"' : '';
+                html += '<div class="twc-form-group"' + (item.type === 'textarea' ? ' style="grid-column:1/-1"' : '') + dependsAttr + '>';
                 html += '<label>' + item.label + '</label>';
 
                 switch (item.type) {
                     case 'toggle':
-                        html += '<div class="twc-toggle' + (val ? ' active' : '') + '" data-config-key="' + item.key + '">' +
+                        html += '<div class="twc-toggle" :class="{\'active\': ' + item.key + '}" @click="' + item.key + ' = !' + item.key + '" data-config-key="' + item.key + '">' +
                             '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div></div>';
                         break;
                     case 'number':
                         html += '<div style="display:flex;gap:4px;align-items:center">' +
-                            '<input type="number" class="twc-input" data-config-key="' + item.key + '" value="' + (val || 0) + '"' +
+                            '<input type="number" class="twc-input" x-model="' + item.key + '"' +
+                            (item.depends ? ' :disabled="!(' + item.depends + ')"' : '') +
                             (item.min !== undefined ? ' min="' + item.min + '"' : '') +
                             (item.max !== undefined ? ' max="' + item.max + '"' : '') +
                             (item.step ? ' step="' + item.step + '"' : '') + ' />' +
@@ -99,26 +128,32 @@ TWC.uiDialogConfig = (function() {
                             '</div>';
                         break;
                     case 'text':
-                        html += '<input type="text" class="twc-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(val || '') + '" />';
+                        html += '<input type="text" class="twc-input" x-model="' + item.key + '"' +
+                            (item.depends ? ' :disabled="!(' + item.depends + ')"' : '') + ' />';
                         break;
                     case 'password':
-                        html += '<input type="password" class="twc-input" data-config-key="' + item.key + '" value="" placeholder="' + TWC.i18n.t('dialog.settings.pwd_placeholder') + '" />';
+                        html += '<input type="password" class="twc-input" x-model="' + item.key + '" placeholder="' + TWC.i18n.t('dialog.settings.pwd_placeholder') + '"' +
+                            (item.depends ? ' :disabled="!(' + item.depends + ')"' : '') + ' />';
                         break;
                     case 'folder':
                     case 'file':
-                        html += '<input type="text" class="twc-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(val || '') + '" />';
+                        html += '<input type="text" class="twc-input" x-model="' + item.key + '"' +
+                            (item.depends ? ' :disabled="!(' + item.depends + ')"' : '') + ' />';
                         break;
                     case 'select':
-                        var selectVal = (Array.isArray(val)) ? val.join(',') : val;
-                        html += '<select class="twc-select" data-config-key="' + item.key + '">';
+                        html += '<select class="twc-select" x-model="' + item.key + '">';
                         for (var o = 0; o < item.options.length; o++) {
-                            html += '<option value="' + item.options[o].value + '"' + (selectVal === item.options[o].value ? ' selected' : '') + '>' + item.options[o].label + '</option>';
+                            html += '<option value="' + item.options[o].value + '">' + item.options[o].label + '</option>';
                         }
                         html += '</select>';
                         break;
                     case 'time':
                         var timeStr = TWC.utils.parseAltSpeedTime(val);
-                        html += '<input type="time" class="twc-input" data-config-key="' + item.key + '" value="' + timeStr + '" />';
+                        if (!window._twcConfigAlpineData[item.key + '_time']) {
+                            window._twcConfigAlpineData[item.key + '_time'] = timeStr;
+                        }
+                        html += '<input type="time" class="twc-input" x-model="' + item.key + '_time" data-config-key="' + item.key + '"' +
+                            (item.depends ? ' :disabled="!(' + item.depends + ')"' : '') + ' />';
                         break;
                     case 'daymask':
                         var maskVal = parseInt(val) || 127;
@@ -147,21 +182,19 @@ TWC.uiDialogConfig = (function() {
                         html += '</div></div>';
                         break;
                     case 'textarea':
-                        html += '<textarea class="twc-input" data-config-key="' + item.key + '" rows="6" style="height:auto;resize:vertical;font-family:var(--font-mono)">' + TWC.utils.escapeHtml(val || '') + '</textarea>';
-                        if (item.key === 'default-trackers') {
+                        html += '<textarea class="twc-input" x-model="' + item.key + '" rows="6" style="height:auto;resize:vertical;font-family:var(--font-mono)"></textarea>';
+                        if (item.key === 'default_trackers') {
                             html += '<div class="twc-tracker-validation" data-tracker-validation="' + item.key + '" style="display:none;font-size:12px;color:var(--color-danger-500);margin-top:4px"></div>';
                         }
                         break;
                     case 'readonly':
-                        html += '<input type="text" class="twc-input twc-readonly-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(String(val !== undefined && val !== null ? val : '-')) + '" readonly tabindex="-1" />';
+                        html += '<input type="text" class="twc-input twc-readonly-input" :value="' + item.key + ' !== undefined && ' + item.key + ' !== null ? ' + item.key + ' : \'-\'" readonly tabindex="-1" />';
                         break;
                     case 'readonly-text':
                         html += '<div class="twc-readonly-text" data-config-key="' + item.key + '">' + TWC.utils.escapeHtml(item.value || '') + '</div>';
                         break;
                     case 'readonly-bytes':
-                        var bytesVal = val || 0;
-                        var bytesStr = TWC.utils.formatBytes(bytesVal);
-                        html += '<input type="text" class="twc-input twc-readonly-input" data-config-key="' + item.key + '" value="' + TWC.utils.escapeHtml(bytesStr) + '" readonly tabindex="-1" />';
+                        html += '<input type="text" class="twc-input twc-readonly-input" :value="TWC.utils.formatBytes(' + item.key + ' || 0)" readonly tabindex="-1" />';
                         break;
                     case 'label-manager':
                         html += _renderLabelManager();
@@ -178,7 +211,7 @@ TWC.uiDialogConfig = (function() {
         }
 
         if (tabId === 'blocklist') {
-            var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
+            var rpcVersion = TWC.config.getSessionValue('rpc_version') || 0;
             var ipProtocolSelect = '';
             if (rpcVersion >= 19) {
                 ipProtocolSelect = '<select id="ip-protocol-select" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px">' +
@@ -194,19 +227,45 @@ TWC.uiDialogConfig = (function() {
                 '<span id="port-test-result" style="margin-left:8px;font-size:12px"></span></div>';
         }
 
+        html += '</div>';
+
         $('#config-content').html(html);
 
-        $('.twc-toggle[data-config-key]').on('click', function() {
-            $(this).toggleClass('active');
-        });
+        if (window.Alpine) {
+            try {
+                var el = document.getElementById('config-content');
+                var hasUninitXData = false;
+                if (el) {
+                    var xDataEls = el.querySelectorAll('[x-data]');
+                    for (var i = 0; i < xDataEls.length; i++) {
+                        if (!xDataEls[i]._x_dataStack) {
+                            hasUninitXData = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasUninitXData) {
+                    Alpine.initTree(el);
+                }
+            } catch(e) {}
+        }
 
-        $('[data-config-key="default-trackers"]').on('input', function() {
+        $('[data-config-key="default_trackers"]').on('input', function() {
             var val = $(this).val().trim();
-            var $validation = $('[data-tracker-validation="default-trackers"]');
+            var $validation = $('[data-tracker-validation="default_trackers"]');
             if (!val) { $validation.hide().text(''); return; }
             var result = TWC.utils.validateTrackerList(val);
-            if (!result.valid) {
-                $validation.html(result.errors.join('<br/>')).show();
+            var msgs = [];
+            if (result.errors.length > 0) {
+                msgs = msgs.concat(result.errors);
+                $validation.css('color', 'var(--color-danger-500)');
+            }
+            if (result.warnings.length > 0) {
+                msgs = msgs.concat(result.warnings);
+                if (result.errors.length === 0) $validation.css('color', 'var(--color-warning-500)');
+            }
+            if (msgs.length > 0) {
+                $validation.html(msgs.join('<br/>')).show();
             } else {
                 $validation.hide().text('');
             }
@@ -217,7 +276,7 @@ TWC.uiDialogConfig = (function() {
                 TWC.config.updateBlocklist(function(size, success) {
                     if (success) {
                         TWC.ui.showToast(TWC.i18n.t('dialog.settings.blocklist_updated').replace('{n}', size), 'success');
-                        $('[data-config-key="blocklist-size"]').val(size);
+                        $('[data-config-key="blocklist_size"]').val(size);
                     } else {
                         TWC.ui.showToast(TWC.i18n.t('dialog.settings.update_failed'), 'error');
                     }
@@ -330,7 +389,7 @@ TWC.uiDialogConfig = (function() {
 
         TWC.config.loadGroups(function(groups, success) {
             if (!success) {
-                var rpcVersion = TWC.config.getSessionValue('rpc-version') || 0;
+                var rpcVersion = TWC.config.getSessionValue('rpc_version') || 0;
                 if (rpcVersion > 0 && rpcVersion < 17) {
                     $content.html('<div class="twc-empty">' + TWC.i18n.t('status.group_unsupported') + '</div>');
                 } else {
@@ -363,11 +422,11 @@ TWC.uiDialogConfig = (function() {
     }
 
     function _renderGroupCard(g) {
-        var dlEnabled = g['speed-limit-down-enabled'] || false;
-        var ulEnabled = g['speed-limit-up-enabled'] || false;
-        var dlLimit = g['speed-limit-down'] || 0;
-        var ulLimit = g['speed-limit-up'] || 0;
-        var honorsSession = g.honorsSessionLimits !== false;
+        var dlEnabled = g.speed_limit_down_enabled || false;
+        var ulEnabled = g.speed_limit_up_enabled || false;
+        var dlLimit = g.speed_limit_down || 0;
+        var ulLimit = g.speed_limit_up || 0;
+        var honorsSession = g.honors_session_limits !== false;
 
         var html = '<div class="twc-group-card" data-group-name="' + TWC.utils.escapeAttr(g.name) + '">';
         html += '<div class="twc-group-card-header">';
@@ -415,11 +474,11 @@ TWC.uiDialogConfig = (function() {
             if (confirm(TWC.i18n.t('dialog.settings.group_delete_confirm').replace('{name}', name))) {
                 TWC.rpc.setGroup({
                     name: name,
-                    'speed-limit-down-enabled': false,
-                    'speed-limit-up-enabled': false,
-                    'speed-limit-down': 0,
-                    'speed-limit-up': 0,
-                    honorsSessionLimits: true
+                    speed_limit_down_enabled: false,
+                    speed_limit_up_enabled: false,
+                    speed_limit_down: 0,
+                    speed_limit_up: 0,
+                    honors_session_limits: true
                 }, function(success) {
                     if (success) {
                         TWC.ui.showToast(TWC.i18n.t('dialog.settings.group_delete_success').replace('{name}', name), 'success');
@@ -435,11 +494,11 @@ TWC.uiDialogConfig = (function() {
     function _showGroupEditor(existingGroup) {
         var isEdit = !!existingGroup;
         var name = isEdit ? existingGroup.name : '';
-        var dlEnabled = isEdit ? (existingGroup['speed-limit-down-enabled'] || false) : false;
-        var ulEnabled = isEdit ? (existingGroup['speed-limit-up-enabled'] || false) : false;
-        var dlLimit = isEdit ? (existingGroup['speed-limit-down'] || 0) : 0;
-        var ulLimit = isEdit ? (existingGroup['speed-limit-up'] || 0) : 0;
-        var honorsSession = isEdit ? (existingGroup.honorsSessionLimits !== false) : true;
+        var dlEnabled = isEdit ? (existingGroup.speed_limit_down_enabled || false) : false;
+        var ulEnabled = isEdit ? (existingGroup.speed_limit_up_enabled || false) : false;
+        var dlLimit = isEdit ? (existingGroup.speed_limit_down || 0) : 0;
+        var ulLimit = isEdit ? (existingGroup.speed_limit_up || 0) : 0;
+        var honorsSession = isEdit ? (existingGroup.honors_session_limits !== false) : true;
 
         var html = '<div class="twc-group-editor">';
         html += '<div class="twc-form-group">';
@@ -495,11 +554,11 @@ TWC.uiDialogConfig = (function() {
 
             var props = {
                 name: groupName,
-                'speed-limit-down-enabled': $('#group-editor-dl-enabled').hasClass('active'),
-                'speed-limit-up-enabled': $('#group-editor-ul-enabled').hasClass('active'),
-                'speed-limit-down': parseInt($('#group-editor-dl-limit').val()) || 0,
-                'speed-limit-up': parseInt($('#group-editor-ul-limit').val()) || 0,
-                honorsSessionLimits: $('#group-editor-honors-session').hasClass('active')
+                speed_limit_down_enabled: $('#group-editor-dl-enabled').hasClass('active'),
+                speed_limit_up_enabled: $('#group-editor-ul-enabled').hasClass('active'),
+                speed_limit_down: parseInt($('#group-editor-dl-limit').val()) || 0,
+                speed_limit_up: parseInt($('#group-editor-ul-limit').val()) || 0,
+                honors_session_limits: $('#group-editor-honors-session').hasClass('active')
             };
 
             TWC.rpc.setGroup(props, function(success) {
@@ -514,8 +573,34 @@ TWC.uiDialogConfig = (function() {
         });
     }
 
+    function _syncAlpineData() {
+        var alpineEl = document.querySelector('#config-content [x-data]');
+        if (alpineEl && window.Alpine) {
+            try {
+                var ad = Alpine.$data(alpineEl);
+                if (ad) {
+                    for (var k in window._twcConfigAlpineData) {
+                        if (!window._twcConfigAlpineData.hasOwnProperty(k)) continue;
+                        if (k.charAt(0) === '$' || k.charAt(0) === '_') continue;
+                        var v = ad[k];
+                        if (v !== undefined) {
+                            window._twcConfigAlpineData[k] = v;
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+    }
+
     function _collectValues(items) {
         var props = {};
+        _syncAlpineData();
+
+        var alpineEl = document.querySelector('#config-content [x-data]');
+        var ad = null;
+        if (alpineEl && window.Alpine) {
+            try { ad = Alpine.$data(alpineEl); } catch(e) {}
+        }
 
         for (var tabId in items) {
             var tabItems = items[tabId];
@@ -526,33 +611,43 @@ TWC.uiDialogConfig = (function() {
                     if (item.type === 'readonly' || item.type === 'readonly-text' || item.type === 'readonly-bytes' || item.type === 'label-manager') continue;
                     if (item.key && item.key.charAt(0) === '_') continue;
 
-                    var $el = $('[data-config-key="' + item.key + '"]');
-                    if ($el.length === 0) continue;
+                    var val;
+                    if (item.type === 'time') {
+                        var timeKey = item.key + '_time';
+                        val = ad ? ad[timeKey] : undefined;
+                        if (val === undefined) val = window._twcConfigAlpineData[timeKey];
+                        if (val === undefined) continue;
+                        props[item.key] = TWC.utils.timeToMinutes(val);
+                        continue;
+                    }
 
-                    if (item.type === 'toggle') {
-                        props[item.key] = $el.hasClass('active');
-                    } else if (item.type === 'time') {
-                        props[item.key] = TWC.utils.timeToMinutes($el.val());
-                    } else if (item.type === 'daymask') {
+                    if (item.type === 'daymask') {
                         var finalMask = 0;
-                        $el.find('input[type=checkbox]:checked').each(function() {
+                        $('[data-config-key="' + item.key + '"]').find('input[type=checkbox]:checked').each(function() {
                             finalMask += parseInt($(this).val());
                         });
                         props[item.key] = finalMask;
-                    } else if (item.type === 'number') {
-                        var numVal = $el.val();
+                        continue;
+                    }
+
+                    val = ad ? ad[item.key] : undefined;
+                    if (val === undefined) val = window._twcConfigAlpineData[item.key];
+                    if (val === undefined) continue;
+
+                    if (item.type === 'number') {
                         if (item.step && item.step.indexOf('.') >= 0) {
-                            props[item.key] = parseFloat(numVal) || 0;
+                            props[item.key] = parseFloat(val) || 0;
                         } else {
-                            props[item.key] = parseInt(numVal) || 0;
+                            props[item.key] = parseInt(val) || 0;
                         }
                     } else if (item.type === 'password') {
-                        var pwd = $el.val();
-                        if (pwd) props[item.key] = pwd;
+                        if (val) props[item.key] = val;
                     } else if (item.valueType === 'array') {
-                        props[item.key] = $el.val() ? $el.val().split(',') : [];
+                        props[item.key] = val ? (typeof val === 'string' ? val.split(',') : val) : [];
+                    } else if (item.type === 'toggle' || item.type === 'checkbox') {
+                        props[item.key] = !!val;
                     } else {
-                        props[item.key] = $el.val();
+                        props[item.key] = val;
                     }
                 }
             }

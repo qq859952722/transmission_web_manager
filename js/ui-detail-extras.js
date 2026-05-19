@@ -225,16 +225,6 @@ TWC.uiDetailExtras = (function() {
         return '<span class="twc-country-unknown" title="' + TWC.i18n.t('times.unknown') + '">-</span>';
     }
 
-    function _getSourceText(p) {
-        var parts = [];
-        if (p.is_incoming !== undefined ? p.is_incoming : p.isIncoming) parts.push(TWC.i18n.t('detail.peers.getting'));
-        if (p.is_utp !== undefined ? p.is_utp : p.isUTP) parts.push(TWC.i18n.t('dialog.settings.utp'));
-        if (p.is_encrypted !== undefined ? p.is_encrypted : p.isEncrypted) parts.push(TWC.i18n.t('detail.peers.encryption'));
-        if (p.is_uploading_to !== undefined ? p.is_uploading_to : p.isUploading) parts.push(TWC.i18n.t('sidebar.status_seeding'));
-        if (p.is_downloading_from !== undefined ? p.is_downloading_from : p.isDownloading) parts.push(TWC.i18n.t('sidebar.status_downloading'));
-        return parts.length > 0 ? parts.join('/') : '-';
-    }
-
     function _renderPeerProgress(progress) {
         var pct = (progress || 0) * 100;
         var pctStr = pct.toFixed(1);
@@ -378,9 +368,21 @@ TWC.uiDetailExtras = (function() {
 
             '<div class="twc-form-group">' +
             '<label>' + TWC.i18n.t('toolbar.auto_refresh') + '</label>' +
-            '<div class="twc-toggle' + (t.honors_session_limits ? ' active' : '') + '" id="ts-honors-limits">' +
+            '<div class="twc-toggle" id="ts-honors-limits" x-data="{ on: ' + (!!t.honors_session_limits) + ' }" :class="{ active: on }" @click="on = !on">' +
             '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div>' +
             '</div>' +
+            '</div>' +
+
+            '<div class="twc-form-group">' +
+            '<label>' + (TWC.i18n.t('detail.general.sequential') || 'Sequential Download') + '</label>' +
+            '<div class="twc-toggle" id="ts-sequential" x-data="{ on: ' + (!!t.sequential_download) + ' }" :class="{ active: on }" @click="on = !on">' +
+            '<div class="twc-toggle-track"><div class="twc-toggle-thumb"></div></div>' +
+            '</div>' +
+            '</div>' +
+
+            '<div class="twc-form-group">' +
+            '<label>' + (TWC.i18n.t('detail.general.from_piece') || 'From Piece') + '</label>' +
+            '<input type="number" class="twc-input" id="ts-from-piece" value="' + (t.sequential_download_from_piece || 0) + '" min="0" style="width:100px" />' +
             '</div>' +
 
             '<div class="twc-form-group full-width">' +
@@ -398,6 +400,13 @@ TWC.uiDetailExtras = (function() {
 
         $('#detail-content').html(html);
 
+        if (window.Alpine) {
+            try {
+                var detailEl = document.getElementById('detail-content');
+                if (detailEl) Alpine.initTree(detailEl);
+            } catch(e) {}
+        }
+
         $('#ts-save-btn').on('click', function() {
             var torrentIds = TWC.torrent.getSelectedIds();
             var props = {
@@ -406,12 +415,14 @@ TWC.uiDetailExtras = (function() {
                 upload_limited: $('#ts-ul-limited').is(':checked'),
                 upload_limit: parseInt($('#ts-ul-limit').val()) || 0,
                 bandwidth_priority: parseInt($('#ts-priority').val()),
-                peerLimit: parseInt($('#ts-peer-limit').val()) || 50,
+                peer_limit: parseInt($('#ts-peer-limit').val()) || 50,
                 seed_ratio_mode: parseInt($('#ts-ratio-mode').val()),
                 seed_ratio_limit: parseFloat($('#ts-ratio-limit').val()) || 2.0,
                 seed_idle_mode: parseInt($('#ts-idle-mode').val()),
                 seed_idle_limit: parseInt($('#ts-idle-limit').val()) || 30,
-                honors_session_limits: $('#ts-honors-limits').hasClass('active')
+                honors_session_limits: $('#ts-honors-limits').hasClass('active'),
+                sequential_download: $('#ts-sequential').hasClass('active'),
+                sequential_download_from_piece: parseInt($('#ts-from-piece').val()) || 0
             };
 
             var selectedGroup = $('#ts-group').val() || '';
@@ -440,10 +451,6 @@ TWC.uiDetailExtras = (function() {
                     TWC.ui.showToast(TWC.i18n.t('dialog.change_dir.failed'), 'error');
                 }
             });
-        });
-
-        $('#ts-honors-limits').on('click', function() {
-            $(this).toggleClass('active');
         });
     }
 

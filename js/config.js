@@ -32,17 +32,17 @@ TWC.config = (function() {
             {
                 i18nGroup: 'detail.settings.download_dir',
                 items: [
-                    { key: 'download-dir', i18nLabel: 'dialog.add.download_dir', type: 'folder', i18nHint: 'dialog.add.dir_placeholder' },
-                    { key: 'incomplete-dir-enabled', i18nLabel: 'dialog.settings.incomplete_enabled', fallbackLabel: 'Enable Incomplete Dir', type: 'toggle', i18nHint: 'dialog.settings.incomplete_hint', fallbackHint: 'Save unfinished files to a temporary folder' },
-                    { key: 'incomplete-dir', i18nLabel: 'dialog.settings.incomplete_dir', fallbackLabel: 'Incomplete Dir', type: 'folder', i18nHint: 'dialog.settings.incomplete_dir_hint', fallbackHint: 'Location for unfinished files', depends: 'incomplete-dir-enabled' }
+                    { key: 'download_dir', i18nLabel: 'dialog.add.download_dir', type: 'folder', i18nHint: 'dialog.add.dir_placeholder' },
+                    { key: 'incomplete_dir_enabled', i18nLabel: 'dialog.settings.incomplete_enabled', fallbackLabel: 'Enable Incomplete Dir', type: 'toggle', i18nHint: 'dialog.settings.incomplete_hint', fallbackHint: 'Save unfinished files to a temporary folder' },
+                    { key: 'incomplete_dir', i18nLabel: 'dialog.settings.incomplete_dir', fallbackLabel: 'Incomplete Dir', type: 'folder', i18nHint: 'dialog.settings.incomplete_dir_hint', fallbackHint: 'Location for unfinished files', depends: 'incomplete_dir_enabled' }
                 ]
             },
             {
                 i18nGroup: 'dialog.settings.add_behavior', fallbackGroup: 'Add Behavior',
                 items: [
-                    { key: 'start-added-torrents', i18nLabel: 'dialog.settings.start_added', fallbackLabel: 'Start Added Torrents', type: 'toggle', i18nHint: 'dialog.add.paused' },
-                    { key: 'rename-partial-files', i18nLabel: 'dialog.settings.rename_partial', fallbackLabel: 'Rename Partial Files', type: 'toggle', i18nHint: 'dialog.settings.rename_partial_hint', fallbackHint: 'Append .part to unfinished files' },
-                    { key: 'trash-original-torrent-files', i18nLabel: 'dialog.settings.trash_torrent', fallbackLabel: 'Trash Original Torrent Files', type: 'toggle', i18nHint: 'dialog.settings.trash_torrent_hint', fallbackHint: 'Delete .torrent files after adding' }
+                    { key: 'start_added_torrents', i18nLabel: 'dialog.settings.start_added', fallbackLabel: 'Start Added Torrents', type: 'toggle', i18nHint: 'dialog.add.paused' },
+                    { key: 'rename_partial_files', i18nLabel: 'dialog.settings.rename_partial', fallbackLabel: 'Rename Partial Files', type: 'toggle', i18nHint: 'dialog.settings.rename_partial_hint', fallbackHint: 'Append .part to unfinished files' },
+                    { key: 'trash_original_torrent_files', i18nLabel: 'dialog.settings.trash_torrent', fallbackLabel: 'Trash Original Torrent Files', type: 'toggle', i18nHint: 'dialog.settings.trash_torrent_hint', fallbackHint: 'Delete .torrent files after adding' }
                 ]
             }
         ],
@@ -50,22 +50,22 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.global_speed', fallbackGroup: 'Global Speed Limits',
                 items: [
-                    { key: 'speed-limit-down-enabled', i18nLabel: 'dialog.settings.dl_limit_enabled', fallbackLabel: 'Enable Download Limit', type: 'toggle' },
-                    { key: 'speed-limit-down', i18nLabel: 'detail.settings.download_limit', type: 'number', unit: 'KB/s', depends: 'speed-limit-down-enabled', min: 0 },
-                    { key: 'speed-limit-up-enabled', i18nLabel: 'dialog.settings.ul_limit_enabled', fallbackLabel: 'Enable Upload Limit', type: 'toggle' },
-                    { key: 'speed-limit-up', i18nLabel: 'detail.settings.upload_limit', type: 'number', unit: 'KB/s', depends: 'speed-limit-up-enabled', min: 0 }
+                    { key: 'speed_limit_down_enabled', i18nLabel: 'dialog.settings.dl_limit_enabled', fallbackLabel: 'Enable Download Limit', type: 'toggle' },
+                    { key: 'speed_limit_down', i18nLabel: 'detail.settings.download_limit', type: 'number', unit: 'KB/s', depends: 'speed_limit_down_enabled', min: 0 },
+                    { key: 'speed_limit_up_enabled', i18nLabel: 'dialog.settings.ul_limit_enabled', fallbackLabel: 'Enable Upload Limit', type: 'toggle' },
+                    { key: 'speed_limit_up', i18nLabel: 'detail.settings.upload_limit', type: 'number', unit: 'KB/s', depends: 'speed_limit_up_enabled', min: 0 }
                 ]
             },
             {
                 i18nGroup: 'toolbar.alt_speed',
                 items: [
-                    { key: 'alt-speed-enabled', i18nLabel: 'dialog.settings.enabled', type: 'toggle', i18nHint: 'status.alt_speed_on' },
-                    { key: 'alt-speed-down', i18nLabel: 'detail.speed.download', type: 'number', unit: 'KB/s', min: 0 },
-                    { key: 'alt-speed-up', i18nLabel: 'detail.speed.upload', type: 'number', unit: 'KB/s', min: 0 },
-                    { key: 'alt-speed-time-enabled', i18nLabel: 'dialog.settings.alt_speed_time', fallbackLabel: 'Enable Scheduled Alt Speed', type: 'toggle' },
-                    { key: 'alt-speed-time-begin', i18nLabel: 'dialog.settings.start_time', fallbackLabel: 'Start Time', type: 'time', depends: 'alt-speed-time-enabled' },
-                    { key: 'alt-speed-time-end', i18nLabel: 'dialog.settings.end_time', fallbackLabel: 'End Time', type: 'time', depends: 'alt-speed-time-enabled' },
-                    { key: 'alt-speed-time-day', i18nLabel: 'dialog.settings.days', fallbackLabel: 'Days', type: 'daymask', depends: 'alt-speed-time-enabled' }
+                    { key: 'alt_speed_enabled', i18nLabel: 'dialog.settings.enabled', type: 'toggle', i18nHint: 'status.alt_speed_on' },
+                    { key: 'alt_speed_down', i18nLabel: 'detail.speed.download', type: 'number', unit: 'KB/s', min: 0 },
+                    { key: 'alt_speed_up', i18nLabel: 'detail.speed.upload', type: 'number', unit: 'KB/s', min: 0 },
+                    { key: 'alt_speed_time_enabled', i18nLabel: 'dialog.settings.alt_speed_time', fallbackLabel: 'Enable Scheduled Alt Speed', type: 'toggle' },
+                    { key: 'alt_speed_time_begin', i18nLabel: 'dialog.settings.start_time', fallbackLabel: 'Start Time', type: 'time', depends: 'alt_speed_time_enabled' },
+                    { key: 'alt_speed_time_end', i18nLabel: 'dialog.settings.end_time', fallbackLabel: 'End Time', type: 'time', depends: 'alt_speed_time_enabled' },
+                    { key: 'alt_speed_time_day', i18nLabel: 'dialog.settings.days', fallbackLabel: 'Days', type: 'daymask', depends: 'alt_speed_time_enabled' }
                 ]
             }
         ],
@@ -73,18 +73,18 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.port_settings', fallbackGroup: 'Port Settings',
                 items: [
-                    { key: 'peer-port', i18nLabel: 'dialog.settings.listen_port', fallbackLabel: 'Listen Port', type: 'number', min: 1, max: 65535 },
-                    { key: 'peer-port-random-on-start', i18nLabel: 'dialog.settings.random_port', fallbackLabel: 'Random Port on Start', type: 'toggle' },
-                    { key: 'port-forwarding-enabled', i18nLabel: 'dialog.settings.port_forwarding', fallbackLabel: 'Enable Port Forwarding', type: 'toggle' }
+                    { key: 'peer_port', i18nLabel: 'dialog.settings.listen_port', fallbackLabel: 'Listen Port', type: 'number', min: 1, max: 65535 },
+                    { key: 'peer_port_random_on_start', i18nLabel: 'dialog.settings.random_port', fallbackLabel: 'Random Port on Start', type: 'toggle' },
+                    { key: 'port_forwarding_enabled', i18nLabel: 'dialog.settings.port_forwarding', fallbackLabel: 'Enable Port Forwarding', type: 'toggle' }
                 ]
             },
             {
                 i18nGroup: 'dialog.settings.protocols', fallbackGroup: 'Protocols',
                 items: [
-                    { key: 'dht-enabled', i18nLabel: 'dialog.settings.dht', fallbackLabel: 'DHT', type: 'toggle', i18nHint: 'dialog.settings.dht_hint', fallbackHint: 'Distributed Hash Table' },
-                    { key: 'pex-enabled', i18nLabel: 'dialog.settings.pex', fallbackLabel: 'PEX', type: 'toggle', i18nHint: 'dialog.settings.pex_hint', fallbackHint: 'Peer Exchange' },
-                    { key: 'lpd-enabled', i18nLabel: 'dialog.settings.lpd', fallbackLabel: 'LPD', type: 'toggle', i18nHint: 'dialog.settings.lpd_hint', fallbackHint: 'Local Peer Discovery' },
-                    { key: 'utp-enabled', i18nLabel: 'dialog.settings.utp', fallbackLabel: 'uTP', type: 'toggle', i18nHint: 'dialog.settings.utp_hint', fallbackHint: 'Micro Transport Protocol' },
+                    { key: 'dht_enabled', i18nLabel: 'dialog.settings.dht', fallbackLabel: 'DHT', type: 'toggle', i18nHint: 'dialog.settings.dht_hint', fallbackHint: 'Distributed Hash Table' },
+                    { key: 'pex_enabled', i18nLabel: 'dialog.settings.pex', fallbackLabel: 'PEX', type: 'toggle', i18nHint: 'dialog.settings.pex_hint', fallbackHint: 'Peer Exchange' },
+                    { key: 'lpd_enabled', i18nLabel: 'dialog.settings.lpd', fallbackLabel: 'LPD', type: 'toggle', i18nHint: 'dialog.settings.lpd_hint', fallbackHint: 'Local Peer Discovery' },
+                    { key: 'utp_enabled', i18nLabel: 'dialog.settings.utp', fallbackLabel: 'uTP', type: 'toggle', i18nHint: 'dialog.settings.utp_hint', fallbackHint: 'Micro Transport Protocol' },
                     { key: 'encryption', i18nLabel: 'detail.peers.encryption', type: 'select', options: [
                         { value: 'required', i18nLabel: 'dialog.settings.enc_required', fallbackLabel: 'Required' },
                         { value: 'preferred', i18nLabel: 'dialog.settings.enc_preferred', fallbackLabel: 'Preferred' },
@@ -95,8 +95,8 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.security', fallbackGroup: 'Security',
                 items: [
-                    { key: 'anti-brute-force-enabled', i18nLabel: 'dialog.settings.anti_brute', fallbackLabel: 'Enable Anti Brute Force', type: 'toggle' },
-                    { key: 'anti-brute-force-threshold', i18nLabel: 'dialog.settings.anti_brute_threshold', fallbackLabel: 'Threshold', type: 'number', depends: 'anti-brute-force-enabled', min: 1 }
+                    { key: 'anti_brute_force_enabled', i18nLabel: 'dialog.settings.anti_brute', fallbackLabel: 'Enable Anti Brute Force', type: 'toggle' },
+                    { key: 'anti_brute_force_threshold', i18nLabel: 'dialog.settings.anti_brute_threshold', fallbackLabel: 'Threshold', type: 'number', depends: 'anti_brute_force_enabled', min: 1 }
                 ]
             },
             {
@@ -116,8 +116,8 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.conn_limits', fallbackGroup: 'Connection Limits',
                 items: [
-                    { key: 'peer-limit-global', i18nLabel: 'dialog.settings.global_peer_limit', fallbackLabel: 'Global Max Peers', type: 'number', min: 1, max: 9999 },
-                    { key: 'peer-limit-per-torrent', i18nLabel: 'dialog.add.peer_limit', fallbackLabel: 'Per Torrent Peer Limit', type: 'number', min: 1, max: 9999 }
+                    { key: 'peer_limit_global', i18nLabel: 'dialog.settings.global_peer_limit', fallbackLabel: 'Global Max Peers', type: 'number', min: 1, max: 9999 },
+                    { key: 'peer_limit_per_torrent', i18nLabel: 'dialog.add.peer_limit', fallbackLabel: 'Per Torrent Peer Limit', type: 'number', min: 1, max: 9999 }
                 ]
             }
         ],
@@ -127,8 +127,8 @@ TWC.config = (function() {
                 items: [
                     { key: 'seed_ratio_limited', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
                     { key: 'seed_ratio_limit', i18nLabel: 'detail.settings.seed_ratio', fallbackLabel: 'Seed Ratio Limit', type: 'number', step: '0.1', depends: 'seed_ratio_limited', min: 0 },
-                    { key: 'idle-seeding-limit-enabled', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'toggle' },
-                    { key: 'idle-seeding-limit', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'idle-seeding-limit-enabled', min: 0 }
+                    { key: 'idle_seeding_limit_enabled', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'toggle' },
+                    { key: 'idle_seeding_limit', i18nLabel: 'detail.settings.seed_idle', fallbackLabel: 'Idle Stop Limit', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'idle_seeding_limit_enabled', min: 0 }
                 ]
             }
         ],
@@ -136,22 +136,22 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.dl_queue', fallbackGroup: 'Download Queue',
                 items: [
-                    { key: 'download-queue-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'download-queue-size', i18nLabel: 'dialog.settings.max_dl', fallbackLabel: 'Max Active Downloads', type: 'number', depends: 'download-queue-enabled', min: 1 }
+                    { key: 'download_queue_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'download_queue_size', i18nLabel: 'dialog.settings.max_dl', fallbackLabel: 'Max Active Downloads', type: 'number', depends: 'download_queue_enabled', min: 1 }
                 ]
             },
             {
                 i18nGroup: 'dialog.settings.seed_queue', fallbackGroup: 'Seed Queue',
                 items: [
-                    { key: 'seed-queue-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'seed-queue-size', i18nLabel: 'dialog.settings.max_seed', fallbackLabel: 'Max Active Seeds', type: 'number', depends: 'seed-queue-enabled', min: 1 }
+                    { key: 'seed_queue_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'seed_queue_size', i18nLabel: 'dialog.settings.max_seed', fallbackLabel: 'Max Active Seeds', type: 'number', depends: 'seed_queue_enabled', min: 1 }
                 ]
             },
             {
                 i18nGroup: 'dialog.settings.stalled_detection', fallbackGroup: 'Stalled Detection',
                 items: [
-                    { key: 'queue-stalled-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'queue-stalled-minutes', i18nLabel: 'dialog.settings.stalled_timeout', fallbackLabel: 'Stalled Timeout', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'queue-stalled-enabled', min: 1 }
+                    { key: 'queue_stalled_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'queue_stalled_minutes', i18nLabel: 'dialog.settings.stalled_timeout', fallbackLabel: 'Stalled Timeout', type: 'number', i18nUnit: 'times.min', fallbackUnit: 'm', depends: 'queue_stalled_enabled', min: 1 }
                 ]
             }
         ],
@@ -167,9 +167,9 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.blocklist', fallbackGroup: 'Blocklist',
                 items: [
-                    { key: 'blocklist-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'blocklist-url', i18nLabel: 'dialog.settings.blocklist_url', fallbackLabel: 'URL', type: 'text', depends: 'blocklist-enabled' },
-                    { key: 'blocklist-size', i18nLabel: 'dialog.settings.rules_count', fallbackLabel: 'Rules Count', type: 'readonly' }
+                    { key: 'blocklist_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'blocklist_url', i18nLabel: 'dialog.settings.blocklist_url', fallbackLabel: 'URL', type: 'text', depends: 'blocklist_enabled' },
+                    { key: 'blocklist_size', i18nLabel: 'dialog.settings.rules_count', fallbackLabel: 'Rules Count', type: 'readonly' }
                 ]
             }
         ],
@@ -178,10 +178,10 @@ TWC.config = (function() {
                 i18nGroup: 'dialog.settings.rpc_info',
                 fallbackGroup: 'RPC',
                 items: [
-                    { key: 'rpc-version', i18nLabel: 'dialog.about.rpc_version', fallbackLabel: 'RPC Version', type: 'readonly' },
-                    { key: 'rpc-version-semver', i18nLabel: 'dialog.settings.rpc_semver', fallbackLabel: 'RPC Semantic Version', type: 'readonly' },
-                    { key: 'rpc-version-minimum', i18nLabel: 'dialog.settings.rpc_min_version', fallbackLabel: 'Min Version', type: 'readonly' },
-                    { key: 'session-id', i18nLabel: 'dialog.settings.session_id', fallbackLabel: 'Session ID', type: 'readonly' }
+                    { key: 'rpc_version', i18nLabel: 'dialog.about.rpc_version', fallbackLabel: 'RPC Version', type: 'readonly' },
+                    { key: 'rpc_version_semver', i18nLabel: 'dialog.settings.rpc_semver', fallbackLabel: 'RPC Semantic Version', type: 'readonly' },
+                    { key: 'rpc_version_minimum', i18nLabel: 'dialog.settings.rpc_min_version', fallbackLabel: 'Min Version', type: 'readonly' },
+                    { key: 'session_id', i18nLabel: 'dialog.settings.session_id', fallbackLabel: 'Session ID', type: 'readonly' }
                 ]
             }
         ],
@@ -189,15 +189,22 @@ TWC.config = (function() {
             {
                 i18nGroup: 'dialog.settings.script_added', fallbackGroup: 'Torrent Added Script',
                 items: [
-                    { key: 'script-torrent-added-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'script-torrent-added-filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script-torrent-added-enabled' }
+                    { key: 'script_torrent_added_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'script_torrent_added_filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script_torrent_added_enabled' }
                 ]
             },
             {
                 i18nGroup: 'dialog.settings.script_done', fallbackGroup: 'Torrent Done Script',
                 items: [
-                    { key: 'script-torrent-done-enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
-                    { key: 'script-torrent-done-filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script-torrent-done-enabled' }
+                    { key: 'script_torrent_done_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'script_torrent_done_filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script_torrent_done_enabled' }
+                ]
+            },
+            {
+                i18nGroup: 'dialog.settings.script_done_seeding', fallbackGroup: 'Torrent Done Seeding Script',
+                items: [
+                    { key: 'script_torrent_done_seeding_enabled', i18nLabel: 'dialog.settings.enabled', fallbackLabel: 'Enabled', type: 'toggle' },
+                    { key: 'script_torrent_done_seeding_filename', i18nLabel: 'dialog.settings.script_path', fallbackLabel: 'Script Path', type: 'file', depends: 'script_torrent_done_seeding_enabled' }
                 ]
             }
         ],
@@ -205,13 +212,13 @@ TWC.config = (function() {
             {
                 fallbackGroup: 'Tracker',
                 items: [
-                    { key: 'default-trackers', i18nLabel: 'dialog.tracker.add_label', fallbackLabel: 'Default Trackers', type: 'textarea' }
+                    { key: 'default_trackers', i18nLabel: 'dialog.tracker.add_label', fallbackLabel: 'Default Trackers', type: 'textarea', i18nHint: 'dialog.tracker.format_info', fallbackHint: 'One URL per line. Blank line = new group (tier). Same group = backup, different groups = priority. Supported: http/https/udp' }
                 ]
             },
             {
                 fallbackGroup: 'Cache',
                 items: [
-                    { key: 'cache-size-mb', i18nLabel: 'dialog.settings.cache_size', fallbackLabel: 'Cache Size', type: 'number', unit: 'MB', min: 1 }
+                    { key: 'cache_size_mib', i18nLabel: 'dialog.settings.cache_size', fallbackLabel: 'Cache Size', type: 'number', unit: 'MB', min: 1 }
                 ]
             }
         ]
@@ -239,7 +246,7 @@ TWC.config = (function() {
                 _notifyListeners('session-saved', properties);
                 if (callback) callback(true);
             } else {
-                if (callback) callback(false, '保存失败');
+                if (callback) callback(false, TWC.i18n.t('dialog.settings.save_failed'));
             }
         });
     }
@@ -276,7 +283,7 @@ TWC.config = (function() {
     function updateBlocklist(callback) {
         TWC.rpc.updateBlocklist(function(size, success) {
             _blocklistSize = size;
-            _sessionData['blocklist-size'] = size;
+            _sessionData.blocklist_size = size;
             _notifyListeners('blocklist-updated', size);
             if (callback) callback(size, success);
         });

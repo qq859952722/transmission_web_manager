@@ -639,26 +639,12 @@ TWC.uiList = (function() {
         _saveColumnConfig();
     }
 
-    function getCountryFlag(ip) {
-        if (_countryCache[ip]) return _countryCache[ip];
-        var code = '';
-        if (TWC.geoip.is_privateIP(ip)) {
-            code = 'local';
-        } else if (TWC.geoip.isLoaded()) {
-            var info = TWC.geoip.getCountryInfo(ip);
-            code = info ? info.code : 'unknown';
-        } else {
-            code = 'unknown';
-        }
-        _countryCache[ip] = code;
-        return code;
-    }
-
     return {
         init: init,
         bindEvents: bindEvents,
         render: render,
         getColumns: getColumns,
-        setColumnVisible: setColumnVisible
+        setColumnVisible: setColumnVisible,
+        getCountryFlag: TWC.geoip ? TWC.geoip.getCountryFlag : function() { return ''; }
     };
 })();

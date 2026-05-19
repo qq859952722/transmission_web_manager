@@ -3,32 +3,45 @@ var TWC = TWC || {};
 TWC.ui = (function() {
     var _refreshTimer = null;
     var _speedTimer = null;
-    var _refreshInterval = 5000;
+    var _refreshInterval = 2000;
     var _speedInterval = 1000;
     var _autoRefresh = true;
     var _detailPanelVisible = true;
     var _sidebarVisible = true;
-    var _lastSelectedId = null;
     var _speedBuffer = new Array(120);
     var _speedBufferPos = 0;
     var _speedBufferSize = 0;
     var _maxSpeedPoints = 120;
-    var _freeSpaceTimer = null;
     var _freeSpaceLastUpdated = 0;
+    var _refreshSeq = 0;
+    var _lastConnectedAt = null;
+    var _statusCountsCache = null;
+    var _statusCountsDirty = true;
 
     function init() {
         _loadUIConfig();
-        TWC.i18n.init(); // Initialize i18n first
+        TWC.i18n.init();
         TWC.theme.init();
+        _initAlpineStores();
         _renderLayout();
         _bindEvents();
+        _applyUIConfig();
         _startRefresh();
         _updateSpeedHistory();
-        _doRefresh(true);
         
         _updatePortStatus();
+        if (_portTestTimer) clearInterval(_portTestTimer);
         _portTestTimer = setInterval(_updatePortStatus, 300000);
         _updateFreeSpace();
+
+        document.removeEventListener('visibilitychange', _onVisibilityChange);
+        document.addEventListener('visibilitychange', _onVisibilityChange);
+    }
+
+    function _onVisibilityChange() {
+        if (!document.hidden && _autoRefresh) {
+            _doRefresh(true);
+        }
     }
 
     function _renderLayout() {
@@ -44,23 +57,22 @@ TWC.ui = (function() {
             '</div>' +
             TWC.uiLayout.renderStatusBar() +
             '</div>' +
-            '<div class="twc-modal-overlay" id="modal-overlay"></div>' +
+            '<div class="twc-modal-overlay" id="modal-overlay" x-data="{ open: false }" x-show="open" x-transition:enter="twc-fade-enter" x-transition:enter-end="twc-fade-enter-end" x-transition:leave="twc-fade-leave" x-transition:leave-end="twc-fade-leave-end"></div>' +
             '<div class="twc-context-menu" id="context-menu" style="display:none"></div>' +
             '<div class="twc-toast-container" id="toast-container"></div>';
 
         $('body').html(html);
+        if (window.Alpine) {
+            try { Alpine.initTree(document.body); } catch(e) {}
+        }
         TWC.uiList.init();
         TWC.uiList.render();
         TWC.uiList.bindEvents();
         TWC.uiDetail.render();
 
         if (!_detailPanelVisible) {
-            $('#detail-panel').addClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
             $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
-        }
-        if (!_sidebarVisible) {
-            $('#sidebar').addClass('collapsed');
         }
     }
 
@@ -82,8 +94,8 @@ TWC.ui = (function() {
         $('#btn-sidebar-toggle').off('click').on('click', _toggleSidebar);
         $('#btn-detail-toggle').off('click').on('click', _toggleDetailPanel);
         $('#btn-detail-collapse').off('click').on('click', _toggleDetailPanel);
-        $('#btn-theme').off('click').on('click', function() { TWC.theme.toggle(); });
         $('#btn-stats').off('click').on('click', function() { TWC.uiStats.renderGlobalStats(); });
+        $('#btn-history').off('click').on('click', function() { TWC.uiHistory.showHistory(); });
         $('#btn-settings').off('click').on('click', function() { TWC.uiDialog.showSettings(); });
 
         $('#search-input').off('input').on('input', TWC.utils.debounce(function() {
@@ -101,9 +113,15 @@ TWC.ui = (function() {
         });
 
         $(document).off('click.detailtab').on('click', '.twc-detail-tab', function() {
-            $('.twc-detail-tab').removeClass('active');
-            $(this).addClass('active');
-            TWC.uiDetail.switchTab($(this).data('tab'));
+            var tab = $(this).data('tab');
+            var panel = document.getElementById('detail-panel');
+            if (panel && Alpine.$data) {
+                try {
+                    var data = Alpine.$data(panel);
+                    if (data) data.activeTab = tab;
+                } catch(e) {}
+            }
+            TWC.uiDetail.switchTab(tab);
         });
 
         $(document).off('click.modal').on('click', function(e) {
@@ -129,6 +147,63 @@ TWC.ui = (function() {
 
         TWC.theme.onThemeChange(function() {
             _updateAltSpeedButton();
+        });
+
+        _bindDragDrop();
+    }
+
+    function _bindDragDrop() {
+        var $body = $('body');
+        var dragCounter = 0;
+
+        $body.off('dragenter.twcDrop dragover.twcDrop dragleave.twcDrop drop.twcDrop');
+
+        $body.on('dragenter.twcDrop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter++;
+            if (dragCounter === 1) {
+                $body.addClass('twc-drag-over');
+            }
+        });
+
+        $body.on('dragover.twcDrop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        $body.on('dragleave.twcDrop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter--;
+            if (dragCounter === 0) {
+                $body.removeClass('twc-drag-over');
+            }
+        });
+
+        $body.on('drop.twcDrop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter = 0;
+            $body.removeClass('twc-drag-over');
+
+            var files = e.originalEvent.dataTransfer.files;
+            if (!files || files.length === 0) return;
+
+            var torrentFiles = [];
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                if (f.name.endsWith('.torrent')) {
+                    torrentFiles.push(f);
+                }
+            }
+
+            if (torrentFiles.length === 0) {
+                TWC.ui.showToast(TWC.i18n.t('dialog.add.no_torrent_file') || 'No .torrent files found', 'warning');
+                return;
+            }
+
+            TWC.uiDialog.showAddTorrent(torrentFiles);
         });
     }
 
@@ -174,6 +249,8 @@ TWC.ui = (function() {
         var ids = TWC.torrent.getSelectedIds();
         if (ids.length === 0) return;
 
+        _optimisticUpdate(action, ids);
+
         function postActionRefresh() {
             _doRefresh(true, true, true);
         }
@@ -182,18 +259,21 @@ TWC.ui = (function() {
             case 'start':
                 TWC.rpc.startTorrents(ids, function(success) {
                     if (success) showToast(TWC.i18n.t('status.started').replace('{n}', ids.length), 'success');
+                    else _rollbackOptimistic(ids);
                     postActionRefresh();
                 });
                 break;
             case 'startNow':
                 TWC.rpc.startNowTorrents(ids, function(success) {
                     if (success) showToast(TWC.i18n.t('status.started_now').replace('{n}', ids.length), 'success');
+                    else _rollbackOptimistic(ids);
                     postActionRefresh();
                 });
                 break;
             case 'stop':
                 TWC.rpc.stopTorrents(ids, function(success) {
                     if (success) showToast(TWC.i18n.t('status.paused').replace('{n}', ids.length), 'success');
+                    else _rollbackOptimistic(ids);
                     postActionRefresh();
                 });
                 break;
@@ -234,9 +314,46 @@ TWC.ui = (function() {
         }
     }
 
+    function _optimisticUpdate(action, ids) {
+        var newStatus;
+        switch (action) {
+            case 'start': case 'startNow': newStatus = 4; break;
+            case 'stop': newStatus = 0; break;
+            default: return;
+        }
+        for (var i = 0; i < ids.length; i++) {
+            var t = TWC.torrent.getTorrent(ids[i]);
+            if (t) {
+                t._prevStatus = t.status;
+                t.status = newStatus;
+                if (newStatus === 0) {
+                    t.rate_download = 0;
+                    t.rate_upload = 0;
+                    t.is_stalled = false;
+                }
+            }
+        }
+        TWC.uiList.render();
+        TWC.uiDetail.update();
+        _statusCountsDirty = true;
+    }
+
+    function _rollbackOptimistic(ids) {
+        for (var i = 0; i < ids.length; i++) {
+            var t = TWC.torrent.getTorrent(ids[i]);
+            if (t && t._prevStatus !== undefined) {
+                t.status = t._prevStatus;
+                delete t._prevStatus;
+            }
+        }
+        TWC.uiList.render();
+        TWC.uiDetail.update();
+        _statusCountsDirty = true;
+    }
+
     function _toggleAltSpeed() {
-        var current = TWC.config.getSessionValue('alt-speed-enabled');
-        TWC.config.saveSession({ 'alt-speed-enabled': !current }, function(success) {
+        var current = TWC.config.getSessionValue('alt_speed_enabled');
+        TWC.config.saveSession({ alt_speed_enabled: !current }, function(success) {
             if (success) {
                 showToast(!current ? TWC.i18n.t('status.alt_speed_on') : TWC.i18n.t('status.alt_speed_off'), 'success');
                 _updateAltSpeedButton();
@@ -246,82 +363,94 @@ TWC.ui = (function() {
     }
 
     function _updateAltSpeedButton() {
-        var enabled = TWC.config.getSessionValue('alt-speed-enabled');
-        if (enabled) {
-            $('#btn-alt-speed').addClass('active');
-        } else {
-            $('#btn-alt-speed').removeClass('active');
+        var enabled = TWC.config.getSessionValue('alt_speed_enabled');
+        if (typeof Alpine !== 'undefined' && Alpine.store('toolbar')) {
+            Alpine.store('toolbar').altSpeedActive = !!enabled;
         }
     }
     
     function _updateAltSpeedStatus() {
-        var altSpeed = TWC.config.getSessionValue('alt-speed-enabled');
-        if (altSpeed) {
-            $('#stat-alt-speed-text').text('⏱ ' + TWC.i18n.t('dialog.settings.enabled')).removeClass('stat-alt-speed-off').addClass('stat-alt-speed-on');
-        } else {
-            $('#stat-alt-speed-text').text(TWC.i18n.t('dialog.settings.disabled')).removeClass('stat-alt-speed-on').addClass('stat-alt-speed-off');
+        var altSpeed = TWC.config.getSessionValue('alt_speed_enabled');
+        if (typeof Alpine !== 'undefined' && Alpine.store('statusbar')) {
+            Alpine.store('statusbar').altSpeedText = altSpeed ? '⏱ ' + TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled');
+            Alpine.store('statusbar').altSpeedOn = !!altSpeed;
         }
     }
 
     function _toggleAutoRefresh() {
         _autoRefresh = !_autoRefresh;
         if (_autoRefresh) {
-            $('#btn-auto-refresh').addClass('active');
             _startRefresh();
         } else {
-            $('#btn-auto-refresh').removeClass('active');
             _stopRefresh();
         }
         TWC.utils.storageSet('twc-auto-refresh', _autoRefresh);
+        if (typeof Alpine !== 'undefined' && Alpine.store('toolbar')) {
+            Alpine.store('toolbar').autoRefreshActive = _autoRefresh;
+        }
     }
 
     function _toggleSidebar() {
         _sidebarVisible = !_sidebarVisible;
-        if (_sidebarVisible) {
-            $('#sidebar').removeClass('collapsed');
-        } else {
-            $('#sidebar').addClass('collapsed');
-        }
         TWC.utils.storageSet('twc-sidebar-visible', _sidebarVisible);
+        if (typeof Alpine !== 'undefined' && Alpine.store('toolbar')) {
+            Alpine.store('toolbar').sidebarCollapsed = !_sidebarVisible;
+        }
     }
 
     function _toggleDetailPanel() {
         _detailPanelVisible = !_detailPanelVisible;
         if (_detailPanelVisible) {
-            $('#detail-panel').removeClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 9 12 15 18 9"/>');
             $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
         } else {
-            $('#detail-panel').addClass('collapsed');
             $('#btn-detail-collapse svg').html('<polyline points="6 15 12 9 18 15"/>');
             $('#btn-detail-collapse').attr('title', TWC.i18n.t('toolbar.detail_toggle'));
         }
         TWC.utils.storageSet('twc-detail-visible', _detailPanelVisible);
+        if (typeof Alpine !== 'undefined' && Alpine.store('toolbar')) {
+            Alpine.store('toolbar').detailCollapsed = !_detailPanelVisible;
+        }
     }
 
     function _updateToolbarState() {
         var ids = TWC.torrent.getSelectedIds();
         var hasSelection = ids.length > 0;
-        $('#btn-start, #btn-start-now, #btn-pause, #btn-reannounce, #btn-verify, #btn-remove, #btn-queue-up, #btn-queue-down, #btn-queue-top, #btn-queue-bottom')
-            .prop('disabled', !hasSelection);
+        if (typeof Alpine !== 'undefined' && Alpine.store('toolbar')) {
+            Alpine.store('toolbar').hasSelection = hasSelection;
+        }
     }
 
     function _startRefresh() {
         _stopRefresh();
         if (_autoRefresh) {
-            _refreshTimer = setInterval(function() {
-                _doRefresh(false);
-            }, _refreshInterval);
+            _doRefresh(true);
             _speedTimer = setInterval(function() {
                 _updateSpeedHistory();
             }, _speedInterval);
-            $('#btn-auto-refresh').addClass('active');
         }
+    }
+
+    function _scheduleNextRefresh() {
+        if (_refreshTimer) clearTimeout(_refreshTimer);
+        _refreshTimer = setTimeout(function() {
+            _doRefresh(false);
+        }, _getRefreshInterval());
+    }
+
+    function _getRefreshInterval() {
+        if (document.hidden) return 15000;
+        var stats = TWC.torrent.getGlobalStats();
+        if (stats.downloadSpeed === 0 && stats.uploadSpeed === 0) {
+            var counts = TWC.torrent.getStatusCounts();
+            if (counts.downloading === 0 && counts.seeding === 0) return 10000;
+        }
+        return _refreshInterval;
     }
 
     function _stopRefresh() {
         if (_refreshTimer) {
-            clearInterval(_refreshTimer);
+            clearTimeout(_refreshTimer);
             _refreshTimer = null;
         }
         if (_speedTimer) {
@@ -339,6 +468,10 @@ TWC.ui = (function() {
         };
         _speedBufferPos = (_speedBufferPos + 1) % _speedBuffer.length;
         if (_speedBufferSize < _speedBuffer.length) _speedBufferSize++;
+
+        $('#stat-download-speed').text(TWC.utils.formatSpeed(stats.downloadSpeed));
+        $('#stat-upload-speed').text(TWC.utils.formatSpeed(stats.uploadSpeed));
+        $('#stat-peers').text(stats.totalPeers || 0);
     }
 
     var _refreshing = false;
@@ -357,6 +490,7 @@ TWC.ui = (function() {
         }
 
         var isFirst = TWC.torrent.isFirstLoad();
+        var currentSeq = ++_refreshSeq;
 
         _refreshing = true;
         _isActionRefresh = isAction;
@@ -371,9 +505,9 @@ TWC.ui = (function() {
         }, 10000);
 
         if (isFirst || forceFull) {
-            _fullRefresh();
+            _fullRefresh(currentSeq);
         } else {
-            _hybridRefresh();
+            _hybridRefresh(currentSeq);
         }
 
         if (!skipStats) {
@@ -401,17 +535,45 @@ TWC.ui = (function() {
                     _doRefresh(false);
                     break;
             }
+        } else if (_autoRefresh) {
+            _scheduleNextRefresh();
         }
     }
 
     var _groupsLoaded = false;
 
-    function _fullRefresh() {
+    var _lastSnapshotTime = 0;
+    var _SNAPSHOT_INTERVAL = 300;
+
+    function _archiveSnapshots() {
+        if (!TWC.dbCache) return;
+        var now = Date.now() / 1000 | 0;
+        if (now - _lastSnapshotTime < _SNAPSHOT_INTERVAL) return;
+        _lastSnapshotTime = now;
+
+        var allTorrents = TWC.torrent.getAllTorrents();
+        var ids = Object.keys(allTorrents);
+        for (var i = 0; i < ids.length; i++) {
+            var t = allTorrents[ids[i]];
+            if (t.rate_download > 0 || t.rate_upload > 0 || t.percent_done < 1) {
+                TWC.dbCache.history.archiveSnapshot(t);
+            }
+        }
+    }
+
+    function _fullRefresh(seq) {
         TWC.rpc.getTorrents(null, TWC.rpc.LIST_FIELDS, function(torrents, removed, success, error) {
-            if (success) {
-                TWC.torrent.updateData(torrents, removed);
-                TWC.torrent.setFirstLoad(false);
-                _updateUI();
+            if (seq !== _refreshSeq) return;
+            try {
+                if (success) {
+                    TWC.torrent.updateData(torrents, removed);
+                    TWC.torrent.setFirstLoad(false);
+                    _statusCountsDirty = true;
+                    _updateUI();
+                    _updateSpeedHistory();
+                }
+            } catch (e) {
+                console.error('[TWC] _fullRefresh error:', e);
             }
             _finishRefresh();
         });
@@ -421,90 +583,127 @@ TWC.ui = (function() {
         }
     }
 
-    function _hybridRefresh() {
-        TWC.rpc.getRecentlyActiveTorrents(TWC.rpc.LIST_FIELDS, function(torrents, removed, success) {
-            if (success) {
-                TWC.torrent.updateData(torrents, removed);
-                
-                var currentSelectedIds = TWC.torrent.getSelectedIds();
-                if (currentSelectedIds.length > 0) {
-                    var allFields = TWC.rpc.LIST_FIELDS.concat(TWC.rpc.DETAIL_FIELDS);
-                    var uniqueFields = [];
-                    var seen = {};
-                    for (var i = 0; i < allFields.length; i++) {
-                        if (!seen[allFields[i]]) { seen[allFields[i]] = true; uniqueFields.push(allFields[i]); }
-                    }
-                    TWC.rpc.getTorrents(currentSelectedIds, uniqueFields, function(selectedTorrents, removedSelected, detailSuccess) {
-                        if (detailSuccess && selectedTorrents && selectedTorrents.length > 0) {
-                            TWC.torrent.updateData(selectedTorrents, removedSelected);
+    function _hybridRefresh(seq) {
+        TWC.rpc.getTorrents(null, TWC.rpc.LIST_FIELDS, function(torrents, removed, success) {
+            if (seq !== _refreshSeq) return;
+            try {
+                if (success) {
+                    TWC.torrent.updateData(torrents, removed);
+                    _statusCountsDirty = true;
+                    
+                    var currentSelectedIds = TWC.torrent.getSelectedIds();
+                    if (currentSelectedIds.length > 0) {
+                        var allFields = TWC.rpc.LIST_FIELDS.concat(TWC.rpc.DETAIL_FIELDS);
+                        var uniqueFields = [];
+                        var seen = {};
+                        for (var i = 0; i < allFields.length; i++) {
+                            if (!seen[allFields[i]]) { seen[allFields[i]] = true; uniqueFields.push(allFields[i]); }
                         }
+                        TWC.rpc.getTorrents(currentSelectedIds, uniqueFields, function(selectedTorrents, removedSelected, detailSuccess) {
+                            if (seq !== _refreshSeq) return;
+                            try {
+                                if (detailSuccess && selectedTorrents && selectedTorrents.length > 0) {
+                                    TWC.torrent.updateData(selectedTorrents, removedSelected);
+                                }
+                                _updateUI();
+                                _updateSpeedHistory();
+                            } catch (e2) {
+                                console.error('[TWC] _hybridRefresh detail error:', e2);
+                            }
+                            _finishRefresh();
+                        });
+                    } else {
                         _updateUI();
+                        _updateSpeedHistory();
                         _finishRefresh();
-                    });
+                    }
                 } else {
-                    _updateUI();
                     _finishRefresh();
                 }
-            } else {
+            } catch (e) {
+                console.error('[TWC] _hybridRefresh error:', e);
                 _finishRefresh();
             }
         });
     }
 
     function _updateUI() {
+        _statusCountsDirty = true;
         TWC.uiLayout.updateSidebar();
         TWC.uiList.render();
         TWC.uiDetail.update();
         _updateStatusBar();
         _updateFreeSpace();
+        _archiveSnapshots();
     }
 
     function _updateStatusBar() {
         var stats = TWC.torrent.getGlobalStats();
-        var counts = TWC.torrent.getStatusCounts();
+        var counts = _getCachedStatusCounts();
 
-        $('#stat-download-speed').text(TWC.utils.formatSpeed(stats.downloadSpeed));
-        $('#stat-upload-speed').text(TWC.utils.formatSpeed(stats.uploadSpeed));
+        var dlSpeed = TWC.utils.formatSpeed(stats.downloadSpeed);
+        var ulSpeed = TWC.utils.formatSpeed(stats.uploadSpeed);
 
         var countText = TWC.i18n.t('status.torrents').replace('{n}', counts.all);
         if (counts.downloading > 0) countText += ' | ' + TWC.i18n.t('sidebar.status_downloading') + ': ' + counts.downloading;
         if (counts.seeding > 0) countText += ' | ' + TWC.i18n.t('sidebar.status_seeding') + ': ' + counts.seeding;
-        $('#stat-torrent-count').text(countText);
 
-        $('#stat-errors').text(counts.error > 0 ? counts.error : '0');
-        if (counts.error > 0) {
-            $('#stat-error-count').css('color', 'var(--color-danger-500)');
-        } else {
-            $('#stat-error-count').css('color', '');
-        }
+        var errCount = counts.error > 0 ? String(counts.error) : '0';
+        var errColor = counts.error > 0 ? 'var(--color-danger-500)' : '';
 
-        $('#stat-peers').text(stats.totalPeers || 0);
+        var peersCount = String(stats.totalPeers || 0);
 
+        var ratioText = '-';
+        var ratioColor = '';
         if (stats.totalDownloaded > 0 && stats.totalUploaded > 0) {
             var ratio = (stats.totalUploaded / stats.totalDownloaded).toFixed(2);
-            $('#stat-global-ratio').text(ratio).css('color', ratio >= 1 ? 'var(--color-success-500)' : 'var(--color-warning-500)');
+            ratioText = ratio;
+            ratioColor = ratio >= 1 ? 'var(--color-success-500)' : 'var(--color-warning-500)';
         }
 
         _updateAltSpeedStatus();
 
         var version = TWC.config.getSessionValue('version');
-        if (version) {
-            $('#stat-version').text('Transmission ' + version);
-        }
 
         _updateConnectionStatus(true);
+
+        if (typeof Alpine !== 'undefined' && Alpine.store('statusbar')) {
+            var sb = Alpine.store('statusbar');
+            sb.downloadSpeed = dlSpeed;
+            sb.uploadSpeed = ulSpeed;
+            sb.peers = peersCount;
+            sb.errors = errCount;
+            sb.errorColor = errColor;
+            sb.torrentCount = countText;
+            if (ratioText !== '-') {
+                sb.globalRatio = ratioText;
+                sb.ratioColor = ratioColor;
+            }
+            if (version) sb.version = 'Transmission ' + version;
+        }
+    }
+
+    function _getCachedStatusCounts() {
+        if (_statusCountsDirty || !_statusCountsCache) {
+            _statusCountsCache = TWC.torrent.getStatusCounts();
+            _statusCountsDirty = false;
+        }
+        return _statusCountsCache;
     }
 
     function _updateFreeSpace() {
         var now = Date.now();
-        if (now - _freeSpaceLastUpdated < 30000) return; // 至少30秒更新一次
-        
-        var download_dir = TWC.config.getSessionValue('download-dir');
+        if (now - _freeSpaceLastUpdated < 30000) return;
+
+        var download_dir = TWC.config.getSessionValue('download_dir');
         if (download_dir) {
             TWC.rpc.getFreeSpace(download_dir, function(freeBytes, totalBytes, path, success) {
                 if (success && freeBytes >= 0) {
-                    $('#stat-free-space').text(TWC.i18n.t('stats.free_space') + ': ' + TWC.utils.formatBytes(freeBytes));
+                    var text = TWC.i18n.t('stats.free_space') + ': ' + TWC.utils.formatBytes(freeBytes);
                     _freeSpaceLastUpdated = Date.now();
+                    if (typeof Alpine !== 'undefined' && Alpine.store('statusbar')) {
+                        Alpine.store('statusbar').freeSpace = text;
+                    }
                 }
             });
         }
@@ -517,12 +716,22 @@ TWC.ui = (function() {
     var _PORT_TEST_TIMEOUT = 60000;
 
     function _updateConnectionStatus(connected) {
+        if (typeof Alpine !== 'undefined' && Alpine.store('statusbar')) {
+            var sb = Alpine.store('statusbar');
+            if (connected) {
+                sb.connIconBg = 'var(--color-success-500)';
+                sb.connText = '✓ ' + TWC.i18n.t('status.connected');
+                sb.connColor = 'var(--color-success-500)';
+                sb.showReconnect = false;
+            } else {
+                sb.connIconBg = 'var(--color-danger-500)';
+                sb.connText = '✗ ' + TWC.i18n.t('status.disconnected');
+                sb.connColor = 'var(--color-danger-500)';
+                sb.showReconnect = true;
+            }
+        }
         if (connected) {
-            $('#stat-conn-icon').css('background', 'var(--color-success-500)');
-            $('#stat-conn-text').text('✓ ' + TWC.i18n.t('status.connected')).css('color', 'var(--color-success-500)');
-        } else {
-            $('#stat-conn-icon').css('background', 'var(--color-danger-500)');
-            $('#stat-conn-text').text('✗ ' + TWC.i18n.t('status.disconnected')).css('color', 'var(--color-danger-500)');
+            _lastConnectedAt = new Date();
         }
     }
 
@@ -535,11 +744,10 @@ TWC.ui = (function() {
             if (_portTestInProgress) {
                 _portTestInProgress = false;
                 _portTestTimedOut = true;
-                $('#stat-port-text').text('✗ ' + (TWC.i18n.t('status.port_test_timeout') || 'Timeout')).removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
+                _syncPortStore('✗ ' + (TWC.i18n.t('status.port_test_timeout') || 'Timeout'), 'stat-port-closed', '', false);
             }
         }, _PORT_TEST_TIMEOUT);
-        $('#stat-port-text').text(TWC.i18n.t('status.connecting')).removeClass('stat-port-unknown stat-port-closed stat-port-open').addClass('stat-port-unknown');
-        $('#stat-ip-protocol').hide();
+        _syncPortStore(TWC.i18n.t('status.connecting'), 'stat-port-unknown', '', false);
         TWC.rpc.testPort(function(isOpen, success, ipProtocol, ipProtocolFromError) {
             if (_portTestTimeoutTimer) { clearTimeout(_portTestTimeoutTimer); _portTestTimeoutTimer = null; }
             if (_portTestTimedOut) return;
@@ -549,28 +757,69 @@ TWC.ui = (function() {
             _portTestInProgress = false;
             if (success) {
                 if (isOpen) {
-                    $('#stat-port-text').text('✓ ' + TWC.i18n.t('status.port_ok')).removeClass('stat-port-unknown stat-port-closed').addClass('stat-port-open');
+                    _syncPortStore('✓ ' + TWC.i18n.t('status.port_ok'), 'stat-port-open', effectiveIpProtocol, !!effectiveIpProtocol);
                 } else {
-                    $('#stat-port-text').text('✗ ' + TWC.i18n.t('status.port_closed')).removeClass('stat-port-unknown stat-port-open').addClass('stat-port-closed');
-                }
-                if (effectiveIpProtocol) {
-                    $('#stat-ip-protocol').text(effectiveIpProtocol.toUpperCase()).show();
+                    _syncPortStore('✗ ' + TWC.i18n.t('status.port_closed'), 'stat-port-closed', effectiveIpProtocol, !!effectiveIpProtocol);
                 }
             } else {
                 var errorText = errMsg || TWC.i18n.t('status.port_test_failed') || 'Test Failed';
-                $('#stat-port-text').text('✗ ' + errorText).removeClass('stat-port-open stat-port-closed').addClass('stat-port-closed');
-                if (effectiveIpProtocol) {
-                    $('#stat-ip-protocol').text(effectiveIpProtocol.toUpperCase()).show();
-                }
+                _syncPortStore('✗ ' + errorText, 'stat-port-closed', effectiveIpProtocol, !!effectiveIpProtocol);
             }
         });
     }
 
+    function _syncPortStore(text, portClass, ipProtocol, showIp) {
+        if (typeof Alpine !== 'undefined' && Alpine.store('statusbar')) {
+            var sb = Alpine.store('statusbar');
+            sb.portText = text;
+            sb.portClass = portClass;
+            sb.ipProtocol = ipProtocol ? ipProtocol.toUpperCase() : '';
+            sb.showIpProtocol = !!showIp;
+        }
+    }
+
     function _loadUIConfig() {
-        _refreshInterval = TWC.utils.storageGet('twc-refresh-interval', 5000);
+        _refreshInterval = TWC.utils.storageGet('twc-refresh-interval', 2000);
         _autoRefresh = TWC.utils.storageGet('twc-auto-refresh', true);
         _detailPanelVisible = TWC.utils.storageGet('twc-detail-visible', true);
         _sidebarVisible = TWC.utils.storageGet('twc-sidebar-visible', true);
+    }
+
+    function _initAlpineStores() {
+        if (typeof Alpine === 'undefined') return;
+        Alpine.store('statusbar', {
+            downloadSpeed: '0 B/s',
+            uploadSpeed: '0 B/s',
+            peers: '0',
+            errors: '0',
+            errorColor: '',
+            globalRatio: '-',
+            ratioColor: '',
+            torrentCount: '',
+            connIconBg: '',
+            connText: TWC.i18n.t('status.connecting'),
+            connColor: '',
+            showReconnect: false,
+            altSpeedText: TWC.i18n.t('dialog.settings.disabled'),
+            altSpeedOn: false,
+            portText: TWC.i18n.t('dialog.settings.testing'),
+            portClass: 'stat-port-unknown',
+            ipProtocol: '',
+            showIpProtocol: false,
+            freeSpace: '',
+            version: ''
+        });
+        Alpine.store('toolbar', {
+            altSpeedActive: false,
+            autoRefreshActive: _autoRefresh,
+            hasSelection: false,
+            sidebarCollapsed: !_sidebarVisible,
+            detailCollapsed: !_detailPanelVisible
+        });
+    }
+
+    function _applyUIConfig() {
+        $('#select-refresh-interval').val(String(_refreshInterval));
     }
 
     function showToast(message, type) {
@@ -632,23 +881,47 @@ TWC.ui = (function() {
             '</div>';
 
         var $overlay = $('#modal-overlay');
-        $overlay.html(html).addClass('visible');
+        $overlay.html(html);
+
+        var alpineData = Alpine.$data($overlay[0]);
+        if (alpineData) alpineData.open = true;
+        $overlay.addClass('visible');
 
         $overlay.find('#modal-close-btn, .twc-modal-cancel').on('click', function() {
             hideModal();
             if (onClose) onClose();
         });
 
-        $overlay.on('click', function(e) {
+        $overlay.off('click.twcModal').on('click.twcModal', function(e) {
             if ($(e.target).is('.twc-modal-overlay')) {
                 hideModal();
                 if (onClose) onClose();
             }
         });
+
+        if (window.Alpine) {
+            try {
+                var hasUninitXData = false;
+                var xDataEls = $overlay[0] ? $overlay[0].querySelectorAll('[x-data]') : [];
+                for (var i = 0; i < xDataEls.length; i++) {
+                    if (!xDataEls[i]._x_dataStack) {
+                        hasUninitXData = true;
+                        break;
+                    }
+                }
+                if (hasUninitXData) {
+                    Alpine.initTree($overlay[0]);
+                }
+            } catch(e) {}
+        }
     }
 
     function hideModal() {
-        $('#modal-overlay').removeClass('visible').html('');
+        var $overlay = $('#modal-overlay');
+        var alpineData = Alpine.$data($overlay[0]);
+        if (alpineData) alpineData.open = false;
+        $overlay.removeClass('visible');
+        setTimeout(function() { $overlay.html(''); }, 300);
     }
 
     function showContextMenu(items, x, y) {

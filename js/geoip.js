@@ -422,13 +422,13 @@ TWC.geoip = (function() {
                     _reader = new MMDBReader(new Uint8Array(xhr.response));
                     _loaded = true;
                     _loading = false;
-                    console.log('GeoIP: MMDB数据库加载成功, IP版本:', _reader.metadata.ipVersion,
-                        '节点数:', _reader.metadata.nodeCount,
-                        '记录大小:', _reader.metadata.recordSize,
-                        '类型:', _reader.metadata.databaseType);
+                    console.log('GeoIP: MMDB database loaded, IP version:', _reader.metadata.ipVersion,
+                        'nodes:', _reader.metadata.nodeCount,
+                        'record size:', _reader.metadata.recordSize,
+                        'type:', _reader.metadata.databaseType);
                     if (callback) callback(true);
                 } catch (e) {
-                    console.error('GeoIP: 解析MMDB数据库失败', e);
+                    console.error('GeoIP: Failed to parse MMDB database', e);
                     _loading = false;
                     if (callback) callback(false);
                 }
@@ -460,26 +460,58 @@ TWC.geoip = (function() {
             }
         }
 
+        if (TWC.geoip.is_privateIP(ipStr)) return null;
+
         var data = _reader.lookup(ipStr);
         if (!data) return null;
 
-        var code = null;
-        var name = null;
-
-        if (data.country && data.country.iso_code) {
-            code = data.country.iso_code;
-        } else if (data.registered_country && data.registered_country.iso_code) {
-            code = data.registered_country.iso_code;
-        } else if (data.continent && data.continent.code) {
-            code = data.continent.code;
-        }
+        var code = _.get(data, 'country.iso_code') ||
+            _.get(data, 'registered_country.iso_code') ||
+            _.get(data, 'continent.code');
 
         if (code) {
-            name = _countryNames[code.toLowerCase()] || code;
-            return { code: code, name: name };
+            var name = TWC.i18n.t('countries.' + code.toLowerCase()) || _countryNames[code.toLowerCase()] || code;
+            var result = { code: code, name: name };
+            if (TWC.dbCache) {
+                TWC.dbCache.geoip.put(ipStr, result);
+            }
+            return result;
         }
 
         return null;
+    }
+
+    function lookupCached(ipStr, callback) {
+        if (!callback) { callback = function() {}; }
+
+        if (TWC.geoip.is_privateIP(ipStr)) { callback(null); return; }
+
+        if (ipStr.includes(':')) {
+            var mappedIPv4 = _extractIPv4FromIPv6(ipStr);
+            if (mappedIPv4) {
+                lookupCached(mappedIPv4, callback);
+                return;
+            }
+        }
+
+        if (!TWC.dbCache) {
+            var result = lookup(ipStr);
+            callback(result);
+            return;
+        }
+
+        TWC.dbCache.geoip.get(ipStr, function(cached) {
+            if (cached) {
+                callback(cached);
+                return;
+            }
+
+            var result = lookup(ipStr);
+            if (result) {
+                TWC.dbCache.geoip.put(ipStr, result);
+            }
+            callback(result);
+        });
     }
 
     function getCountryCode(ip) {
@@ -569,6 +601,7 @@ TWC.geoip = (function() {
     return {
         init: init,
         lookup: lookup,
+        lookupCached: lookupCached,
         getCountryCode: getCountryCode,
         getCountryInfo: getCountryInfo,
         getCountryFlag: getCountryFlag,

@@ -2,12 +2,26 @@ var TWC = TWC || {};
 
 TWC.uiDialog = (function() {
 
-    function showAddTorrent() {
+    function showAddTorrent(droppedFiles) {
         var session = TWC.config.getSessionData();
-        var download_dir = session['download-dir'] || '';
-        var peerLimit = session['peer-limit-per-torrent'] || '';
+        var download_dir = session.download_dir || '';
+        var peerLimit = session.peer_limit_per_torrent || '';
 
-        var html = '<div class="twc-form-group">' +
+        var fileHint = '';
+        if (droppedFiles && droppedFiles.length > 0) {
+            var names = [];
+            for (var di = 0; di < droppedFiles.length; di++) {
+                names.push(droppedFiles[di].name);
+            }
+            fileHint = '<div class="twc-dropped-files" style="margin-bottom:8px;padding:8px;background:var(--bg-tertiary);border-radius:4px;font-size:12px;color:var(--color-primary-500)">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+                (TWC.i18n.t('dialog.add.dropped_files') || 'Dropped {n} file(s)').replace('{n}', droppedFiles.length) +
+                ': ' + TWC.utils.escapeHtml(names.join(', ')) +
+                '</div>';
+        }
+
+        var html = fileHint +
+            '<div class="twc-form-group">' +
             '<label>' + TWC.i18n.t('dialog.add.url_label') + '</label>' +
             '<textarea class="twc-input" id="add-url" rows="3" style="height:auto;resize:vertical" placeholder="' + TWC.i18n.t('dialog.add.url_placeholder') + '"></textarea>' +
             '</div>' +
@@ -94,7 +108,7 @@ TWC.uiDialog = (function() {
 
         $('#add-submit').off('click').on('click', function() {
             var urls = $('#add-url').val().trim();
-            var files = $('#add-file')[0].files;
+            var files = droppedFiles || $('#add-file')[0].files;
             var dir = $('#add-download-dir').val().trim();
             var paused = $('#add-paused').is(':checked');
             var peerLimit = $('#add-peer-limit').val().trim();
@@ -106,14 +120,14 @@ TWC.uiDialog = (function() {
             var group = $('#add-group').val() || '';
 
             var opts = {
-                'download-dir': dir || undefined,
+                download_dir: dir || undefined,
                 paused: paused,
-                bandwidth_priority: priority !== 1 ? priority : undefined,
+                bandwidth_priority: priority !== 0 ? priority : undefined,
                 sequential_download: sequential ? true : undefined
             };
 
             if (peerLimit && parseInt(peerLimit, 10) > 0) {
-                opts['peer-limit'] = parseInt(peerLimit, 10);
+                opts.peer_limit = parseInt(peerLimit, 10);
             }
 
             if (labelsStr) {
@@ -253,6 +267,16 @@ TWC.uiDialog = (function() {
             var deletedIds = ids.slice();
             TWC.torrent.clearSelection();
             TWC.ui.hideModal();
+
+            if (TWC.dbCache) {
+                for (var i = 0; i < deletedIds.length; i++) {
+                    var t = TWC.torrent.getTorrent(deletedIds[i]);
+                    if (t) {
+                        TWC.dbCache.history.archiveTorrent(t, shouldDeleteData);
+                    }
+                }
+            }
+
             TWC.rpc.removeTorrents(deletedIds, shouldDeleteData, function(success) {
                 if (success) {
                     TWC.torrent.updateData([], deletedIds);
@@ -275,7 +299,7 @@ TWC.uiDialog = (function() {
 
     function showChangeDir(ids) {
         var t = ids.length === 1 ? TWC.torrent.getTorrent(ids[0]) : null;
-        var currentDir = t ? t.download_dir : (TWC.config.getSessionValue('download-dir') || '');
+        var currentDir = t ? t.download_dir : (TWC.config.getSessionValue('download_dir') || '');
 
         var html = '<div class="twc-form-group"><label>' + TWC.i18n.t('dialog.change_dir.label') + '</label>' +
             '<input type="text" class="twc-input" id="change-dir-input" value="' + TWC.utils.escapeHtml(currentDir) + '" /></div>' +
@@ -298,7 +322,7 @@ TWC.uiDialog = (function() {
 
     function showSetLabel(ids) {
         var t = ids.length === 1 ? TWC.torrent.getTorrent(ids[0]) : null;
-        var currentLabels = t && t.labels ? t.labels : [];
+        var currentLabels = _.get(t, 'labels', []);
         var allLabels = TWC.torrent.getAllLabels();
         var savedLabels = TWC.utils.storageGet('twc-label-library', []);
         var labelSet = {};
@@ -448,7 +472,7 @@ TWC.uiDialog = (function() {
             var existingList = _buildTrackerListString(t);
             var combinedList = existingList ? existingList + '\n\n' + newTrackers : newTrackers;
 
-            TWC.rpc.setTorrent(ids, { trackerList: combinedList }, function(s) {
+            TWC.rpc.setTorrent(ids, { tracker_list: combinedList }, function(s) {
                 if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.add_success'), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.add_failed'), 'error'); }
             });
@@ -538,7 +562,7 @@ TWC.uiDialog = (function() {
 
             var newTrackerList = filtered.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
-            TWC.rpc.setTorrent(ids, { trackerList: newTrackerList }, function(s) {
+            TWC.rpc.setTorrent(ids, { tracker_list: newTrackerList }, function(s) {
                 if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.remove_success').replace('{n}', trackerUrlsToRemove.length), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.remove_failed'), 'error'); }
             });
@@ -603,7 +627,7 @@ TWC.uiDialog = (function() {
             }
             if (replaceCount === 0) { TWC.ui.showToast(TWC.i18n.t('dialog.trackers.not_found'), 'warning'); return; }
 
-            TWC.rpc.setTorrent(ids, { trackerList: replaced }, function(s) {
+            TWC.rpc.setTorrent(ids, { tracker_list: replaced }, function(s) {
                 if (s) { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.replace_success').replace('{n}', replaceCount), 'success'); TWC.ui.refreshData(true); }
                 else { TWC.ui.showToast(TWC.i18n.t('dialog.tracker.replace_failed'), 'error'); }
             });
@@ -613,7 +637,7 @@ TWC.uiDialog = (function() {
 
     function showAbout() {
         var version = TWC.config.getSessionValue('version') || '-';
-        var rpcVersion = TWC.config.getSessionValue('rpc-version') || '-';
+        var rpcVersion = TWC.config.getSessionValue('rpc_version') || '-';
         var html = '<div style="text-align:center;padding:20px">' +
             '<h2 style="font-size:20px;font-weight:700;color:var(--color-primary-500);margin-bottom:4px">Transmission Web Control</h2>' +
             '<p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">' + TWC.i18n.t('dialog.about.desc') + '</p>' +

@@ -81,9 +81,9 @@ TWC.mobileViews = (function() {
     function renderStats(torrents, sessionStats, sessionData) {
         var counts = _getCounts(torrents);
         var globalStats = _getGlobalStats(torrents);
-        var cumulative = sessionStats['cumulative-stats'] || {};
-        var current = sessionStats['current-stats'] || {};
-        var altSpeedEnabled = sessionData['alt-speed-enabled'] || false;
+        var cumulative = sessionStats.cumulative_stats || {};
+        var current = sessionStats.current_stats || {};
+        var altSpeedEnabled = sessionData.alt_speed_enabled || false;
 
         var html = '<div class="m-stats">' +
             '<div class="m-stats-section"><div class="m-stats-title">' + TWC.i18n.t('system.global_stats') + '</div>' +
@@ -114,13 +114,13 @@ TWC.mobileViews = (function() {
     }
 
     function renderSpeed(sessionData) {
-        var dlEnabled = sessionData['speed-limit-down-enabled'] || false;
-        var dlLimit = sessionData['speed-limit-down'] || 0;
-        var ulEnabled = sessionData['speed-limit-up-enabled'] || false;
-        var ulLimit = sessionData['speed-limit-up'] || 0;
-        var altEnabled = sessionData['alt-speed-enabled'] || false;
-        var altDl = sessionData['alt-speed-down'] || 0;
-        var altUl = sessionData['alt-speed-up'] || 0;
+        var dlEnabled = sessionData.speed_limit_down_enabled || false;
+        var dlLimit = sessionData.speed_limit_down || 0;
+        var ulEnabled = sessionData.speed_limit_up_enabled || false;
+        var ulLimit = sessionData.speed_limit_up || 0;
+        var altEnabled = sessionData.alt_speed_enabled || false;
+        var altDl = sessionData.alt_speed_down || 0;
+        var altUl = sessionData.alt_speed_up || 0;
 
         var html = '<div class="m-speed-page">' +
             '<div class="m-speed-section"><div class="m-speed-title">' + TWC.i18n.t('dialog.speed.global_limits') + '</div>' +
@@ -144,19 +144,19 @@ TWC.mobileViews = (function() {
 
         $('#m-save-speed').on('click', function() {
             TWC.rpc.setSession({
-                'speed-limit-down-enabled': $('#m-dl-enabled').is(':checked'),
-                'speed-limit-down': parseInt($('#m-dl-limit').val()) || 0,
-                'speed-limit-up-enabled': $('#m-ul-enabled').is(':checked'),
-                'speed-limit-up': parseInt($('#m-ul-limit').val()) || 0
+                speed_limit_down_enabled: $('#m-dl-enabled').is(':checked'),
+                speed_limit_down: parseInt($('#m-dl-limit').val()) || 0,
+                speed_limit_up_enabled: $('#m-ul-enabled').is(':checked'),
+                speed_limit_up: parseInt($('#m-ul-limit').val()) || 0
             }, function(s) {
-                if (s) { _showToast('限速设置已保存', 'success'); } else { _showToast('保存失败', 'error'); }
+                if (s) { _showToast(TWC.i18n.t('mobile.speed_limit_saved'), 'success'); } else { _showToast(TWC.i18n.t('mobile.save_failed'), 'error'); }
             });
         });
     }
 
     function renderAdd(sessionData) {
-        var download_dir = sessionData['download-dir'] || '';
-        var peerLimit = sessionData['peer-limit-per-torrent'] || '';
+        var download_dir = sessionData.download_dir || '';
+        var peerLimit = sessionData.peer_limit_per_torrent || '';
         var html = '<div class="m-add-page">' +
             '<div class="m-add-section"><label>' + TWC.i18n.t('dialog.add.urls') + '</label>' +
             '<textarea id="m-add-url" rows="3" placeholder="' + TWC.i18n.t('mobile.enter_link_file') + '"></textarea></div>' +

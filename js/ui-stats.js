@@ -12,8 +12,8 @@ TWC.uiStats = (function() {
         var session = TWC.config.getSessionData();
         var history = TWC.ui.getSpeedHistory();
 
-        var cumulative = sessionStats['cumulative-stats'] || {};
-        var current = sessionStats['current-stats'] || {};
+        var cumulative = sessionStats.cumulative_stats || {};
+        var current = sessionStats.current_stats || {};
 
         var html = '<div class="twc-stats-page">' +
 
@@ -57,7 +57,7 @@ TWC.uiStats = (function() {
             '</div>' +
             '<div class="twc-stat-card">' +
             '<div class="stat-label">' + TWC.i18n.t('stats.file_count') + '</div>' +
-            '<div class="stat-value">' + TWC.utils.formatNumber(cumulative.file_count || 0) + '</div>' +
+            '<div class="stat-value">' + TWC.utils.formatNumber(cumulative.filesAdded || 0) + '</div>' +
             '</div>' +
             '</div>' +
             '</div>' +
@@ -101,19 +101,19 @@ TWC.uiStats = (function() {
             '<div class="twc-stats-section-title">' + TWC.i18n.t('stats.sys_info') + '</div>' +
             '<div class="twc-stats-info-grid">' +
             _infoRow(TWC.i18n.t('dialog.about.version'), session.version || '-') +
-            _infoRow(TWC.i18n.t('dialog.about.rpc_version'), session['rpc-version'] || '-') +
-            _infoRow(TWC.i18n.t('dialog.settings.rpc_semver') || 'RPC Semantic Version', session['rpc-version-semver'] || '-') +
-            _infoRow(TWC.i18n.t('dialog.settings.config_dir') || 'Config Dir', session['config-dir'] || '-') +
-            _infoRow(TWC.i18n.t('dialog.add.download_dir'), session['download-dir'] || '-') +
-            _infoRow(TWC.i18n.t('stats.free_space'), session['download-dir-free-space'] ? TWC.utils.formatBytes(session['download-dir-free-space']) : '-') +
-            _infoRow(TWC.i18n.t('dialog.settings.listen_port') || 'Peer Port', session['peer-port'] || '-') +
-            _infoRow(TWC.i18n.t('dialog.settings.port_forwarding') || 'Port Forwarding', session['port-forwarding-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
-            _infoRow(TWC.i18n.t('dialog.settings.dht'), session['dht-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
-            _infoRow(TWC.i18n.t('dialog.settings.pex'), session['pex-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
-            _infoRow(TWC.i18n.t('dialog.settings.lpd'), session['lpd-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
-            _infoRow(TWC.i18n.t('dialog.settings.utp'), session['utp-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.about.rpc_version'), session.rpc_version || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.rpc_semver') || 'RPC Semantic Version', session.rpc_version_semver || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.config_dir') || 'Config Dir', session.config_dir || '-') +
+            _infoRow(TWC.i18n.t('dialog.add.download_dir'), session.download_dir || '-') +
+            _infoRow(TWC.i18n.t('stats.free_space'), session.download_dir_free_space ? TWC.utils.formatBytes(session.download_dir_free_space) : '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.listen_port') || 'Peer Port', session.peer_port || '-') +
+            _infoRow(TWC.i18n.t('dialog.settings.port_forwarding') || 'Port Forwarding', session.port_forwarding_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.dht'), session.dht_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.pex'), session.pex_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.lpd'), session.lpd_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('dialog.settings.utp'), session.utp_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
             _infoRow(TWC.i18n.t('detail.peers.encryption'), TWC.utils.getEncryptionText(session.encryption) || '-') +
-            _infoRow(TWC.i18n.t('toolbar.alt_speed'), session['alt-speed-enabled'] ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
+            _infoRow(TWC.i18n.t('toolbar.alt_speed'), session.alt_speed_enabled ? TWC.i18n.t('dialog.settings.enabled') : TWC.i18n.t('dialog.settings.disabled')) +
             '</div>' +
             '</div>' +
 
@@ -124,7 +124,11 @@ TWC.uiStats = (function() {
             size: 'xl'
         });
 
-        _drawGlobalSpeedChart(history);
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                _drawGlobalSpeedChart(history);
+            });
+        });
     }
 
     function _renderStatusBarChart(counts) {
@@ -188,6 +192,11 @@ TWC.uiStats = (function() {
         if (!canvas) return;
 
         var container = canvas.parentElement;
+        if (container.clientWidth === 0) {
+            setTimeout(function() { _drawGlobalSpeedChart(history); }, 100);
+            return;
+        }
+
         canvas.width = container.clientWidth;
         canvas.height = 180;
 
@@ -288,13 +297,13 @@ TWC.uiStats = (function() {
         if (val <= 0) return 1024;
         var magnitude = Math.pow(1024, Math.floor(Math.log(val) / Math.log(1024)));
         var normalized = val / magnitude;
-        var nice = [1, 2, 3, 5, 10];
+        var nice = [1, 2, 3, 5, 10, 20, 30, 50, 100, 200, 300, 500, 1024];
         for (var i = 0; i < nice.length; i++) {
             if (normalized <= nice[i]) {
                 return nice[i] * magnitude;
             }
         }
-        return 10 * magnitude;
+        return Math.pow(1024, Math.ceil(Math.log(val) / Math.log(1024)));
     }
 
     return {

@@ -56,7 +56,7 @@ TWC.mobile = (function() {
             '<div class="m-modal-overlay" id="m-modal-overlay"></div>' +
             '<div class="m-toast-container" id="m-toast-container"></div>';
 
-        $('body').html(html);
+        $('body').append(html);
     }
 
     function _bindEvents() {
@@ -136,18 +136,18 @@ TWC.mobile = (function() {
     }
 
     function _toggleAltSpeed() {
-        var current = _sessionData['alt-speed-enabled'] || false;
-        TWC.rpc.setSession({ 'alt-speed-enabled': !current }, function(s) {
+        var current = _sessionData.alt_speed_enabled || false;
+        TWC.rpc.setSession({ alt_speed_enabled: !current }, function(s) {
             if (s) { _showToast(!current ? TWC.i18n.t('mobile.alt_speed_on') : TWC.i18n.t('mobile.alt_speed_off'), 'success'); _doRefresh(true); }
         });
     }
 
     function _setSpeedLimit(dl, ul) {
         var props = {};
-        props['speed-limit-down-enabled'] = dl > 0;
-        if (dl > 0) props['speed-limit-down'] = dl;
-        props['speed-limit-up-enabled'] = ul > 0;
-        if (ul > 0) props['speed-limit-up'] = ul;
+        props.speed_limit_down_enabled = dl > 0;
+        if (dl > 0) props.speed_limit_down = dl;
+        props.speed_limit_up_enabled = ul > 0;
+        if (ul > 0) props.speed_limit_up = ul;
         TWC.rpc.setSession(props, function(s) { if (s) { _showToast(TWC.i18n.t('mobile.speed_limit_set'), 'success'); _doRefresh(true); } });
     }
 
@@ -165,12 +165,12 @@ TWC.mobile = (function() {
         var count = 0;
 
         var opts = {
-            'download-dir': dir || undefined,
+            download_dir: dir || undefined,
             paused: paused,
             bandwidth_priority: priority !== 1 ? priority : undefined,
             sequential_download: sequential ? true : undefined
         };
-        if (peerLimit && parseInt(peerLimit, 10) > 0) opts['peer-limit'] = parseInt(peerLimit, 10);
+        if (peerLimit && parseInt(peerLimit, 10) > 0) opts.peer_limit = parseInt(peerLimit, 10);
         if (labelsStr) opts.labels = labelsStr.split(',').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
 
         if (urls) {
@@ -223,12 +223,12 @@ TWC.mobile = (function() {
             '<div class="m-modal-header"><h3>' + TWC.i18n.t('mobile.settings') + '</h3><button class="m-modal-close" id="m-modal-close">✕</button></div>' +
             '<div class="m-modal-body">' +
             _attrRow(TWC.i18n.t('mobile.version'), 'Transmission ' + (_sessionData.version || '-')) +
-            _attrRow(TWC.i18n.t('mobile.rpc_version'), _sessionData['rpc-version'] || '-') +
-            _attrRow(TWC.i18n.t('mobile.default_dir'), _sessionData['download-dir'] || '-') +
-            _attrRow(TWC.i18n.t('mobile.peer_port'), _sessionData['peer-port'] || '-') +
-            _attrRow(TWC.i18n.t('mobile.dht'), _sessionData['dht-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
-            _attrRow(TWC.i18n.t('mobile.pex'), _sessionData['pex-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
-            _attrRow(TWC.i18n.t('mobile.port_forwarding'), _sessionData['port-forwarding-enabled'] ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
+            _attrRow(TWC.i18n.t('mobile.rpc_version'), _sessionData.rpc_version || '-') +
+            _attrRow(TWC.i18n.t('mobile.default_dir'), _sessionData.download_dir || '-') +
+            _attrRow(TWC.i18n.t('mobile.peer_port'), _sessionData.peer_port || '-') +
+            _attrRow(TWC.i18n.t('mobile.dht'), _sessionData.dht_enabled ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
+            _attrRow(TWC.i18n.t('mobile.pex'), _sessionData.pex_enabled ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
+            _attrRow(TWC.i18n.t('mobile.port_forwarding'), _sessionData.port_forwarding_enabled ? TWC.i18n.t('mobile.enabled') : TWC.i18n.t('mobile.disabled')) +
             '</div></div>';
         $('#m-modal-overlay').html(html).addClass('visible');
         $('#m-modal-close, #m-modal-overlay').on('click', function(e) {

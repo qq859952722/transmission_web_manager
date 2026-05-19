@@ -2,6 +2,7 @@ var TWC = TWC || {};
 
 TWC.uiDetail = (function() {
     var _currentTab = 'general';
+    var _lastRenderedSettingsId = null;
 
     function render() {
         _renderContent();
@@ -9,8 +10,11 @@ TWC.uiDetail = (function() {
 
     function switchTab(tab) {
         _currentTab = tab;
-        if (tab === 'peers' || tab === 'speed' || tab === 'pieces') {
+        if (tab === 'peers' || tab === 'speed' || tab === 'pieces' || tab === 'settings') {
             _refreshCurrentTorrent();
+        }
+        if (tab !== 'settings') {
+            _lastRenderedSettingsId = null;
         }
         _renderContent();
     }
@@ -28,7 +32,79 @@ TWC.uiDetail = (function() {
     }
 
     function update() {
-        _renderContent();
+        if (_currentTab === 'general') {
+            _updateGeneralDiff();
+        } else if (_currentTab === 'settings') {
+            var ids = TWC.torrent.getSelectedIds();
+            var currentId = ids.length === 1 ? ids[0] : null;
+            if (currentId !== _lastRenderedSettingsId) {
+                _renderContent();
+            }
+        } else {
+            _renderContent();
+        }
+    }
+
+    function _updateGeneralDiff() {
+        var ids = TWC.torrent.getSelectedIds();
+        if (ids.length !== 1) { _renderContent(); return; }
+        var t = TWC.torrent.getTorrent(ids[0]);
+        if (!t) { _renderContent(); return; }
+
+        var $table = $('#detail-content .twc-attr-table');
+        if ($table.length === 0) { _renderGeneral(t); return; }
+
+        var values = [
+            TWC.utils.escapeHtml(t.name),
+            t.id,
+            TWC.utils.escapeHtml(t.hash_string),
+            TWC.utils.getStatusText(t.status),
+            TWC.utils.formatPercent(t.percent_done),
+            TWC.utils.formatBytes(t.total_size),
+            TWC.utils.formatBytes(t.have_valid),
+            TWC.utils.formatBytes(t.left_until_done),
+            TWC.utils.formatSpeed(t.rate_download),
+            TWC.utils.formatSpeed(t.rate_upload),
+            TWC.utils.formatBytes(t.downloaded_ever),
+            TWC.utils.formatBytes(t.uploaded_ever),
+            '<span class="' + TWC.utils.getRatioClass(t.upload_ratio) + '">' + TWC.utils.formatRatio(t.upload_ratio) + '</span>',
+            TWC.utils.formatBytes(t.corrupt_ever),
+            _getSeederCount(t),
+            _getLeecherCount(t),
+            t.peers_connected,
+            t.peers_sending_to_us,
+            t.peers_getting_from_us,
+            TWC.utils.formatETA(t.eta),
+            TWC.utils.formatTimestamp(t.added_date),
+            t.done_date > 0 ? TWC.utils.formatTimestamp(t.done_date) : '-',
+            TWC.utils.formatTimestamp(t.activity_date),
+            TWC.utils.escapeHtml(t.creator || '-'),
+            t.date_created > 0 ? TWC.utils.formatTimestamp(t.date_created) : '-',
+            TWC.utils.escapeHtml(t.comment || '-'),
+            TWC.utils.escapeHtml(t.download_dir || '-'),
+            TWC.utils.escapeHtml(t.labels ? t.labels.join(', ') : '-'),
+            TWC.utils.escapeHtml(t.source || '-'),
+            TWC.utils.escapeHtml(t['primary_mime_type'] || '-'),
+            t.is_private ? TWC.i18n.t('common.yes') : TWC.i18n.t('common.no'),
+            t.queue_position !== undefined ? t.queue_position : '-',
+            t.piece_count,
+            TWC.utils.formatBytes(t.piece_size),
+            t.file_count || '-',
+            TWC.utils.escapeHtml(t.torrent_file || '-'),
+            t.error !== 0 ? '<span class="text-danger">' + TWC.utils.escapeHtml(t.error_string) + '</span>' : TWC.i18n.t('common.no'),
+            TWC.utils.escapeHtml(t.group || '-'),
+            TWC.utils.formatDuration(t.seconds_downloading),
+            TWC.utils.formatDuration(t.seconds_seeding)
+        ];
+
+        var $cells = $table.find('td:nth-child(2)');
+        for (var i = 0; i < values.length && i < $cells.length; i++) {
+            var newVal = String(values[i]);
+            var oldVal = $cells.eq(i).html();
+            if (newVal !== oldVal) {
+                $cells.eq(i).html(newVal);
+            }
+        }
     }
 
     function _renderContent() {
@@ -56,7 +132,7 @@ TWC.uiDetail = (function() {
             case 'peers': TWC.uiDetailExtras.renderPeers(t); break;
             case 'pieces': _renderPieces(t); break;
             case 'speed': TWC.uiDetailExtras.renderSpeed(t); break;
-            case 'settings': TWC.uiDetailExtras.renderSettings(t); break;
+            case 'settings': TWC.uiDetailExtras.renderSettings(t); _lastRenderedSettingsId = t.id; break;
         }
     }
 
@@ -69,7 +145,7 @@ TWC.uiDetail = (function() {
             [TWC.i18n.t('detail.general.status'), TWC.utils.getStatusText(t.status)],
             [TWC.i18n.t('detail.general.progress'), TWC.utils.formatPercent(t.percent_done)],
             [TWC.i18n.t('detail.general.size'), TWC.utils.formatBytes(t.total_size)],
-            [TWC.i18n.t('detail.general.downloaded'), TWC.utils.formatBytes(t.have_valid)],
+            [TWC.i18n.t('detail.general.verified'), TWC.utils.formatBytes(t.have_valid)],
             [TWC.i18n.t('detail.general.left'), TWC.utils.formatBytes(t.left_until_done)],
             [TWC.i18n.t('detail.speed.download'), TWC.utils.formatSpeed(t.rate_download)],
             [TWC.i18n.t('detail.speed.upload'), TWC.utils.formatSpeed(t.rate_upload)],
@@ -102,7 +178,8 @@ TWC.uiDetail = (function() {
             [TWC.i18n.t('sidebar.status_error'), t.error !== 0 ? '<span class="text-danger">' + TWC.utils.escapeHtml(t.error_string) + '</span>' : TWC.i18n.t('common.no')],
             [TWC.i18n.t('detail.general.group'), TWC.utils.escapeHtml(t.group || '-')],
             [TWC.i18n.t('detail.general.download_time'), TWC.utils.formatDuration(t.seconds_downloading)],
-            [TWC.i18n.t('detail.general.upload_time'), TWC.utils.formatDuration(t.seconds_seeding)]
+            [TWC.i18n.t('detail.general.upload_time'), TWC.utils.formatDuration(t.seconds_seeding)],
+            [TWC.i18n.t('detail.general.sequential') || 'Sequential', t.sequential_download ? TWC.i18n.t('common.yes') + (t.sequential_download_from_piece > 0 ? ' (' + TWC.i18n.t('detail.general.from_piece') + ' ' + t.sequential_download_from_piece + ')' : '') : TWC.i18n.t('common.no')]
         ];
 
         for (var i = 0; i < rows.length; i++) {
@@ -165,9 +242,9 @@ TWC.uiDetail = (function() {
             if (torrentIds.length > 0) {
                 var props = {};
                 if (checked) {
-                    props.filesWanted = [idx];
+                    props.files_wanted = [idx];
                 } else {
-                    props.filesUnwanted = [idx];
+                    props.files_unwanted = [idx];
                 }
                 TWC.rpc.setTorrent(torrentIds, props, function(success) {
                     if (success) TWC.ui.refreshData(true);
@@ -198,15 +275,15 @@ TWC.uiDetail = (function() {
         var nextWanted, nextPriority;
 
         if (!wanted) {
-            props.filesWanted = [fileIndex];
-            props.priorityLow = [fileIndex];
+            props.files_wanted = [fileIndex];
+            props.priority_low = [fileIndex];
             nextWanted = true;
             nextPriority = -1;
         } else {
             var next = current === -1 ? 0 : (current === 0 ? 1 : -1);
-            if (next === 1) props.priorityHigh = [fileIndex];
-            else if (next === 0) props.priorityNormal = [fileIndex];
-            else props.priorityLow = [fileIndex];
+            if (next === 1) props.priority_high = [fileIndex];
+            else if (next === 0) props.priority_normal = [fileIndex];
+            else props.priority_low = [fileIndex];
             nextWanted = true;
             nextPriority = next;
         }
@@ -237,19 +314,19 @@ TWC.uiDetail = (function() {
         var props = {};
         var localPriority;
         if (priority === -2) {
-            props.filesUnwanted = indices;
+            props.files_unwanted = indices;
             localPriority = -2;
         } else if (priority === 1) {
-            props.filesWanted = indices;
-            props.priorityHigh = indices;
+            props.files_wanted = indices;
+            props.priority_high = indices;
             localPriority = 1;
         } else if (priority === 0) {
-            props.filesWanted = indices;
-            props.priorityNormal = indices;
+            props.files_wanted = indices;
+            props.priority_normal = indices;
             localPriority = 0;
         } else {
-            props.filesWanted = indices;
-            props.priorityLow = indices;
+            props.files_wanted = indices;
+            props.priority_low = indices;
             localPriority = -1;
         }
 
@@ -506,7 +583,7 @@ TWC.uiDetail = (function() {
 
         if (!t.pieces || !t.piece_count || t.piece_count <= 0) {
             html += '<div class="twc-pieces-empty">' +
-                (TWC.i18n.t('detail.pieces.no_data') || '暂无分片数据') + '</div>';
+                (TWC.i18n.t('detail.pieces.no_data') || 'No piece data') + '</div>';
             html += '</div>';
             $('#detail-content').html(html);
             return;
@@ -553,6 +630,9 @@ TWC.uiDetail = (function() {
             } else {
                 html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:var(--bg-tertiary,#d1d5db)"></span>' + TWC.i18n.t('detail.general.pieces_pending') + ': <strong>' + (t.piece_count - completed) + '</strong></span>';
             }
+            if (t.sequential_download && (t.sequential_download_from_piece || 0) > 0) {
+                html += '<span class="twc-pieces-legend-item"><span class="twc-pieces-legend-dot" style="background:#f59e0b"></span>' + (TWC.i18n.t('detail.general.from_piece') || 'From Piece') + ': <strong>' + t.sequential_download_from_piece + '</strong></span>';
+            }
             html += '</div>';
 
             var canvasWidth = $('#detail-content').width() - 48;
@@ -580,14 +660,18 @@ TWC.uiDetail = (function() {
                 cols: cols,
                 cellSize: cellSize,
                 gap: gap,
-                step: step
+                step: step,
+                fromPiece: t.sequential_download_from_piece || 0,
+                sequentialDownload: !!t.sequential_download,
+                pieceCount: t.piece_count,
+                torrentId: t.id
             };
 
             $('#detail-content').html(html);
             _drawPiecesCanvas();
         } catch (e) {
             html += '<div class="twc-pieces-empty">' +
-                (TWC.i18n.t('detail.pieces.no_data') || '暂无分片数据') + '</div>';
+                (TWC.i18n.t('detail.pieces.no_data') || 'No piece data') + '</div>';
             html += '</div>';
             $('#detail-content').html(html);
         }
@@ -605,6 +689,7 @@ TWC.uiDetail = (function() {
         var styles = getComputedStyle(document.documentElement);
         var doneColor = '#3b82f6';
         var pendingColor = styles.getPropertyValue('--bg-tertiary').trim() || '#d1d5db';
+        var fromPieceColor = '#f59e0b';
 
         ctx.clearRect(0, 0, c.width, c.height);
 
@@ -644,6 +729,134 @@ TWC.uiDetail = (function() {
             ctx.fillRect(x, y + s - 1, s, 1);
             ctx.fillRect(x + s - 1, y, 1, s);
         }
+
+        if (p.sequentialDownload && p.fromPiece > 0 && p.fromPiece < p.pieceCount) {
+            var fpCol = p.fromPiece % p.cols;
+            var fpRow = Math.floor(p.fromPiece / p.cols);
+            var fpX = fpCol * p.step;
+            var fpY = fpRow * p.step;
+
+            ctx.strokeStyle = fromPieceColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 2]);
+            ctx.beginPath();
+            ctx.moveTo(fpX, 0);
+            ctx.lineTo(fpX, c.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = fromPieceColor;
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'left';
+            var labelY = fpRow > 0 ? fpY - 2 : fpY + p.step + 9;
+            ctx.fillText('▶ ' + p.fromPiece, fpX + 2, labelY);
+        }
+
+        c._pieceRenderData = p;
+        c.onclick = function(e) {
+            var rect = c.getBoundingClientRect();
+            var mx = e.clientX - rect.left;
+            var my = e.clientY - rect.top;
+            var col = Math.floor(mx / p.step);
+            var row = Math.floor(my / p.step);
+            var idx = row * p.cols + col;
+            if (idx >= 0 && idx < p.pieceCount) {
+                _showPieceClickMenu(e, idx, p);
+            }
+        };
+    }
+
+    function _showPieceClickMenu(e, pieceIndex, renderData) {
+        var existing = document.getElementById('piece-click-menu');
+        if (existing) existing.remove();
+
+        var menu = document.createElement('div');
+        menu.id = 'piece-click-menu';
+        menu.style.cssText = 'position:fixed;z-index:10000;background:var(--bg-primary,#fff);border:1px solid var(--border-color,#e5e7eb);border-radius:6px;padding:6px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:12px;min-width:180px';
+
+        var header = document.createElement('div');
+        header.style.cssText = 'padding:4px 12px;color:var(--text-secondary);font-weight:600;border-bottom:1px solid var(--border-color,#e5e7eb);margin-bottom:4px';
+        header.textContent = TWC.i18n.t('detail.pieces.piece_num') ? TWC.i18n.t('detail.pieces.piece_num').replace('{n}', pieceIndex) : ('Piece #' + pieceIndex);
+        menu.appendChild(header);
+
+        var stateText = renderData.states[pieceIndex]
+            ? (TWC.i18n.t('detail.general.pieces_done') || 'Done')
+            : (TWC.i18n.t('detail.general.pieces_pending') || 'Pending');
+        var stateRow = document.createElement('div');
+        stateRow.style.cssText = 'padding:4px 12px;color:var(--text-secondary)';
+        stateRow.textContent = (TWC.i18n.t('detail.general.status') || 'Status') + ': ' + stateText;
+        menu.appendChild(stateRow);
+
+        if (renderData.availability && renderData.availability.length > pieceIndex) {
+            var av = renderData.availability[pieceIndex];
+            var avText = av < 0 ? (TWC.i18n.t('detail.pieces.availability_none') || 'N/A') : String(av);
+            var avRow = document.createElement('div');
+            avRow.style.cssText = 'padding:4px 12px;color:var(--text-secondary)';
+            avRow.textContent = (TWC.i18n.t('detail.pieces.availability') || 'Availability') + ': ' + avText;
+            menu.appendChild(avRow);
+        }
+
+        var divider = document.createElement('div');
+        divider.style.cssText = 'border-top:1px solid var(--border-color,#e5e7eb);margin:4px 0';
+        menu.appendChild(divider);
+
+        var setFromPieceBtn = document.createElement('div');
+        setFromPieceBtn.style.cssText = 'padding:6px 12px;cursor:pointer;color:var(--color-primary-500);font-weight:500';
+        setFromPieceBtn.textContent = TWC.i18n.t('detail.pieces.set_from_piece') || 'Set as start piece';
+        setFromPieceBtn.onmouseenter = function() { this.style.background = 'var(--bg-tertiary)'; };
+        setFromPieceBtn.onmouseleave = function() { this.style.background = ''; };
+        setFromPieceBtn.onclick = function() {
+            var ids = TWC.torrent.getSelectedIds();
+            TWC.rpc.setTorrent(ids, {
+                sequential_download: true,
+                sequential_download_from_piece: pieceIndex
+            }, function(success) {
+                if (success) {
+                    TWC.ui.showToast(TWC.i18n.t('detail.pieces.from_piece_set') || 'Start piece set', 'success');
+                    TWC.ui.refreshData(true);
+                }
+            });
+            menu.remove();
+        };
+        menu.appendChild(setFromPieceBtn);
+
+        var clearFromPieceBtn = document.createElement('div');
+        clearFromPieceBtn.style.cssText = 'padding:6px 12px;cursor:pointer;color:var(--text-secondary)';
+        clearFromPieceBtn.textContent = TWC.i18n.t('detail.pieces.clear_from_piece') || 'Clear start piece';
+        clearFromPieceBtn.onmouseenter = function() { this.style.background = 'var(--bg-tertiary)'; };
+        clearFromPieceBtn.onmouseleave = function() { this.style.background = ''; };
+        clearFromPieceBtn.onclick = function() {
+            var ids = TWC.torrent.getSelectedIds();
+            TWC.rpc.setTorrent(ids, {
+                sequential_download_from_piece: 0
+            }, function(success) {
+                if (success) {
+                    TWC.ui.showToast(TWC.i18n.t('detail.pieces.from_piece_cleared') || 'Start piece cleared', 'success');
+                    TWC.ui.refreshData(true);
+                }
+            });
+            menu.remove();
+        };
+        menu.appendChild(clearFromPieceBtn);
+
+        document.body.appendChild(menu);
+
+        var menuX = e.clientX;
+        var menuY = e.clientY;
+        if (menuX + 200 > window.innerWidth) menuX = window.innerWidth - 210;
+        if (menuY + menu.offsetHeight > window.innerHeight) menuY = window.innerHeight - menu.offsetHeight - 10;
+        menu.style.left = menuX + 'px';
+        menu.style.top = menuY + 'px';
+
+        setTimeout(function() {
+            var closeHandler = function(ce) {
+                if (!menu.contains(ce.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeHandler, true);
+                }
+            };
+            document.addEventListener('click', closeHandler, true);
+        }, 50);
     }
 
     return {

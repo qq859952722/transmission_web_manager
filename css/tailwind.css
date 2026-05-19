@@ -638,8 +638,9 @@ a:hover {
     white-space: nowrap;
 }
 .twc-statusbar .twc-status-item svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 .twc-statusbar .twc-speed-display {
     font-family: var(--font-mono);
@@ -757,6 +758,14 @@ a:hover {
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
+}
+.twc-form-group.twc-form-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.twc-form-group.twc-form-disabled .twc-input,
+.twc-form-group.twc-form-disabled .twc-select {
+    opacity: 0.6;
 }
 
 .twc-input {
@@ -1912,3 +1921,148 @@ a:hover {
     background: rgba(107,114,128,0.18);
     color: #9ca3af;
 }
+
+.twc-history-page {
+    padding: 4px;
+}
+.twc-history-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.twc-history-search input {
+    width: 260px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12px;
+    outline: none;
+}
+.twc-history-search input:focus {
+    border-color: var(--color-primary-400);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+.twc-history-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.twc-history-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.twc-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.twc-history-table th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--border-secondary);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    white-space: nowrap;
+    user-select: none;
+}
+.twc-history-table th.sortable {
+    cursor: pointer;
+}
+.twc-history-table th.sortable:hover {
+    color: var(--color-primary-500);
+}
+.twc-history-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border-secondary);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.twc-history-table tr:hover td {
+    background: var(--bg-tertiary);
+}
+.twc-history-name {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.twc-history-labels {
+    font-size: 10px;
+    color: var(--color-primary-500);
+    margin-left: 4px;
+}
+.twc-history-empty {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+.twc-btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s ease;
+}
+.twc-btn-sm:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+.twc-btn-sm.danger:hover {
+    background: rgba(239,68,68,0.1);
+    color: #ef4444;
+    border-color: rgba(239,68,68,0.3);
+}
+.sort-indicator {
+    font-size: 10px;
+    margin-left: 2px;
+}
+.twc-history-detail {
+    padding: 4px;
+}
+.twc-drag-over::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(59,130,246,0.08);
+    border: 3px dashed var(--color-primary-500);
+    z-index: 99999;
+    pointer-events: none;
+    border-radius: 8px;
+    margin: 8px;
+}
+.twc-drag-over::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100000;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-primary-500);
+    pointer-events: none;
+    background: var(--bg-primary);
+    padding: 16px 32px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.twc-fade-enter { opacity: 0; transition: opacity 0.2s ease; }
+.twc-fade-enter-end { opacity: 1; }
+.twc-fade-leave { opacity: 1; transition: opacity 0.2s ease; }
+.twc-fade-leave-end { opacity: 0; }

@@ -8,7 +8,7 @@ TWC.utils = (function() {
         if (bytes < 0) return '0 B';
         var k = 1024;
         var dm = decimals < 0 ? 0 : decimals;
-        var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        var sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
         var i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
@@ -20,7 +20,8 @@ TWC.utils = (function() {
     }
 
     function formatETA(seconds) {
-        if (!seconds || seconds < 0) return '∞';
+        if (typeof seconds !== 'number' || seconds < 0) return '∞';
+        if (seconds === 0) return '0' + TWC.i18n.t('times.sec');
         if (seconds === -1) return '∞';
         if (seconds === -2) return TWC.i18n.t('times.unknown');
         var days = Math.floor(seconds / 86400);
@@ -153,11 +154,34 @@ TWC.utils = (function() {
         var urls = [];
         var warnings = [];
         var errors = [];
+        var tierCount = 0;
+        var currentTierUrls = 0;
+        var MAX_TIERS = 64;
+        var MAX_URLS_PER_TIER = 64;
+        var MAX_TOTAL_URLS = 1024;
+        var totalUrls = 0;
+
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
-            if (!line) continue;
+            if (!line) {
+                if (currentTierUrls > 0) {
+                    tierCount++;
+                    currentTierUrls = 0;
+                }
+                continue;
+            }
             if (isValidTrackerUrl(line)) {
                 urls.push(line);
+                totalUrls++;
+                currentTierUrls++;
+                if (currentTierUrls > MAX_URLS_PER_TIER) {
+                    warnings.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': ' +
+                        (TWC.i18n.t('dialog.tracker.tier_too_many') || 'Tier has more than {n} trackers, some may be ignored').replace('{n}', MAX_URLS_PER_TIER));
+                }
+                if (totalUrls > MAX_TOTAL_URLS) {
+                    warnings.push(TWC.i18n.t('times.line') + ' ' + (i + 1) + ': ' +
+                        (TWC.i18n.t('dialog.tracker.total_too_many') || 'Total trackers exceeds {n}, some may be ignored').replace('{n}', MAX_TOTAL_URLS));
+                }
             } else {
                 var lowerLine = line.toLowerCase();
                 if (lowerLine.substring(0, 5) === 'ws://' || lowerLine.substring(0, 6) === 'wss://') {
@@ -172,7 +196,17 @@ TWC.utils = (function() {
                 }
             }
         }
-        return { valid: errors.length === 0, urls: urls, warnings: warnings, errors: errors };
+        if (currentTierUrls > 0) tierCount++;
+        if (tierCount > MAX_TIERS) {
+            warnings.push((TWC.i18n.t('dialog.tracker.too_many_tiers') || 'More than {n} tiers, some may be ignored').replace('{n}', MAX_TIERS));
+        }
+
+        var info = (TWC.i18n ? TWC.i18n.t('dialog.tracker.format_info') : null) || 'Format: One URL per line. Blank line = new tier. Supported: http/https/udp';
+        if (urls.length > 0 && errors.length === 0) {
+            warnings.push(info);
+        }
+
+        return { valid: errors.length === 0, urls: urls, warnings: warnings, errors: errors, tierCount: tierCount, totalUrls: totalUrls };
     }
 
     function getTrackerDomain(announceUrl) {
@@ -335,12 +369,8 @@ TWC.utils = (function() {
         try {
             localStorage.setItem(key, JSON.stringify(value));
         } catch (e) {
-            console.error('localStorage写入失败:', e);
+            console.error('localStorage write failed:', e);
         }
-    }
-
-    function getCountryFlag(ip) {
-        return '';
     }
 
     function formatNumber(num) {
@@ -419,7 +449,6 @@ TWC.utils = (function() {
         generateId: generateId,
         storageGet: storageGet,
         storageSet: storageSet,
-        getCountryFlag: getCountryFlag,
         formatNumber: formatNumber,
         getEncryptionText: getEncryptionText,
         getPriorityText: getPriorityText,
