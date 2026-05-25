@@ -1,0 +1,48 @@
+.trwm-app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.trwm-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.trwm-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trwm-toolbar {
+  height: 48px;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.trwm-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden; /* Virtual scroll container will handle scroll */
+  background-color: var(--bg-primary);
+}
+
+.trwm-bottom-panel {
+  height: var(--detail-panel-height);
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}

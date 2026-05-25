@@ -1,0 +1,254 @@
+.trwm-table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+.trwm-torrent-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Header context menu */
+.trwm-header-menu {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-md);
+  min-width: 180px;
+  max-height: 350px;
+  overflow-y: auto;
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trwm-header-menu-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+
+.trwm-header-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 12px;
+  transition: background 0.15s ease;
+}
+
+.trwm-header-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.trwm-header-menu-item input[type="checkbox"] {
+  accent-color: var(--color-primary-500);
+  cursor: pointer;
+}
+
+/* Table Header Row */
+.trwm-table-header {
+  display: flex;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  user-select: none;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 12px;
+  height: 34px;
+  align-items: center;
+  padding-right: 8px; /* Alignment with scrollbar */
+  flex-shrink: 0;
+}
+
+.trwm-table-th {
+  padding: 8px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.trwm-table-th:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.trwm-table-th .sort-indicator {
+  color: var(--color-primary-500);
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+/* Alignment Utilities */
+.align-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+.align-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+.align-center {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Table Body containing virtual scroll */
+.trwm-table-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+
+/* Row Layout */
+.trwm-table-tr {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  height: 38px;
+  cursor: pointer;
+  background-color: var(--bg-primary);
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.trwm-table-tr:hover {
+  background-color: var(--bg-hover);
+}
+
+.trwm-table-tr.selected {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.trwm-table-td {
+  padding: 6px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.text-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 12px;
+}
+
+/* Cell-specific layouts */
+.cell-name-container {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.cell-name {
+  font-weight: 500;
+}
+
+/* Progress bar inside table cell */
+.cell-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.cell-progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.cell-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+
+/* Pulse animation for verifying state */
+.cell-progress-fill.verifying {
+  animation: verifyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes verifyPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.cell-progress-text {
+  min-width: 45px;
+  text-align: right;
+}
+
+/* Status Badge */
+.status-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Active transfer speeds coloring */
+.active-download {
+  color: var(--color-primary-500);
+  font-weight: 600;
+}
+
+.active-upload {
+  color: var(--color-success-500);
+  font-weight: 600;
+}
+
+/* Directory cell */
+.cell-dir {
+  color: var(--text-secondary);
+}
+
+/* Labels Cell */
+.cell-labels {
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.cell-label-badge {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}

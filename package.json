@@ -1,0 +1,32 @@
+{
+  "name": "temp-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@kobalte/core": "^0.13.11",
+    "@tanstack/solid-query": "^5.100.14",
+    "@tanstack/solid-virtual": "^3.13.25",
+    "dayjs": "^1.11.20",
+    "dexie": "^4.4.2",
+    "lucide-solid": "^1.16.0",
+    "solid-js": "^1.9.12",
+    "uplot": "^1.6.32"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/node": "^24.12.4",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vite-plugin-solid": "^2.11.12"
+  }
+}
