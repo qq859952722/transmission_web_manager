@@ -2,9 +2,9 @@ import { Component, Show, createSignal, onMount } from 'solid-js';
 import { useSession, useSessionStats, useFreeSpace } from '../api/queries';
 import { rpcCall } from '../api/rpc';
 import { torrentList } from '../store/torrentStore';
-import { showSettingsModal } from '../store/modalStore';
 import { formatSpeed, formatBytes } from '../utils/format';
 import { t } from '../utils/i18n';
+import { QuickSettings } from './QuickSettings';
 import './StatusBar.css';
 
 export const StatusBar: Component = () => {
@@ -14,6 +14,7 @@ export const StatusBar: Component = () => {
   const [portStatus, setPortStatus] = createSignal<'testing' | 'open' | 'closed' | 'unknown'>('unknown');
   const [altSpeedLoading, setAltSpeedLoading] = createSignal(false);
   const [connected, setConnected] = createSignal(true);
+  const [showQuickSettings, setShowQuickSettings] = createSignal(false);
   const freeSpace = useFreeSpace(() => session.data?.download_dir);
 
   const checkPort = async () => {
@@ -107,7 +108,7 @@ export const StatusBar: Component = () => {
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
         </svg>
-        <span>{totalTorrents()}</span>
+        <span class="font-semibold">{totalTorrents()}</span>
         <Show when={activeCount() > 0}>
           <span class="active-count">({activeCount()})</span>
         </Show>
@@ -148,21 +149,13 @@ export const StatusBar: Component = () => {
 
       {/* Download speed */}
       <div class="sb-item" title={t('detail.speed.download')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sb-icon text-primary">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
+        <span class="sb-speed-dot download" />
         <span class="sb-speed download text-mono">{formatSpeed(dlSpeed())}</span>
       </div>
 
       {/* Upload speed */}
       <div class="sb-item" title={t('detail.speed.upload')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sb-icon text-success">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
+        <span class="sb-speed-dot upload" />
         <span class="sb-speed upload text-mono">{formatSpeed(ulSpeed())}</span>
       </div>
 
@@ -213,13 +206,16 @@ export const StatusBar: Component = () => {
         </div>
       </Show>
 
-      {/* Settings gear */}
-      <div class="sb-item sb-btn" title={t('toolbar.settings')} onClick={showSettingsModal}>
+      {/* Settings gear — opens QuickSettings panel */}
+      <div class="sb-item sb-btn" title={t('toolbar.settings')} onClick={() => setShowQuickSettings(!showQuickSettings())}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sb-icon">
           <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
         </svg>
       </div>
+
+      {/* Quick Settings Panel */}
+      <QuickSettings open={showQuickSettings()} onClose={() => setShowQuickSettings(false)} />
     </div>
   );
 };

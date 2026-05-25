@@ -1,9 +1,10 @@
 import { legacyRpcCall, isLegacyProtocol, detectProtocol } from './rpc-legacy';
-import { getSessionId, setSessionId, getRpcVersion, setRpcVersion } from './rpc-session';
+import { getSessionId, setSessionId, setRpcVersion } from './rpc-session';
 
 const RPC_PATH = '/transmission/rpc';
 let protocolDetected = false;
 let requestId = 0;
+const MAX_RETRY = 3;
 
 // Re-export for convenience
 export { getRpcVersion } from './rpc-session';
@@ -16,7 +17,7 @@ async function ensureProtocolDetected() {
   }
 }
 
-export async function rpcCall<T = any>(method: string, params?: Record<string, any>): Promise<T> {
+export async function rpcCall<T = any>(method: string, params?: Record<string, any>, retryCount = 0): Promise<T> {
   await ensureProtocolDetected();
 
   // Use legacy protocol if detected
@@ -46,7 +47,8 @@ export async function rpcCall<T = any>(method: string, params?: Record<string, a
     const newId = response.headers.get('X-Transmission-Session-Id') || '';
     setSessionId(newId);
     if (!newId) throw new Error('Failed to get session ID');
-    return rpcCall<T>(method, params);
+    if (retryCount >= MAX_RETRY) throw new Error('Max retry reached for session ID acquisition');
+    return rpcCall<T>(method, params, retryCount + 1);
   }
 
   if (!response.ok) {

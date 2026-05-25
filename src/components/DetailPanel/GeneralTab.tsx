@@ -12,6 +12,7 @@ import {
   formatSpeed
 } from '../../utils/format';
 import { t } from '../../utils/i18n';
+import './GeneralTab.css';
 
 export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
   const isMulti = () => props.torrents.length > 1;
@@ -237,68 +238,7 @@ export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
         </div>
       </Show>
 
-      {/* Styled inline for general tab */}
-      <style>{`
-        .trwm-general-tab {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          height: 100%;
-        }
-        .general-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 24px;
-        }
-        .info-section {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          background-color: var(--bg-secondary);
-          padding: 16px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-        }
-        .info-section h3 {
-          margin: 0 0 12px 0;
-          font-size: 13px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 6px;
-        }
-        .info-group {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-          gap: 12px;
-        }
-        .info-label {
-          color: var(--text-secondary);
-          flex-shrink: 0;
-          font-weight: 500;
-        }
-        .info-val {
-          color: var(--text-primary);
-          text-align: right;
-          word-break: break-all;
-        }
-        .selectable-text {
-          user-select: text;
-        }
-        .code-font {
-          font-family: monospace;
-          font-size: 11px;
-        }
-        .error-text {
-          color: var(--color-danger-500);
-        }
-        .error-text .info-val {
-          color: var(--color-danger-500);
-          text-align: left;
-        }
-      `}</style>
+
     </div>
   );
 };

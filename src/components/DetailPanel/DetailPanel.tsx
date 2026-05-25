@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, Show, Switch, Match } from 'solid-js';
+import { Component, createSignal, createMemo, Show, Switch, Match, For } from 'solid-js';
 import { selectedIds, torrentStore } from '../../store/torrentStore';
 import { Torrent } from '../../types/transmission';
 import { t } from '../../utils/i18n';
@@ -55,41 +55,40 @@ export const DetailPanel: Component<{
   ];
 
   return (
-    <div class="trwm-detail-panel">
+    <div class="trwm-detail-panel flex flex-col h-full w-full overflow-hidden">
       {/* Panel Tabs Header */}
-      <div class="trwm-detail-tabs">
+      <div class="trwm-detail-tabs flex items-center shrink-0">
         <Show when={torrentCount() > 0}>
-          <div class="trwm-tab-scroller">
-            {tabs
-              .filter((tab) => !tab.singleOnly || torrentCount() === 1)
-              .map((tab) => (
+          <div class="trwm-tab-scroller flex items-center gap-1 h-full">
+            <For each={tabs
+              .filter((tab) => !tab.singleOnly || torrentCount() === 1)}>{(tab) => (
                 <button
                   class={`trwm-detail-tab ${activeTab() === tab.id ? 'active' : ''}`}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   {tab.label}
                 </button>
-              ))}
+              )}</For>
           </div>
         </Show>
-        <div class="trwm-detail-spacer" />
+        <div class="trwm-detail-spacer flex-1" />
         <button
           class="trwm-detail-close-btn"
           onClick={props.onClose}
           title={t('toolbar.detail_toggle')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
       </div>
 
       {/* Tabs Content Panel */}
-      <div class="trwm-detail-content">
+      <div class="trwm-detail-content flex-1 overflow-y-auto">
         <Switch>
           <Match when={torrentCount() === 0}>
-            <div class="trwm-detail-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+            <div class="trwm-detail-empty flex flex-col items-center justify-center h-full gap-3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon size-12">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -99,7 +98,7 @@ export const DetailPanel: Component<{
           </Match>
 
           <Match when={torrentCount() > 1}>
-            <div class="trwm-detail-multi-view">
+            <div class="trwm-detail-multi-view flex flex-col h-full">
               <div class="multi-title">{t('detail.multi_msg', { n: torrentCount() })}</div>
               <Show when={activeTab() === 'general'}>
                 <GeneralTab torrents={selectedTorrents()} />
@@ -111,7 +110,7 @@ export const DetailPanel: Component<{
           </Match>
 
           <Match when={torrentCount() === 1}>
-            <div class="trwm-detail-single-view">
+            <div class="trwm-detail-single-view h-full">
               <Switch>
                 <Match when={activeTab() === 'general'}>
                   <GeneralTab torrents={[singleTorrent()]} />

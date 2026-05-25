@@ -2,6 +2,7 @@ import { Component, createSignal, createEffect } from 'solid-js';
 import { Torrent } from '../../types/transmission';
 import { formatBytes, formatSpeed, formatRatio, getRatioClass } from '../../utils/format';
 import { t } from '../../utils/i18n';
+import './SpeedTab.css';
 
 export const SpeedTab: Component<{ torrent: Torrent }> = (props) => {
   let canvasRef: HTMLCanvasElement | undefined;
@@ -174,90 +175,7 @@ export const SpeedTab: Component<{ torrent: Torrent }> = (props) => {
         </div>
       </div>
 
-      <style>{`
-        .trwm-speed-tab {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-        }
-        .speed-tab-layout {
-          display: flex;
-          gap: 20px;
-          flex-wrap: wrap;
-        }
-        .chart-container {
-          flex: 2;
-          min-width: 300px;
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 12px;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-        }
-        .chart-legend {
-          display: flex;
-          gap: 16px;
-          margin-top: 8px;
-          font-size: 12px;
-          padding-left: 55px;
-        }
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: var(--text-secondary);
-          font-weight: 500;
-        }
-        .legend-dot {
-          width: 12px;
-          height: 4px;
-          border-radius: var(--radius-sm);
-        }
-        .download-dot {
-          background-color: #3b82f6;
-        }
-        .upload-dot {
-          background-color: #22c55e;
-        }
-        .speed-stats-grid {
-          flex: 1;
-          min-width: 200px;
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-          gap: 12px;
-        }
-        .stat-card {
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .stat-lbl {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-        }
-        .stat-val {
-          font-size: 16px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-        .text-xs {
-          font-size: 12px;
-        }
-        .active-download {
-          color: var(--color-primary-500);
-        }
-        .active-upload {
-          color: var(--color-success-500);
-        }
-      `}</style>
+
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { formatTimestamp } from '../../utils/format';
 import { rpcCall } from '../../api/rpc';
 import { fetchTorrents } from '../../store/torrentStore';
 import { t } from '../../utils/i18n';
+import './TrackersTab.css';
 
 function announceStateText(state: number): string {
   switch (state) {
@@ -109,7 +110,7 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
         <table class="trackers-table">
           <thead>
             <tr>
-              <th width="36"></th>
+              <th width="36" />
               <th width="36">#</th>
               <th>{t('dialog.add.tracker_url')}</th>
               <th width="70">{t('detail.general.status')}</th>
@@ -120,7 +121,7 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
               <th width="110">{t('detail.trackers.detail_announce_result')}</th>
               <th width="110">{t('detail.trackers.detail_next_announce')}</th>
               <th width="50">{t('detail.general.downloaded')}</th>
-              <th width="36"></th>
+              <th width="36" />
             </tr>
           </thead>
           <tbody>
@@ -236,52 +237,7 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
         )}
       </Show>
 
-      <style>{`
-        .trwm-trackers-tab { display:flex; flex-direction:column; gap:12px; height:100%; overflow:hidden; }
-        .trackers-toolbar { display:flex; gap:8px; flex-shrink:0; }
-        .add-tracker-form { display:flex; flex-direction:column; gap:8px; width:100%; background:var(--bg-secondary); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-color); }
-        .add-tracker-form textarea { background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px; font-family:inherit; resize:vertical; }
-        .form-hint { font-size:11px; color:var(--text-muted); }
-        .form-actions { display:flex; gap:8px; }
-        .trackers-table-container { flex:1; overflow-y:auto; border:1px solid var(--border-color); border-radius:var(--radius-md); }
-        .trackers-table { width:100%; border-collapse:collapse; text-align:left; font-size:12px; }
-        .trackers-table th { background:var(--bg-secondary); color:var(--text-secondary); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--border-color); user-select:none; white-space:nowrap; }
-        .trackers-table td { padding:5px 8px; border-bottom:1px solid var(--border-color); vertical-align:middle; }
-        .trackers-table tbody tr:hover { background:var(--bg-hover); }
-        .selected-row { background:rgba(59,130,246,0.1)!important; }
-        .tracker-url-cell { word-break:break-all; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .backup-tag { font-size:10px; color:var(--text-muted); background:var(--bg-tertiary); padding:0 4px; border-radius:3px; margin-left:4px; }
-        .announce-result-cell { word-break:break-all; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .empty-row { text-align:center; color:var(--text-muted); padding:24px!important; }
-        .text-success { color:var(--color-success-500); }
-        .text-danger { color:var(--color-danger-500); }
-        .text-muted { color:var(--text-muted); }
-        .detail-btn { background:none; border:none; cursor:pointer; font-size:14px; color:var(--color-primary-500); padding:2px 4px; border-radius:3px; }
-        .detail-btn:hover { background:var(--bg-hover); }
-        /* Buttons */
-        .trwm-btn { border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); padding:6px 12px; font-size:13px; font-weight:500; border-radius:var(--radius-sm); cursor:pointer; transition:all 0.15s ease; }
-        .trwm-btn:hover:not(:disabled) { background:var(--bg-hover); }
-        .trwm-btn.primary { background:var(--color-primary-500); color:#fff; border-color:var(--color-primary-500); }
-        .trwm-btn.primary:hover:not(:disabled) { background:var(--color-primary-600); }
-        .trwm-btn.danger { background:var(--color-danger-500); color:#fff; border-color:var(--color-danger-500); }
-        .trwm-btn.danger:hover:not(:disabled) { background:#dc2626; }
-        .trwm-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        /* Detail Modal */
-        .tracker-detail-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
-        .tracker-detail-glass { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,0.2); max-width:520px; width:90%; max-height:80vh; overflow-y:auto; padding:16px; }
-        .tracker-detail-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-        .tracker-detail-title { font-size:12px; font-weight:600; word-break:break-all; color:var(--text-primary); flex:1; margin-right:8px; }
-        .tracker-detail-close { background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-muted); padding:0 4px; }
-        .tracker-detail-close:hover { color:var(--text-primary); }
-        .tracker-detail-section { margin-bottom:12px; }
-        .tracker-detail-section:last-child { margin-bottom:0; }
-        .tracker-detail-section-title { font-size:11px; font-weight:700; color:var(--color-primary-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border-color); }
-        .tracker-detail-grid { display:flex; flex-direction:column; gap:3px; }
-        .detail-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-        .detail-label { font-size:12px; color:var(--text-secondary); white-space:nowrap; }
-        .detail-value { font-size:12px; color:var(--text-primary); text-align:right; word-break:break-all; }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-      `}</style>
+
     </div>
   );
 };

@@ -42,7 +42,7 @@ export function formatPercent(value: number): string {
 
 export function formatRatio(ratio: number): string {
   if (ratio === -1 || ratio === -2) return '∞';
-  if (ratio < 0) return 'None';
+  if (ratio < 0) return t('common.none');
   return ratio.toFixed(2);
 }
 

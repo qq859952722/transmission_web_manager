@@ -3,6 +3,7 @@ import { Torrent, Peer } from '../../types/transmission';
 import { formatBytes, formatSpeed, formatPercent } from '../../utils/format';
 import { t } from '../../utils/i18n';
 import * as geoip from '../../utils/geoip';
+import './PeersTab.css';
 
 const FLAG_DESCRIPTIONS: Record<string, string> = {
   'D': t('detail.peers.flag_D'),
@@ -148,16 +149,16 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
             <tr>
               <th>{t('detail.peers.country')}</th>
               <th>{t('detail.peers.address')}</th>
-              <th width="50">{t('detail.peers.port')}</th>
+              <th>{t('detail.peers.port')}</th>
               <th>{t('detail.peers.client')}</th>
-              <th width="110">{t('detail.peers.progress')}</th>
-              <th width="90">{t('detail.peers.rate_dl')}</th>
-              <th width="90">{t('detail.peers.rate_ul')}</th>
-              <th width="80">{t('detail.peers.downloaded')}</th>
-              <th width="80">{t('detail.peers.uploaded')}</th>
-              <th width="50">{t('detail.peers.protocol')}</th>
-              <th width="70">{t('detail.peers.flags')}</th>
-              <th width="36"></th>
+              <th>{t('detail.peers.progress')}</th>
+              <th>{t('detail.peers.rate_dl')}</th>
+              <th>{t('detail.peers.rate_ul')}</th>
+              <th>{t('detail.peers.downloaded')}</th>
+              <th>{t('detail.peers.uploaded')}</th>
+              <th>{t('detail.peers.protocol')}</th>
+              <th>{t('detail.peers.flags')}</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -273,255 +274,7 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
         </Show>
       </div>
 
-      <style>{`
-        .trwm-peers-tab {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          overflow: hidden;
-        }
-        .peers-table-container {
-          flex: 1;
-          min-height: 0;
-          overflow-y: auto;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-        }
-        .peers-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 12px;
-        }
-        .peers-table th {
-          background-color: var(--bg-secondary);
-          color: var(--text-secondary);
-          font-weight: 600;
-          padding: 4px 8px;
-          border-bottom: 1px solid var(--border-color);
-          user-select: none;
-          white-space: nowrap;
-          font-size: 11px;
-        }
-        .peers-table td {
-          padding: 2px 8px;
-          border-bottom: 1px solid var(--border-color);
-          vertical-align: middle;
-          line-height: 1.4;
-        }
-        .peers-table tbody tr:hover {
-          background-color: var(--bg-hover);
-        }
-        .peer-progress-container {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .peer-progress-bar {
-          flex: 1;
-          height: 4px;
-          background-color: var(--bg-tertiary);
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .peer-progress-fill {
-          height: 100%;
-          border-radius: 2px;
-        }
-        .peer-progress-text {
-          min-width: 38px;
-          text-align: right;
-          font-size: 10px;
-        }
-        .empty-row {
-          text-align: center;
-          color: var(--text-muted);
-          padding: 24px !important;
-        }
-        .active-download {
-          color: var(--color-primary-500);
-          font-weight: 600;
-        }
-        .active-upload {
-          color: var(--color-success-500);
-          font-weight: 600;
-        }
-        .peer-detail-btn {
-          background: none;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-size: 11px;
-          padding: 0 4px;
-          line-height: 1;
-          transition: all 0.15s ease;
-        }
-        .peer-detail-btn:hover {
-          background-color: var(--bg-hover);
-          color: var(--text-primary);
-        }
-        /* Bottom drawer */
-        .peers-bottom-drawer {
-          flex-shrink: 0;
-          border-top: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-        }
-        .drawer-toggle-btn {
-          width: 100%;
-          border: none;
-          background: none;
-          color: var(--text-secondary);
-          font-size: 11px;
-          font-weight: 600;
-          padding: 4px 10px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .drawer-toggle-btn:hover {
-          background-color: var(--bg-hover);
-          color: var(--text-primary);
-        }
-        .chevron-icon {
-          width: 12px;
-          height: 12px;
-          transition: transform 0.2s ease;
-        }
-        .chevron-icon.expanded {
-          transform: rotate(180deg);
-        }
-        .drawer-content {
-          padding: 6px 10px 8px;
-          border-top: 1px solid var(--border-color);
-        }
-        .peers-source-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px 16px;
-        }
-        .source-item {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 11px;
-        }
-        .source-label {
-          color: var(--text-muted);
-        }
-        .source-count {
-          color: var(--text-primary);
-          font-weight: 600;
-          font-family: monospace;
-          font-size: 10px;
-          background: var(--bg-tertiary);
-          padding: 1px 4px;
-          border-radius: 3px;
-        }
-        .legend-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 3px 12px;
-        }
-        .legend-item {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-          font-size: 10px;
-          line-height: 1.4;
-        }
-        .legend-key {
-          font-family: monospace;
-          background-color: var(--bg-tertiary);
-          color: var(--text-primary);
-          padding: 0 3px;
-          border-radius: 2px;
-          font-weight: 700;
-          font-size: 10px;
-          min-width: 16px;
-          text-align: center;
-        }
-        .legend-desc {
-          color: var(--text-muted);
-        }
-        /* Peer Detail Modal */
-        .peer-detail-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-        .peer-detail-modal {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          min-width: 380px;
-          max-width: 480px;
-          max-height: 80vh;
-          overflow-y: auto;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        .peer-detail-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--border-color);
-        }
-        .peer-detail-title {
-          font-weight: 700;
-          font-size: 14px;
-          font-family: monospace;
-        }
-        .peer-detail-close {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          font-size: 20px;
-          cursor: pointer;
-          padding: 0 4px;
-          line-height: 1;
-          border-radius: var(--radius-sm);
-        }
-        .peer-detail-close:hover {
-          color: var(--text-primary);
-          background: var(--bg-hover);
-        }
-        .peer-detail-body {
-          padding: 12px 16px;
-        }
-        .peer-detail-section {
-          margin-bottom: 12px;
-        }
-        .peer-detail-section:last-child {
-          margin-bottom: 0;
-        }
-        .peer-detail-section-title {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          margin-bottom: 6px;
-          letter-spacing: 0.5px;
-        }
-        .peer-detail-grid {
-          display: grid;
-          grid-template-columns: auto 1fr;
-          gap: 4px 12px;
-          font-size: 12px;
-        }
-        .detail-label {
-          color: var(--text-secondary);
-          white-space: nowrap;
-        }
-        .detail-value {
-          color: var(--text-primary);
-        }
-      `}</style>
+
     </div>
   );
 };

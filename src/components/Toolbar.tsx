@@ -275,7 +275,7 @@ export const Toolbar: Component<{
 
       {/* Stats modal */}
       <button class="tb-btn icon-only" onClick={openStatsModal} title={t('toolbar.stats')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #8b5cf6;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-purple">
           <path d="M18 20V10M12 20V4M6 20v-6" />
         </svg>
       </button>

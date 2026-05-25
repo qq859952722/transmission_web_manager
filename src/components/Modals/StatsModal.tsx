@@ -162,7 +162,7 @@ export const StatsModal: Component = () => {
             <div class="stats-card-sec">
               <h3>{t('stats.speed_title') || 'Speed History'}</h3>
               <div style={{ width: '100%', height: '180px' }}>
-                <canvas ref={canvasRef}></canvas>
+                <canvas ref={canvasRef} />
               </div>
               <div class="form-grid-2col" style={{ "margin-top": "12px" }}>
                 <div class="stats-group-row">
@@ -190,12 +190,12 @@ export const StatsModal: Component = () => {
                 </Show>
               </div>
               <div class="status-legend">
-                <div class="legend-item"><div class="legend-color" style="background:var(--color-primary-500)"></div><span class="legend-label">{t('status.downloading')}</span><span class="legend-value">{sidebarCounts().downloading}</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:var(--color-success-500)"></div><span class="legend-label">{t('status.seeding')}</span><span class="legend-value">{sidebarCounts().seeding}</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#6b7280"></div><span class="legend-label">{t('status.stopped')}</span><span class="legend-value">{sidebarCounts().stopped}</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:var(--color-warning-500)"></div><span class="legend-label">{t('status.checking')}</span><span class="legend-value">{sidebarCounts().checking}</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:var(--color-danger-500)"></div><span class="legend-label">{t('filter.error')}</span><span class="legend-value">{sidebarCounts().error}</span></div>
-                <div class="legend-item"><div class="legend-color" style="background:#8b5cf6"></div><span class="legend-label">{t('status.download_wait')}</span><span class="legend-value">{sidebarCounts().queued}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"var(--color-primary-500)"}} /><span class="legend-label">{t('status.downloading')}</span><span class="legend-value">{sidebarCounts().downloading}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"var(--color-success-500)"}} /><span class="legend-label">{t('status.seeding')}</span><span class="legend-value">{sidebarCounts().seeding}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"#6b7280"}} /><span class="legend-label">{t('status.stopped')}</span><span class="legend-value">{sidebarCounts().stopped}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"var(--color-warning-500)"}} /><span class="legend-label">{t('status.checking')}</span><span class="legend-value">{sidebarCounts().checking}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"var(--color-danger-500)"}} /><span class="legend-label">{t('filter.error')}</span><span class="legend-value">{sidebarCounts().error}</span></div>
+                <div class="legend-item"><div class="legend-color" style={{"background":"#8b5cf6"}} /><span class="legend-label">{t('status.download_wait')}</span><span class="legend-value">{sidebarCounts().queued}</span></div>
               </div>
             </div>
 

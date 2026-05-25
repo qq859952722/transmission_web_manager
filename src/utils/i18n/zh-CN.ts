@@ -54,7 +54,8 @@ export const zhCN = {
     "none": "无",
     "default": "默认",
     "unlimited": "不限",
-    "unknown": "未知"
+    "unknown": "未知",
+    "operation_failed": "操作失败"
   },
   "detail": {
     "title": "种子详情",
@@ -152,6 +153,7 @@ export const zhCN = {
       "testing": "测试中...",
       "port_open": "端口开放",
       "port_closed": "端口关闭",
+      "port_closed_hint": "端口转发(UPnP)可能已生效，但端口从公网不可达。请检查防火墙、路由器设置或运营商限制。",
       "test_failed": "测试失败",
       "bandwidth_groups": "带宽组",
       "blocklist": "屏蔽列表",
@@ -455,6 +457,7 @@ export const zhCN = {
       "testing": "测试中...",
       "port_open": "端口开放",
       "port_closed": "端口关闭",
+      "port_closed_hint": "端口转发(UPnP)可能已生效，但端口从公网不可达。请检查防火墙、路由器设置或运营商限制。",
       "test_failed": "测试失败",
       "enabled": "已启用",
       "disabled": "已禁用",

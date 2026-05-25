@@ -54,21 +54,10 @@ export const [lastSelectedId, setLastSelectedId] = createSignal<number | null>(n
 
 export const [speedHistory, setSpeedHistory] = createSignal<{download: number[], upload: number[]}>({download: [], upload: []});
 
-// Getters - use createMemo to establish reactive dependencies on torrent properties
+// Getters - SolidJS Store fine-grained reactivity automatically tracks
+// individual field access, so no manual void t.xxx hack is needed.
 export const torrentList = createMemo(() => {
-  const items = torrentStore.items;
-  const list = Object.values(items);
-  // Access key properties to establish fine-grained reactive dependencies
-  // so that reconcile updates to individual torrent fields trigger re-computation
-  for (const t of list) {
-    void t.rate_download;
-    void t.rate_upload;
-    void t.percent_done;
-    void t.status;
-    void t.error;
-    void t.is_stalled;
-  }
-  return list;
+  return Object.values(torrentStore.items);
 });
 
 // Helper to extract domain from tracker URL
@@ -257,13 +246,12 @@ export async function fetchTorrents(forceFull = false) {
   isFetching = true;
 
   try {
-    // Always fetch all torrents - "recently-active" doesn't work reliably
-    // with JSON-RPC 2.0 + table format
+    // Always fetch all torrents from backend (full data)
     const data = await torrentGet(TORRENT_FIELDS);
     setTorrentStore('error', null);
 
     if (!torrentStore.isInitialized) {
-      // First time initialization
+      // First time initialization: batch set all items
       const newItems: Record<number, Torrent> = {};
       for (const t of data.torrents) {
         newItems[t.id] = t as Torrent;
@@ -271,16 +259,21 @@ export async function fetchTorrents(forceFull = false) {
       setTorrentStore('items', reconcile(newItems));
       setTorrentStore('isInitialized', true);
     } else {
-      // Update with full data using reconcile for proper reactivity
-      const newItems: Record<number, Torrent> = {};
+      // Differential update: per-torrent reconcile so only changed fields trigger UI updates.
+      // This avoids replacing the entire items object, which would cause all downstream
+      // memos and effects to recompute even when nothing changed.
+      const incomingIds = new Set<number>();
+
       for (const t of data.torrents) {
-        newItems[t.id] = t as Torrent;
+        const id = t.id as number;
+        incomingIds.add(id);
+        // reconcile per-torrent: deep diff only this one item, not the entire store
+        setTorrentStore('items', id, reconcile(t as Torrent));
       }
 
-      // Handle removed torrents (those that were in store but not in response)
-      const currentIds = new Set(Object.keys(torrentStore.items).map(Number));
-      const newIds = new Set(Object.keys(newItems).map(Number));
-      const removedIds = [...currentIds].filter(id => !newIds.has(id));
+      // Remove torrents that no longer exist in the backend response
+      const currentIds = Object.keys(torrentStore.items).map(Number);
+      const removedIds = currentIds.filter(id => !incomingIds.has(id));
 
       if (removedIds.length > 0) {
         const nowTime = Math.floor(Date.now() / 1000);
@@ -326,10 +319,10 @@ export async function fetchTorrents(forceFull = false) {
               }
             });
           }
+          // Delete from store by setting to undefined
+          setTorrentStore('items', id, undefined as any);
         }
       }
-
-      setTorrentStore('items', reconcile(newItems));
     }
 
     // Update global speed history

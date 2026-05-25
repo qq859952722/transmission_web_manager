@@ -424,7 +424,7 @@ for (const [legacyKey, snakeKey] of Object.entries(FIELD_MAP)) {
  * old bespoke protocol.  Tries JSON-RPC 2.0 first; if the response lacks the
  * `jsonrpc` field it falls back to legacy mode.
  */
-export async function detectProtocol(): Promise<boolean> {
+export async function detectProtocol(retryCount = 0): Promise<boolean> {
   try {
     const id = Date.now();
     const payload = {
@@ -448,7 +448,8 @@ export async function detectProtocol(): Promise<boolean> {
       const newId = response.headers.get('X-Transmission-Session-Id') || '';
       setSessionId(newId);
       if (!newId) { setLegacyProtocol(false); return false; }
-      return detectProtocol();
+      if (retryCount >= 3) { setLegacyProtocol(false); return false; }
+      return detectProtocol(retryCount + 1);
     }
 
     if (!response.ok) {
@@ -480,7 +481,7 @@ export function isLegacyProtocol(): boolean {
 // Legacy RPC call
 // ---------------------------------------------------------------------------
 
-let _requestId = 0;
+const _requestId = 0;
 
 /**
  * Send an RPC request using the old Transmission protocol format.
@@ -488,6 +489,7 @@ let _requestId = 0;
 export async function legacyRpcCall<T = any>(
   method: string,
   params?: Record<string, any>,
+  retryCount = 0,
 ): Promise<T> {
   // Map method name to legacy hyphenated format
   const legacyMethod = LEGACY_METHOD_MAP[method] || method;
@@ -514,7 +516,8 @@ export async function legacyRpcCall<T = any>(
     const newId = response.headers.get('X-Transmission-Session-Id') || '';
     setSessionId(newId);
     if (!newId) throw new Error('Failed to get session ID');
-    return legacyRpcCall<T>(method, params);
+    if (retryCount >= 3) throw new Error('Max retry reached for session ID acquisition');
+    return legacyRpcCall<T>(method, params, retryCount + 1);
   }
 
   if (!response.ok) {

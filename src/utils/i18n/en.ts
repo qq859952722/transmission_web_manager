@@ -54,7 +54,8 @@ export const en = {
     "none": "None",
     "default": "Default",
     "unlimited": "Unlimited",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "operation_failed": "Operation failed"
   },
   "detail": {
     "title": "Torrent Details",
@@ -152,6 +153,7 @@ export const en = {
       "testing": "Testing...",
       "port_open": "Port Open",
       "port_closed": "Port Closed",
+      "port_closed_hint": "Port forwarding (UPnP) may be working, but the port is not reachable from the internet. Check your firewall, router settings, or ISP restrictions.",
       "test_failed": "Test failed",
       "bandwidth_groups": "Bandwidth Groups",
       "blocklist": "Blocklist",
@@ -455,6 +457,7 @@ export const en = {
       "testing": "Testing...",
       "port_open": "Port Open",
       "port_closed": "Port Closed",
+      "port_closed_hint": "Port forwarding (UPnP) may be working, but the port is not reachable from the internet. Check your firewall, router settings, or ISP restrictions.",
       "test_failed": "Test failed",
       "enabled": "Enabled",
       "disabled": "Disabled",
@@ -819,7 +822,7 @@ export const en = {
     "me": "Montenegro", "mg": "Madagascar", "mh": "Marshall Islands", "mk": "North Macedonia", "ml": "Mali",
     "mm": "Myanmar", "mn": "Mongolia", "mo": "Macao", "mr": "Mauritania", "mt": "Malta",
     "mu": "Mauritius", "mv": "Maldives", "mw": "Malawi", "mx": "Mexico", "my": "Malaysia",
-    "mz": "Mozambique", "na": "Andaman", "ne": "Niger", "ng": "Nigeria", "ni": "Nicaragua",
+    "mz": "Mozambique", "na": "Namibia", "ne": "Niger", "ng": "Nigeria", "ni": "Nicaragua",
     "nl": "Netherlands", "no": "Norway", "np": "Nepal", "nr": "Nauru", "nz": "New Zealand",
     "om": "Oman", "pa": "Panama", "pe": "Peru", "pg": "Papua New Guinea", "ph": "Philippines",
     "pk": "Pakistan", "pl": "Poland", "pt": "Portugal", "pw": "Palau", "py": "Paraguay",

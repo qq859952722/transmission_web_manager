@@ -70,11 +70,17 @@
   user-select: none;
   font-weight: 600;
   color: var(--text-secondary);
-  font-size: 12px;
-  height: 34px;
+  font-size: 11px;
+  height: 32px;
   align-items: center;
-  padding-right: 8px; /* Alignment with scrollbar */
+  padding-right: 8px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
 }
 
 .trwm-table-th {
@@ -127,11 +133,11 @@
 .trwm-table-tr {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  height: 38px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+  height: 34px;
   cursor: pointer;
   background-color: var(--bg-primary);
-  transition: background-color 0.15s ease;
+  transition: background-color 0.12s ease;
   user-select: none;
 }
 
@@ -140,15 +146,19 @@
 }
 
 .trwm-table-tr.selected {
-  background-color: rgba(59, 130, 246, 0.15) !important;
+  background-color: color-mix(in srgb, var(--color-primary-500) 12%, transparent) !important;
+}
+
+.trwm-table-tr.selected:hover {
+  background-color: color-mix(in srgb, var(--color-primary-500) 18%, transparent) !important;
 }
 
 .trwm-table-td {
-  padding: 6px 12px;
+  padding: 4px 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -182,17 +192,30 @@
 
 .cell-progress-bar {
   flex: 1;
-  height: 8px;
+  height: 6px;
   background-color: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  border-radius: 3px;
   overflow: hidden;
   position: relative;
 }
 
 .cell-progress-fill {
   height: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: 3px;
   transition: width 0.3s ease;
+  position: relative;
+}
+
+/* Subtle shine effect on progress bar */
+.cell-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+  border-radius: 3px 3px 0 0;
 }
 
 /* Pulse animation for verifying state */
@@ -212,12 +235,14 @@
 
 /* Status Badge */
 .status-badge {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
   border: 1px solid currentColor;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
 }
 
 /* Active transfer speeds coloring */

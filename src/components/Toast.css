@@ -22,7 +22,7 @@
   cursor: pointer;
   pointer-events: auto;
   animation: toast-in 0.25s ease-out;
-  color: #fff;
+  color: var(--text-on-primary);
 }
 
 .toast-icon {
@@ -31,10 +31,10 @@
   font-weight: 700;
 }
 
-.toast-success { background: #16a34a; }
-.toast-error   { background: #dc2626; }
-.toast-warning { background: #d97706; }
-.toast-info    { background: #2563eb; }
+.toast-success { background: var(--color-success-500); }
+.toast-error   { background: var(--color-danger-500); }
+.toast-warning { background: var(--color-warning-500); }
+.toast-info    { background: var(--color-primary-500); }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(40px); }

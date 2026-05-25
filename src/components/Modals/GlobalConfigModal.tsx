@@ -7,6 +7,20 @@ import { t } from '../../utils/i18n';
 import { showToast } from '../../utils/toast';
 import './Modals.css';
 
+// Tab components
+import { DownloadTab } from './SettingsTabs/DownloadTab';
+import { SpeedTab } from './SettingsTabs/SpeedTab';
+import { GroupsTab } from './SettingsTabs/GroupsTab';
+import { NetworkTab } from './SettingsTabs/NetworkTab';
+import { PeerTab } from './SettingsTabs/PeerTab';
+import { SeedingTab } from './SettingsTabs/SeedingTab';
+import { QueueTab } from './SettingsTabs/QueueTab';
+import { LabelsTab } from './SettingsTabs/LabelsTab';
+import { BlocklistTab } from './SettingsTabs/BlocklistTab';
+import { RpcTab } from './SettingsTabs/RpcTab';
+import { ScriptTab } from './SettingsTabs/ScriptTab';
+import { AdvancedTab } from './SettingsTabs/AdvancedTab';
+
 // Helper to convert time (HH:MM) to minutes in day
 function timeToMinutes(timeStr: string): number {
   if (!timeStr) return 0;
@@ -21,24 +35,12 @@ function minutesToTime(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+type TabId = 'download' | 'speed' | 'groups' | 'network' | 'peer' | 'seeding' | 'queue' | 'labels' | 'blocklist' | 'rpc' | 'script' | 'advanced';
+
 export const GlobalConfigModal: Component = () => {
   const session = useSession();
 
-  const [activeTab, setActiveTab] = createSignal<
-    | 'download'
-    | 'speed'
-    | 'groups'
-    | 'network'
-    | 'peer'
-    | 'seeding'
-    | 'queue'
-    | 'labels'
-    | 'blocklist'
-    | 'rpc'
-    | 'script'
-    | 'advanced'
-  >('download');
-
+  const [activeTab, setActiveTab] = createSignal<TabId>('download');
   const [saving, setSaving] = createSignal(false);
 
   // --- 1. Download settings ---
@@ -54,13 +56,12 @@ export const GlobalConfigModal: Component = () => {
   const [speedLimitDown, setSpeedLimitDown] = createSignal(100);
   const [speedLimitUpEnabled, setSpeedLimitUpEnabled] = createSignal(false);
   const [speedLimitUp, setSpeedLimitUp] = createSignal(100);
-  const [altSpeedEnabled, setAltSpeedEnabled] = createSignal(false);
   const [altSpeedDown, setAltSpeedDown] = createSignal(50);
   const [altSpeedUp, setAltSpeedUp] = createSignal(50);
   const [altSpeedTimeEnabled, setAltSpeedTimeEnabled] = createSignal(false);
   const [altSpeedTimeBegin, setAltSpeedTimeBegin] = createSignal('09:00');
   const [altSpeedTimeEnd, setAltSpeedTimeEnd] = createSignal('17:00');
-  const [altSpeedTimeDay, setAltSpeedTimeDay] = createSignal(127); // 127 = every day
+  const [altSpeedTimeDay, setAltSpeedTimeDay] = createSignal(127);
 
   // --- 3. Bandwidth Groups settings ---
   const [bandwidthGroups, setBandwidthGroups] = createSignal<any[]>([]);
@@ -168,7 +169,6 @@ export const GlobalConfigModal: Component = () => {
     setSpeedLimitDown(s.speed_limit_down || 100);
     setSpeedLimitUpEnabled(s.speed_limit_up_enabled || false);
     setSpeedLimitUp(s.speed_limit_up || 100);
-    setAltSpeedEnabled(s.alt_speed_enabled || false);
     setAltSpeedDown(s.alt_speed_down || 50);
     setAltSpeedUp(s.alt_speed_up || 50);
     setAltSpeedTimeEnabled(s.alt_speed_time_enabled || false);
@@ -234,7 +234,6 @@ export const GlobalConfigModal: Component = () => {
       if (activeTab() === 'labels') {
         const list = JSON.parse(localStorage.getItem('twc-label-library') || '[]');
         setSavedLabels(list);
-        // Collect all labels from torrents
         const tLabels = new Set<string>();
         for (const t of Object.values(torrentStore.items)) {
           if (t.labels) {
@@ -262,7 +261,7 @@ export const GlobalConfigModal: Component = () => {
       speed_limit_down: Number(speedLimitDown()),
       speed_limit_up_enabled: speedLimitUpEnabled(),
       speed_limit_up: Number(speedLimitUp()),
-      alt_speed_enabled: altSpeedEnabled(),
+      alt_speed_enabled: false, // not saved here, it's a toggle
       alt_speed_down: Number(altSpeedDown()),
       alt_speed_up: Number(altSpeedUp()),
       alt_speed_time_enabled: altSpeedTimeEnabled(),
@@ -311,7 +310,6 @@ export const GlobalConfigModal: Component = () => {
       default_trackers: defaultTrackers(),
     };
 
-    // Use appropriate cache field based on RPC version
     if (rpcVersion() >= 17) {
       args.cache_size_mib = Number(cacheSizeMib());
     } else {
@@ -375,7 +373,6 @@ export const GlobalConfigModal: Component = () => {
 
   const handleDeleteGroup = async (name: string) => {
     try {
-      // Clearing group controls deletes/resets it in Transmission
       await rpcCall('group_set', {
         name,
         speed_limit_down_enabled: false,
@@ -447,10 +444,8 @@ export const GlobalConfigModal: Component = () => {
       let result;
 
       if (selectedProtocol) {
-        // User explicitly chose a protocol
         result = await tryPortTest(selectedProtocol);
       } else {
-        // Auto: try IPv4 first, then IPv6 if IPv4 fails
         try {
           result = await tryPortTest('ipv4');
         } catch {
@@ -468,6 +463,10 @@ export const GlobalConfigModal: Component = () => {
       } else {
         setPortTestResult(`✗ ${t('dialog.settings.port_closed')} (${result.protocol.toUpperCase()})`);
         setPortTestClass('stat-port-closed');
+        // Provide helpful hint: UPnP may have succeeded but firewall/ISP blocks
+        setTimeout(() => {
+          showToast(t('dialog.settings.port_closed_hint'), 'info');
+        }, 500);
       }
     } catch (e: any) {
       const msg = e?.message || '';
@@ -482,17 +481,7 @@ export const GlobalConfigModal: Component = () => {
     }
   };
 
-  // --- Alternate Speed daymask bitwise toggles ---
-  const isDayActive = (day: number) => (altSpeedTimeDay() & day) !== 0;
-  const toggleDay = (day: number) => {
-    if (isDayActive(day)) {
-      setAltSpeedTimeDay(altSpeedTimeDay() & ~day);
-    } else {
-      setAltSpeedTimeDay(altSpeedTimeDay() | day);
-    }
-  };
-
-  const tabs = [
+  const tabs: { id: TabId; label: string }[] = [
     { id: 'download', label: t('dialog.settings.tab_download') },
     { id: 'speed', label: t('dialog.settings.tab_speed') },
     { id: 'groups', label: t('dialog.settings.bandwidth_groups') },
@@ -526,8 +515,8 @@ export const GlobalConfigModal: Component = () => {
                       type="button"
                       class={`tab-btn ${activeTab() === tab.id ? 'active' : ''}`}
                       onClick={() => {
-                        setActiveTab(tab.id as any);
-                        setEditingGroup(null); // Clear group editor state
+                        setActiveTab(tab.id);
+                        setEditingGroup(null);
                       }}
                     >
                       {tab.label}
@@ -538,960 +527,145 @@ export const GlobalConfigModal: Component = () => {
 
               {/* Right Settings panel */}
               <div class="settings-tabs-content">
-                {/* 1. Download settings */}
                 <Show when={activeTab() === 'download'}>
-                  <div class="settings-group">
-                    <div class="form-group">
-                      <label>{t('dialog.settings.download_dir')}</label>
-                      <input
-                        type="text"
-                        value={downloadDir()}
-                        onInput={(e) => setDownloadDir(e.currentTarget.value)}
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <label class="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={incompleteDirEnabled()}
-                          onChange={(e) => setIncompleteDirEnabled(e.currentTarget.checked)}
-                        />
-                        <span>{t('dialog.settings.incomplete_enabled')}</span>
-                      </label>
-                      <Show when={incompleteDirEnabled()}>
-                        <input
-                          type="text"
-                          placeholder={t('dialog.settings.incomplete_dir_hint')}
-                          value={incompleteDir()}
-                          onInput={(e) => setIncompleteDir(e.currentTarget.value)}
-                          style={{ 'margin-top': '6px' }}
-                        />
-                      </Show>
-                    </div>
-
-                    <div class="form-divider" />
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.add_behavior')}</h4>
-                      <div class="checkbox-stack">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={startAddedTorrents()}
-                            onChange={(e) => setStartAddedTorrents(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.start_added')}</span>
-                        </label>
-
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={renamePartialFiles()}
-                            onChange={(e) => setRenamePartialFiles(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.rename_partial')}</span>
-                        </label>
-
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={trashOriginalTorrentFiles()}
-                            onChange={(e) => setTrashOriginalTorrentFiles(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.trash_torrent')}</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                  <DownloadTab
+                    downloadDir={downloadDir} setDownloadDir={setDownloadDir}
+                    incompleteDirEnabled={incompleteDirEnabled} setIncompleteDirEnabled={setIncompleteDirEnabled}
+                    incompleteDir={incompleteDir} setIncompleteDir={setIncompleteDir}
+                    startAddedTorrents={startAddedTorrents} setStartAddedTorrents={setStartAddedTorrents}
+                    renamePartialFiles={renamePartialFiles} setRenamePartialFiles={setRenamePartialFiles}
+                    trashOriginalTorrentFiles={trashOriginalTorrentFiles} setTrashOriginalTorrentFiles={setTrashOriginalTorrentFiles}
+                  />
                 </Show>
 
-                {/* 2. Speed settings */}
                 <Show when={activeTab() === 'speed'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.global_speed')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={speedLimitDownEnabled()}
-                            onChange={(e) => setSpeedLimitDownEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.dl_limit_enabled')} (KB/s):</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!speedLimitDownEnabled()}
-                          value={speedLimitDown()}
-                          onInput={(e) => setSpeedLimitDown(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={speedLimitUpEnabled()}
-                            onChange={(e) => setSpeedLimitUpEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.ul_limit_enabled')} (KB/s):</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!speedLimitUpEnabled()}
-                          value={speedLimitUp()}
-                          onInput={(e) => setSpeedLimitUp(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('toolbar.alt_speed')}</h4>
-                      <div class="form-row">
-                        <span class="flex-1 text-sm">{t('dialog.settings.download_limit')} (KB/s):</span>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          value={altSpeedDown()}
-                          onInput={(e) => setAltSpeedDown(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                      <div class="form-row">
-                        <span class="flex-1 text-sm">{t('dialog.settings.upload_limit')} (KB/s):</span>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          value={altSpeedUp()}
-                          onInput={(e) => setAltSpeedUp(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={altSpeedTimeEnabled()}
-                            onChange={(e) => setAltSpeedTimeEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.alt_speed_time')}</span>
-                        </label>
-                      </div>
-
-                      <Show when={altSpeedTimeEnabled()}>
-                        <div class="form-grid">
-                          <div class="form-group">
-                            <label>{t('dialog.settings.start_time')}</label>
-                            <input
-                              type="time"
-                              value={altSpeedTimeBegin()}
-                              onInput={(e) => setAltSpeedTimeBegin(e.currentTarget.value)}
-                            />
-                          </div>
-                          <div class="form-group">
-                            <label>{t('dialog.settings.end_time')}</label>
-                            <input
-                              type="time"
-                              value={altSpeedTimeEnd()}
-                              onInput={(e) => setAltSpeedTimeEnd(e.currentTarget.value)}
-                            />
-                          </div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>{t('dialog.settings.days')}</label>
-                          <div class="daymask-presets flex-row gap-2 mb-2">
-                            <button
-                              type="button"
-                              class="trwm-btn-sm"
-                              onClick={() => setAltSpeedTimeDay(127)}
-                            >
-                              {t('days.every')}
-                            </button>
-                            <button
-                              type="button"
-                              class="trwm-btn-sm"
-                              onClick={() => setAltSpeedTimeDay(62)}
-                            >
-                              {t('days.work')}
-                            </button>
-                            <button
-                              type="button"
-                              class="trwm-btn-sm"
-                              onClick={() => setAltSpeedTimeDay(65)}
-                            >
-                              {t('days.weekend')}
-                            </button>
-                          </div>
-                          <div class="daymask-checkboxes" style={{ "display": "flex", "flex-direction": "row", "gap": "6px", "flex-wrap": "nowrap", "overflow-x": "auto" }}>
-                            <For
-                              each={[
-                                { bit: 1, label: t('days.sun') },
-                                { bit: 2, label: t('days.mon') },
-                                { bit: 4, label: t('days.tue') },
-                                { bit: 8, label: t('days.wed') },
-                                { bit: 16, label: t('days.thu') },
-                                { bit: 32, label: t('days.fri') },
-                                { bit: 64, label: t('days.sat') },
-                              ]}
-                            >
-                              {(day) => (
-                                <label class="checkbox-label">
-                                  <input
-                                    type="checkbox"
-                                    checked={isDayActive(day.bit)}
-                                    onChange={() => toggleDay(day.bit)}
-                                  />
-                                  <span>{day.label}</span>
-                                </label>
-                              )}
-                            </For>
-                          </div>
-                        </div>
-                      </Show>
-                    </div>
-                  </div>
+                  <SpeedTab
+                    speedLimitDownEnabled={speedLimitDownEnabled} setSpeedLimitDownEnabled={setSpeedLimitDownEnabled}
+                    speedLimitDown={speedLimitDown} setSpeedLimitDown={setSpeedLimitDown}
+                    speedLimitUpEnabled={speedLimitUpEnabled} setSpeedLimitUpEnabled={setSpeedLimitUpEnabled}
+                    speedLimitUp={speedLimitUp} setSpeedLimitUp={setSpeedLimitUp}
+                    altSpeedDown={altSpeedDown} setAltSpeedDown={setAltSpeedDown}
+                    altSpeedUp={altSpeedUp} setAltSpeedUp={setAltSpeedUp}
+                    altSpeedTimeEnabled={altSpeedTimeEnabled} setAltSpeedTimeEnabled={setAltSpeedTimeEnabled}
+                    altSpeedTimeBegin={altSpeedTimeBegin} setAltSpeedTimeBegin={setAltSpeedTimeBegin}
+                    altSpeedTimeEnd={altSpeedTimeEnd} setAltSpeedTimeEnd={setAltSpeedTimeEnd}
+                    altSpeedTimeDay={altSpeedTimeDay} setAltSpeedTimeDay={setAltSpeedTimeDay}
+                  />
                 </Show>
 
-                {/* 3. Bandwidth Groups */}
                 <Show when={activeTab() === 'groups'}>
-                  <div class="settings-group">
-                    <Show
-                      when={editingGroup()}
-                      fallback={
-                        <div class="groups-manager-list">
-                          <div class="groups-header">
-                            <span class="groups-hint-text">{t('dialog.settings.groups_hint')}</span>
-                            <button
-                              type="button"
-                              class="trwm-btn primary"
-                              onClick={handleCreateGroup}
-                            >
-                              {t('dialog.settings.group_add')}
-                            </button>
-                          </div>
-
-                          <Show when={loadingGroups()}>
-                            <div class="text-center text-secondary py-6">{t('common.loading')}</div>
-                          </Show>
-
-                          <Show
-                            when={!loadingGroups() && bandwidthGroups().length > 0}
-                            fallback={
-                              <Show when={!loadingGroups()}>
-                                <div class="empty-list-note">{t('dialog.settings.no_groups')}</div>
-                              </Show>
-                            }
-                          >
-                            <div class="groups-cards-grid">
-                              <For each={bandwidthGroups()}>
-                                {(g) => (
-                                  <div class="group-card">
-                                    <div class="group-card-header flex-row justify-between align-center">
-                                      <span class="group-card-title">{g.name}</span>
-                                      <div class="group-card-actions flex-row gap-2">
-                                        <button
-                                          type="button"
-                                          class="trwm-btn-sm"
-                                          onClick={() => handleEditGroup(g)}
-                                        >
-                                          {t('dialog.settings.group_edit')}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          class="trwm-btn-sm danger"
-                                          onClick={() => handleDeleteGroup(g.name)}
-                                        >
-                                          {t('dialog.settings.group_delete')}
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div class="group-card-body">
-                                      <div class="group-info-row">
-                                        <span>{t('dialog.settings.group_download_limit')}:</span>
-                                        <span class="text-mono">
-                                          {g.speed_limit_down_enabled
-                                            ? `${g.speed_limit_down} KB/s`
-                                            : t('dialog.settings.group_no_limit')}
-                                        </span>
-                                      </div>
-                                      <div class="group-info-row">
-                                        <span>{t('dialog.settings.group_upload_limit')}:</span>
-                                        <span class="text-mono">
-                                          {g.speed_limit_up_enabled
-                                            ? `${g.speed_limit_up} KB/s`
-                                            : t('dialog.settings.group_no_limit')}
-                                        </span>
-                                      </div>
-                                      <div class="group-info-row">
-                                        <span>{t('dialog.settings.group_honors_session')}:</span>
-                                        <span>{g.honors_session_limits ? '✓' : '✗'}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </For>
-                            </div>
-                          </Show>
-                        </div>
-                      }
-                    >
-                      {/* Editor Sub-panel */}
-                      <div class="group-editor-panel">
-                        <h4>
-                          {editingGroup()?.isNew
-                            ? t('dialog.settings.group_add_title')
-                            : t('dialog.settings.group_edit_title', { name: editingGroup()?.name })}
-                        </h4>
-                        <div class="form-group">
-                          <label>{t('dialog.settings.group_name')}</label>
-                          <input
-                            type="text"
-                            class={editingGroup()?.isNew ? '' : 'readonly-input'}
-                            value={groupName()}
-                            onInput={(e) => setGroupName(e.currentTarget.value)}
-                            readOnly={!editingGroup()?.isNew}
-                          />
-                        </div>
-
-                        <div class="form-group mt-4">
-                          <label>{t('dialog.settings.group_download_limit')}</label>
-                          <div class="flex-row align-center gap-4">
-                            <input
-                              type="checkbox"
-                              id="grp-dl-en"
-                              checked={groupDlEnabled()}
-                              onChange={(e) => setGroupDlEnabled(e.currentTarget.checked)}
-                            />
-                            <label for="grp-dl-en">{t('dialog.settings.dl_limit_enabled')}</label>
-                            <input
-                              type="number"
-                              class="w-32 text-right ml-auto"
-                              value={groupDlLimit()}
-                              disabled={!groupDlEnabled()}
-                              onInput={(e) => setGroupDlLimit(Number(e.currentTarget.value))}
-                            />
-                            <span>KB/s</span>
-                          </div>
-                        </div>
-
-                        <div class="form-group mt-4">
-                          <label>{t('dialog.settings.group_upload_limit')}</label>
-                          <div class="flex-row align-center gap-4">
-                            <input
-                              type="checkbox"
-                              id="grp-ul-en"
-                              checked={groupUlEnabled()}
-                              onChange={(e) => setGroupUlEnabled(e.currentTarget.checked)}
-                            />
-                            <label for="grp-ul-en">{t('dialog.settings.ul_limit_enabled')}</label>
-                            <input
-                              type="number"
-                              class="w-32 text-right ml-auto"
-                              value={groupUlLimit()}
-                              disabled={!groupUlEnabled()}
-                              onInput={(e) => setGroupUlLimit(Number(e.currentTarget.value))}
-                            />
-                            <span>KB/s</span>
-                          </div>
-                        </div>
-
-                        <div class="form-group flex-row align-center mt-4">
-                          <input
-                            type="checkbox"
-                            id="grp-honors"
-                            checked={groupHonors()}
-                            onChange={(e) => setGroupHonors(e.currentTarget.checked)}
-                          />
-                          <label for="grp-honors">{t('dialog.settings.group_honors_session')}</label>
-                        </div>
-
-                        <div class="flex-row gap-2 mt-6">
-                          <button
-                            type="button"
-                            class="trwm-btn primary"
-                            onClick={handleSaveGroup}
-                            disabled={!groupName().trim()}
-                          >
-                            {t('dialog.settings.save')}
-                          </button>
-                          <button
-                            type="button"
-                            class="trwm-btn"
-                            onClick={() => setEditingGroup(null)}
-                          >
-                            {t('dialog.cancel')}
-                          </button>
-                        </div>
-                      </div>
-                    </Show>
-                  </div>
+                  <GroupsTab
+                    bandwidthGroups={bandwidthGroups}
+                    loadingGroups={loadingGroups}
+                    editingGroup={editingGroup} setEditingGroup={setEditingGroup}
+                    groupName={groupName} setGroupName={setGroupName}
+                    groupDlEnabled={groupDlEnabled} setGroupDlEnabled={setGroupDlEnabled}
+                    groupDlLimit={groupDlLimit} setGroupDlLimit={setGroupDlLimit}
+                    groupUlEnabled={groupUlEnabled} setGroupUlEnabled={setGroupUlEnabled}
+                    groupUlLimit={groupUlLimit} setGroupUlLimit={setGroupUlLimit}
+                    groupHonors={groupHonors} setGroupHonors={setGroupHonors}
+                    onCreateGroup={handleCreateGroup}
+                    onSaveGroup={handleSaveGroup}
+                    onDeleteGroup={handleDeleteGroup}
+                  />
                 </Show>
 
-                {/* 4. Network settings */}
                 <Show when={activeTab() === 'network'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.port_settings')}</h4>
-                      <div class="form-row">
-                        <div class="form-group" style={{ flex: '1', 'min-width': '120px' }}>
-                          <label>{t('dialog.settings.listen_port')}</label>
-                          <input
-                            type="number"
-                            value={peerPort()}
-                            onInput={(e) => setPeerPort(Number(e.currentTarget.value))}
-                          />
-                        </div>
-                        <label class="checkbox-label" style={{ 'margin-top': '20px' }}>
-                          <input
-                            type="checkbox"
-                            id="rand-port"
-                            checked={peerPortRandomOnStart()}
-                            onChange={(e) => setPeerPortRandomOnStart(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.random_port')}</span>
-                        </label>
-                      </div>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="port-fwd"
-                            checked={portForwardingEnabled()}
-                            onChange={(e) => setPortForwardingEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.port_forwarding')}</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.protocols')}</h4>
-                      <div class="checkbox-grid-2x2">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={dhtEnabled()}
-                            onChange={(e) => setDhtEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.dht')}</span>
-                        </label>
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={pexEnabled()}
-                            onChange={(e) => setPexEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.pex')}</span>
-                        </label>
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={lpdEnabled()}
-                            onChange={(e) => setLpdEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.lpd')}</span>
-                        </label>
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={utpEnabled()}
-                            onChange={(e) => setUtpEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.utp')}</span>
-                        </label>
-                      </div>
-
-                      <div class="form-group">
-                        <label>{t('detail.peers.encryption')}</label>
-                        <select
-                          value={encryption()}
-                          onChange={(e) => setEncryption(e.currentTarget.value)}
-                        >
-                          <option value="required">{t('dialog.settings.enc_required')}</option>
-                          <option value="preferred">{t('dialog.settings.enc_preferred')}</option>
-                          <option value="tolerated">{t('dialog.settings.enc_tolerated')}</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.security')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="brute-en"
-                            checked={antiBruteForceEnabled()}
-                            onChange={(e) => setAntiBruteForceEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.anti_brute')}</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!antiBruteForceEnabled()}
-                          value={antiBruteForceThreshold()}
-                          onInput={(e) => setAntiBruteForceThreshold(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.transport_pref')}</h4>
-                      <div class="form-group">
-                        <label>{t('dialog.settings.pref_transports')}</label>
-                        <select
-                          value={preferredTransports()}
-                          onChange={(e) => setPreferredTransports(e.currentTarget.value)}
-                        >
-                          <option value="utp,tcp">{t('dialog.settings.pref_utp_tcp')}</option>
-                          <option value="tcp,utp">{t('dialog.settings.pref_tcp_utp')}</option>
-                          <option value="utp">{t('dialog.settings.pref_utp')}</option>
-                          <option value="tcp">{t('dialog.settings.pref_tcp')}</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="seq-dl"
-                            checked={sequentialDownload()}
-                            onChange={(e) => setSequentialDownload(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.add.sequential')}</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                  <NetworkTab
+                    peerPort={peerPort} setPeerPort={setPeerPort}
+                    peerPortRandomOnStart={peerPortRandomOnStart} setPeerPortRandomOnStart={setPeerPortRandomOnStart}
+                    portForwardingEnabled={portForwardingEnabled} setPortForwardingEnabled={setPortForwardingEnabled}
+                    dhtEnabled={dhtEnabled} setDhtEnabled={setDhtEnabled}
+                    pexEnabled={pexEnabled} setPexEnabled={setPexEnabled}
+                    lpdEnabled={lpdEnabled} setLpdEnabled={setLpdEnabled}
+                    utpEnabled={utpEnabled} setUtpEnabled={setUtpEnabled}
+                    encryption={encryption} setEncryption={setEncryption}
+                    antiBruteForceEnabled={antiBruteForceEnabled} setAntiBruteForceEnabled={setAntiBruteForceEnabled}
+                    antiBruteForceThreshold={antiBruteForceThreshold} setAntiBruteForceThreshold={setAntiBruteForceThreshold}
+                    preferredTransports={preferredTransports} setPreferredTransports={setPreferredTransports}
+                    sequentialDownload={sequentialDownload} setSequentialDownload={setSequentialDownload}
+                  />
                 </Show>
 
-                {/* 5. Peers / Connection Limits */}
                 <Show when={activeTab() === 'peer'}>
-                  <div class="settings-group">
-                    <div class="form-grid">
-                      <div class="form-group">
-                        <label>{t('dialog.settings.global_peer_limit')}</label>
-                        <input
-                          type="number"
-                          value={peerLimitGlobal()}
-                          onInput={(e) => setPeerLimitGlobal(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                      <div class="form-group">
-                        <label>{t('mobile.max_peers')}</label>
-                        <input
-                          type="number"
-                          value={peerLimitPerTorrent()}
-                          onInput={(e) => setPeerLimitPerTorrent(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <PeerTab
+                    peerLimitGlobal={peerLimitGlobal} setPeerLimitGlobal={setPeerLimitGlobal}
+                    peerLimitPerTorrent={peerLimitPerTorrent} setPeerLimitPerTorrent={setPeerLimitPerTorrent}
+                  />
                 </Show>
 
-                {/* 6. Seeding limits */}
                 <Show when={activeTab() === 'seeding'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('detail.settings.seed_ratio')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={seedRatioLimited()}
-                            onChange={(e) => setSeedRatioLimited(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          class="w-24 text-right"
-                          disabled={!seedRatioLimited()}
-                          value={seedRatioLimit()}
-                          onInput={(e) => setSeedRatioLimit(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-                    <div class="settings-section">
-                      <h4>{t('detail.settings.seed_idle')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={idleSeedingLimitEnabled()}
-                            onChange={(e) => setIdleSeedingLimitEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!idleSeedingLimitEnabled()}
-                          value={idleSeedingLimit()}
-                          onInput={(e) => setIdleSeedingLimit(Number(e.currentTarget.value))}
-                        />
-                        <span class="text-sm text-secondary">({t('times.min')})</span>
-                      </div>
-                    </div>
-                  </div>
+                  <SeedingTab
+                    seedRatioLimited={seedRatioLimited} setSeedRatioLimited={setSeedRatioLimited}
+                    seedRatioLimit={seedRatioLimit} setSeedRatioLimit={setSeedRatioLimit}
+                    idleSeedingLimitEnabled={idleSeedingLimitEnabled} setIdleSeedingLimitEnabled={setIdleSeedingLimitEnabled}
+                    idleSeedingLimit={idleSeedingLimit} setIdleSeedingLimit={setIdleSeedingLimit}
+                  />
                 </Show>
 
-                {/* 7. Queue limits */}
                 <Show when={activeTab() === 'queue'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.dl_queue')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="dl-q-en"
-                            checked={downloadQueueEnabled()}
-                            onChange={(e) => setDownloadQueueEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.max_dl')}:</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!downloadQueueEnabled()}
-                          value={downloadQueueSize()}
-                          onInput={(e) => setDownloadQueueSize(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.seed_queue')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="ul-q-en"
-                            checked={seedQueueEnabled()}
-                            onChange={(e) => setSeedQueueEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.max_seed')}:</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!seedQueueEnabled()}
-                          value={seedQueueSize()}
-                          onInput={(e) => setSeedQueueSize(Number(e.currentTarget.value))}
-                        />
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.stalled_detection')}</h4>
-                      <div class="form-row">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="stall-en"
-                            checked={queueStalledEnabled()}
-                            onChange={(e) => setQueueStalledEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.stalled_timeout')}:</span>
-                        </label>
-                        <input
-                          type="number"
-                          class="w-24 text-right"
-                          disabled={!queueStalledEnabled()}
-                          value={queueStalledMinutes()}
-                          onInput={(e) => setQueueStalledMinutes(Number(e.currentTarget.value))}
-                        />
-                        <span class="text-sm text-secondary">({t('times.min')})</span>
-                      </div>
-                    </div>
-                  </div>
+                  <QueueTab
+                    downloadQueueSize={downloadQueueSize} setDownloadQueueSize={setDownloadQueueSize}
+                    downloadQueueEnabled={downloadQueueEnabled} setDownloadQueueEnabled={setDownloadQueueEnabled}
+                    seedQueueSize={seedQueueSize} setSeedQueueSize={setSeedQueueSize}
+                    seedQueueEnabled={seedQueueEnabled} setSeedQueueEnabled={setSeedQueueEnabled}
+                    queueStalledEnabled={queueStalledEnabled} setQueueStalledEnabled={setQueueStalledEnabled}
+                    queueStalledMinutes={queueStalledMinutes} setQueueStalledMinutes={setQueueStalledMinutes}
+                  />
                 </Show>
 
-                {/* 8. Custom Labels library */}
                 <Show when={activeTab() === 'labels'}>
-                  <div class="settings-group">
-                    <div class="labels-library-manager">
-                      <h4>{t('dialog.label.saved_label')}</h4>
-                      <form onSubmit={handleAddLabel} class="flex-row gap-2 mb-4">
-                        <input
-                          type="text"
-                          placeholder={t('dialog.label.placeholder')}
-                          value={newLabelText()}
-                          onInput={(e) => setNewLabelText(e.currentTarget.value)}
-                        />
-                        <button type="submit" class="trwm-btn primary" style={{ 'white-space': 'nowrap' }}>
-                          {t('dialog.add.submit')}
-                        </button>
-                      </form>
-
-                      <Show
-                        when={(() => {
-                          const saved = new Set(savedLabels());
-                          const fromTorrent = new Set(torrentLabels());
-                          const all = new Set([...saved, ...fromTorrent]);
-                          return all.size > 0;
-                        })()}
-                        fallback={<div class="empty-list-note">{t('dialog.label.no_labels')}</div>}
-                      >
-                        <div class="labels-library-list flex-col gap-2">
-                          <For each={(() => {
-                            const saved = new Set(savedLabels());
-                            const fromTorrent = new Set(torrentLabels());
-                            const all = new Set([...saved, ...fromTorrent]);
-                            return [...all].sort();
-                          })()}>
-                            {(lbl) => {
-                              const isFromTorrent = torrentLabels().includes(lbl);
-                              const isSaved = savedLabels().includes(lbl);
-                              const source = isFromTorrent && isSaved
-                                ? t('dialog.label.source_both')
-                                : isFromTorrent
-                                  ? t('dialog.label.source_torrent')
-                                  : t('dialog.label.source_custom');
-                              return (
-                                <div class="label-library-item flex-row justify-between align-center">
-                                  <div class="label-library-info">
-                                    <span class="label-badge text-mono">{lbl}</span>
-                                    <span class="label-source-tag">{source}</span>
-                                  </div>
-                                  <Show when={isSaved}>
-                                    <button
-                                      type="button"
-                                      class="trwm-btn-sm danger"
-                                      onClick={() => handleDeleteLabel(lbl)}
-                                      title={t('dialog.delete.submit')}
-                                    >
-                                      &times;
-                                    </button>
-                                  </Show>
-                                </div>
-                              );
-                            }}
-                          </For>
-                        </div>
-                      </Show>
-                    </div>
-                  </div>
+                  <LabelsTab
+                    savedLabels={savedLabels}
+                    torrentLabels={torrentLabels}
+                    newLabelText={newLabelText} setNewLabelText={setNewLabelText}
+                    onAddLabel={handleAddLabel}
+                    onDeleteLabel={handleDeleteLabel}
+                  />
                 </Show>
 
-                {/* 9. Blocklist & testing */}
                 <Show when={activeTab() === 'blocklist'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.blocklist')}</h4>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            id="bl-en"
-                            checked={blocklistEnabled()}
-                            onChange={(e) => setBlocklistEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                      </div>
-                      <div class="form-group">
-                        <label>{t('dialog.settings.blocklist_url')}</label>
-                        <input
-                          type="text"
-                          value={blocklistUrl()}
-                          onInput={(e) => setBlocklistUrl(e.currentTarget.value)}
-                          disabled={!blocklistEnabled()}
-                        />
-                      </div>
-                      <div class="form-group">
-                        <span class="text-sm text-secondary">
-                          {t('dialog.settings.rules_count')}:{' '}
-                          <strong class="text-mono text-primary">{blocklistSize()}</strong>
-                        </span>
-                      </div>
-                      <div class="flex-row gap-2">
-                        <button
-                          type="button"
-                          class="trwm-btn"
-                          onClick={handleUpdateBlocklist}
-                          disabled={!blocklistEnabled()}
-                        >
-                          {t('dialog.settings.update_blocklist')}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.test_port')}</h4>
-                      <div class="form-row flex-wrap gap-4">
-                        <Show when={rpcVersion() >= 19}>
-                          <div class="form-row gap-2">
-                            <label class="text-sm text-secondary">{t('dialog.settings.ip_protocol')}:</label>
-                            <select
-                              value={ipProtocol()}
-                              onChange={(e) => setIpProtocol(e.currentTarget.value)}
-                              style={{ padding: '4px', 'border-radius': '4px' }}
-                            >
-                              <option value="">{t('dialog.settings.ip_protocol_auto')}</option>
-                              <option value="ipv4">IPv4</option>
-                              <option value="ipv6">IPv6</option>
-                            </select>
-                          </div>
-                        </Show>
-
-                        <button
-                          type="button"
-                          class="trwm-btn"
-                          onClick={handleTestPort}
-                          disabled={portTesting()}
-                        >
-                          {portTesting() ? t('dialog.settings.testing') : t('dialog.settings.test_port')}
-                        </button>
-
-                        <Show when={portTestResult()}>
-                          <span class={`port-result-badge ${portTestClass()}`}>
-                            {portTestResult()}
-                          </span>
-                        </Show>
-                      </div>
-                    </div>
-                  </div>
+                  <BlocklistTab
+                    blocklistEnabled={blocklistEnabled} setBlocklistEnabled={setBlocklistEnabled}
+                    blocklistUrl={blocklistUrl} setBlocklistUrl={setBlocklistUrl}
+                    blocklistSize={blocklistSize}
+                    onUpdateBlocklist={handleUpdateBlocklist}
+                    rpcVersion={rpcVersion}
+                    ipProtocol={ipProtocol} setIpProtocol={setIpProtocol}
+                    portTesting={portTesting}
+                    portTestResult={portTestResult}
+                    portTestClass={portTestClass}
+                    onTestPort={handleTestPort}
+                  />
                 </Show>
 
-                {/* 10. RPC Information */}
                 <Show when={activeTab() === 'rpc'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>RPC</h4>
-                      <div class="form-group">
-                        <label>{t('dialog.about.rpc_version')}</label>
-                        <input type="text" class="readonly-input" readOnly value={rpcVersion()} />
-                      </div>
-                      <div class="form-group">
-                        <label>{t('dialog.settings.rpc_semver')}</label>
-                        <input type="text" class="readonly-input" readOnly value={rpcVersionSemver() || '-'} />
-                      </div>
-                      <div class="form-group">
-                        <label>{t('dialog.settings.rpc_min_version')}</label>
-                        <input type="text" class="readonly-input" readOnly value={rpcVersionMinimum()} />
-                      </div>
-                      <div class="form-group">
-                        <label>{t('dialog.settings.session_id')}</label>
-                        <input type="text" class="readonly-input text-mono" readOnly value={sessionId()} style={{ 'font-size': '12px' }} />
-                      </div>
-                    </div>
-                  </div>
+                  <RpcTab
+                    rpcVersion={rpcVersion}
+                    rpcVersionSemver={rpcVersionSemver}
+                    rpcVersionMinimum={rpcVersionMinimum}
+                    sessionId={sessionId}
+                  />
                 </Show>
 
-                {/* 11. Script linkage */}
                 <Show when={activeTab() === 'script'}>
-                  <div class="settings-group">
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.script_added')}</h4>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={scriptTorrentAddedEnabled()}
-                            onChange={(e) => setScriptTorrentAddedEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                        <Show when={scriptTorrentAddedEnabled()}>
-                          <input
-                            type="text"
-                            placeholder={t('dialog.settings.script_path')}
-                            value={scriptTorrentAddedFilename()}
-                            onInput={(e) => setScriptTorrentAddedFilename(e.currentTarget.value)}
-                            style={{ 'margin-top': '6px' }}
-                          />
-                        </Show>
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.script_done')}</h4>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={scriptTorrentDoneEnabled()}
-                            onChange={(e) => setScriptTorrentDoneEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                        <Show when={scriptTorrentDoneEnabled()}>
-                          <input
-                            type="text"
-                            placeholder={t('dialog.settings.script_path')}
-                            value={scriptTorrentDoneFilename()}
-                            onInput={(e) => setScriptTorrentDoneFilename(e.currentTarget.value)}
-                            style={{ 'margin-top': '6px' }}
-                          />
-                        </Show>
-                      </div>
-                    </div>
-
-                    <div class="settings-section">
-                      <h4>{t('dialog.settings.script_done_seeding')}</h4>
-                      <div class="form-group">
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={scriptTorrentDoneSeedingEnabled()}
-                            onChange={(e) => setScriptTorrentDoneSeedingEnabled(e.currentTarget.checked)}
-                          />
-                          <span>{t('dialog.settings.enabled')}</span>
-                        </label>
-                        <Show when={scriptTorrentDoneSeedingEnabled()}>
-                          <input
-                            type="text"
-                            placeholder={t('dialog.settings.script_path')}
-                            value={scriptTorrentDoneSeedingFilename()}
-                            onInput={(e) => setScriptTorrentDoneSeedingFilename(e.currentTarget.value)}
-                            style={{ 'margin-top': '6px' }}
-                          />
-                        </Show>
-                      </div>
-                    </div>
-                  </div>
+                  <ScriptTab
+                    scriptTorrentAddedEnabled={scriptTorrentAddedEnabled} setScriptTorrentAddedEnabled={setScriptTorrentAddedEnabled}
+                    scriptTorrentAddedFilename={scriptTorrentAddedFilename} setScriptTorrentAddedFilename={setScriptTorrentAddedFilename}
+                    scriptTorrentDoneEnabled={scriptTorrentDoneEnabled} setScriptTorrentDoneEnabled={setScriptTorrentDoneEnabled}
+                    scriptTorrentDoneFilename={scriptTorrentDoneFilename} setScriptTorrentDoneFilename={setScriptTorrentDoneFilename}
+                    scriptTorrentDoneSeedingEnabled={scriptTorrentDoneSeedingEnabled} setScriptTorrentDoneSeedingEnabled={setScriptTorrentDoneSeedingEnabled}
+                    scriptTorrentDoneSeedingFilename={scriptTorrentDoneSeedingFilename} setScriptTorrentDoneSeedingFilename={setScriptTorrentDoneSeedingFilename}
+                  />
                 </Show>
 
-                {/* 12. Advanced settings */}
                 <Show when={activeTab() === 'advanced'}>
-                  <div class="settings-group">
-                    <div class="form-group">
-                      <label>{t('dialog.tracker.add_label')}</label>
-                      <textarea
-                        rows="5"
-                        placeholder={t('dialog.tracker.format_info')}
-                        value={defaultTrackers()}
-                        onInput={(e) => setDefaultTrackers(e.currentTarget.value)}
-                        style={{ 'font-family': 'var(--font-mono)', 'font-size': '12px' }}
-                      />
-                    </div>
-                    <div class="form-group mt-4">
-                      <label>{t('dialog.settings.cache_size')} (MB):</label>
-                      <Show
-                        when={rpcVersion() >= 17}
-                        fallback={
-                          <input
-                            type="number"
-                            value={cacheSizeMb()}
-                            onInput={(e) => setCacheSizeMb(Number(e.currentTarget.value))}
-                          />
-                        }
-                      >
-                        <input
-                          type="number"
-                          value={cacheSizeMib()}
-                          onInput={(e) => setCacheSizeMib(Number(e.currentTarget.value))}
-                        />
-                      </Show>
-                    </div>
-                  </div>
+                  <AdvancedTab
+                    defaultTrackers={defaultTrackers} setDefaultTrackers={setDefaultTrackers}
+                    cacheSizeMb={cacheSizeMb} setCacheSizeMb={setCacheSizeMb}
+                    cacheSizeMib={cacheSizeMib} setCacheSizeMib={setCacheSizeMib}
+                    rpcVersion={rpcVersion}
+                  />
                 </Show>
               </div>
             </div>

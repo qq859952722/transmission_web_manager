@@ -1,91 +1,74 @@
+/* Sidebar — Industrial/Utilitarian styling */
+
+/* Root container — layout handled by Tailwind in TSX */
 .trwm-sidebar-inner {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  user-select: none;
+  /* only color/theme props remain */
 }
 
+/* Brand bar */
 .sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 16px;
   border-bottom: 1px solid var(--border-color);
   font-weight: 700;
   font-size: 15px;
   color: var(--text-primary);
-  flex-shrink: 0;
   letter-spacing: -0.2px;
 }
 
 .brand-logo {
-  width: 20px;
-  height: 20px;
   color: var(--color-primary-500);
 }
 
+/* Scrollable sections container — layout handled by Tailwind */
 .sidebar-sections-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  /* only color/theme props remain */
 }
 
+/* Section */
 .sidebar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  /* layout handled by Tailwind */
 }
 
+/* Collapsible section header */
 .section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 8px;
-  cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  transition: background 0.2s ease;
 }
 
 .section-header:hover {
   background-color: var(--bg-hover);
 }
 
+/* Section title — stronger visual hierarchy */
 .section-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   padding: 4px 8px;
 }
 
+/* Chevron toggle */
 .chevron-icon {
-  width: 14px;
-  height: 14px;
   color: var(--text-muted);
-  transition: transform 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chevron-icon.expanded {
   transform: rotate(180deg);
 }
 
+/* Sidebar item — base styling (layout via Tailwind) */
 .sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .sidebar-item:hover {
@@ -93,40 +76,51 @@
   color: var(--text-primary);
 }
 
+/* Active item — left accent border + tinted background */
 .sidebar-item.active {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
   color: var(--color-primary-500);
   font-weight: 600;
+  border-left-color: var(--color-primary-500);
 }
 
+/* Sub-item indent — padding-left set via Tailwind pl-5 */
 .sidebar-item.sub-item {
-  padding-left: 20px;
+  /* padding-left handled by Tailwind pl-5 */
 }
 
+/* Item icon */
 .item-icon {
   font-size: 14px;
-  width: 16px;
-  text-align: center;
-  flex-shrink: 0;
+  color: inherit;
 }
 
+/* Item label — truncation handled by Tailwind */
 .item-label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* layout handled by Tailwind */
 }
 
+/* Count badge — subtle pill */
 .item-count {
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1;
   background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
-  padding: 1px 6px;
+  color: var(--text-muted);
+  padding: 2px 6px;
   border-radius: var(--radius-lg);
   font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.sidebar-item:hover .item-count {
+  color: var(--text-secondary);
 }
 
 .sidebar-item.active .item-count {
   background-color: var(--color-primary-500);
-  color: #ffffff;
+  color: var(--text-on-primary);
 }

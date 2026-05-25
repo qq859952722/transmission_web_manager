@@ -1,0 +1,128 @@
+.trwm-pieces-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+.empty-pieces {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 12px;
+  padding: 24px;
+}
+.empty-pieces .empty-icon {
+  width: 48px;
+  height: 48px;
+}
+.pieces-stats-row {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.pieces-stats-row strong {
+  color: var(--text-primary);
+}
+.pieces-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.pieces-progress-track {
+  flex: 1;
+  height: 12px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.pieces-progress-fill {
+  height: 100%;
+  background-color: var(--color-primary-500);
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+.pieces-progress-pct {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 45px;
+  text-align: right;
+}
+.pieces-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.pieces-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pieces-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.pieces-canvas-frame {
+  flex: 1;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 150px;
+}
+.pieces-canvas {
+  image-rendering: pixelated;
+}
+.piece-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+.piece-context-menu {
+  position: fixed;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 0;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  min-width: 180px;
+  z-index: 10000;
+}
+.piece-menu-header {
+  padding: 4px 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+.piece-menu-info {
+  padding: 3px 12px;
+  color: var(--text-secondary);
+}
+.piece-menu-divider {
+  border-top: 1px solid var(--border-color);
+  margin: 4px 0;
+}
+.piece-menu-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.piece-menu-item:hover {
+  background: var(--bg-tertiary);
+}
+.piece-menu-item.primary {
+  color: var(--color-primary-500);
+}

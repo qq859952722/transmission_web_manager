@@ -20,7 +20,7 @@ export function useSessionStats() {
       const data = await rpcCall<SessionStats>('session_stats');
       return data;
     },
-    refetchInterval: 3000, // Poll stats every 3s
+    refetchInterval: 5000, // Poll stats every 5s (coordinated with torrent_get 2s polling)
   }));
 }
 

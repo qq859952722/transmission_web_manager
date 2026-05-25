@@ -1,29 +1,19 @@
+/* ── Panel Shell ── */
 .trwm-detail-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
   background-color: var(--bg-primary);
   border-top: 1px solid var(--border-color);
 }
 
-/* Tabs Header */
+/* ── Tabs Header ── */
 .trwm-detail-tabs {
-  display: flex;
-  align-items: center;
-  height: 38px;
+  height: 36px;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  padding: 0 8px;
-  flex-shrink: 0;
+  padding: 0 6px;
 }
 
 .trwm-tab-scroller {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
+  gap: 2px;
 }
 
 .trwm-detail-tab {
@@ -32,13 +22,16 @@
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 0 16px;
+  padding: 0 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.15s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-bottom-color 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 .trwm-detail-tab:hover {
@@ -52,22 +45,19 @@
   font-weight: 600;
 }
 
-.trwm-detail-spacer {
-  flex: 1;
-}
-
+/* ── Close Button ── */
 .trwm-detail-close-btn {
   background: none;
   border: none;
   color: var(--text-secondary);
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .trwm-detail-close-btn:hover {
@@ -75,50 +65,30 @@
   color: var(--text-primary);
 }
 
-.trwm-detail-close-btn svg {
-  width: 16px;
-  height: 16px;
+.trwm-detail-close-btn:active {
+  background-color: var(--bg-tertiary);
 }
 
-/* Detail Content Area */
+.trwm-detail-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Detail Content Area ── */
 .trwm-detail-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+  padding: 12px 16px;
   background-color: var(--bg-primary);
 }
 
-/* Empty Selected state */
+/* ── Empty Selected State ── */
 .trwm-detail-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
   color: var(--text-muted);
-  gap: 12px;
 }
 
-.trwm-detail-empty .empty-icon {
-  width: 48px;
-  height: 48px;
-}
-
-/* Multi selected state */
-.trwm-detail-multi-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
+/* ── Multi Selected State ── */
 .trwm-detail-multi-view .multi-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   color: var(--text-primary);
-}
-
-/* Single Selected State */
-.trwm-detail-single-view {
-  height: 100%;
 }

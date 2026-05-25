@@ -1,4 +1,5 @@
 import { type Component, createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
+import { createPersistedSignal } from '../../utils/persist';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { Torrent } from '../../types/transmission';
 import {
@@ -59,9 +60,20 @@ export const TorrentTable: Component<{
 }> = (props) => {
   let parentRef: HTMLDivElement | undefined;
 
-  // Sort State
-  const [sortKey, setSortKey] = createSignal<ColumnId>('queue_position');
-  const [sortAsc, setSortAsc] = createSignal<boolean>(true);
+  // Sort State (persisted)
+  const [sortKey, setSortKey] = createPersistedSignal<ColumnId>('trwm-sort-key', 'queue_position');
+  const [sortAsc, setSortAsc] = createPersistedSignal<boolean>('trwm-sort-asc', true);
+
+  // Column visibility (persisted)
+  const defaultVisible: Record<string, boolean> = {
+    queue_position: true, name: true, total_size: true, percent_done: true,
+    status: true, seeds: true, peers: true, rate_download: true, rate_upload: true,
+    eta: true, upload_ratio: true, downloaded_ever: false, uploaded_ever: false,
+    added_date: false, done_date: false, download_dir: false, labels: true,
+  };
+  const [columnVisibility, setColumnVisibility] = createPersistedSignal<Record<string, boolean>>(
+    'trwm-column-visibility', defaultVisible
+  );
 
   // Column Definitions
   const [columns, setColumns] = createSignal<ColumnDef[]>([
@@ -83,6 +95,12 @@ export const TorrentTable: Component<{
     { id: 'download_dir', label: t('columns.download_dir'), width: 150, align: 'left', visible: false },
     { id: 'labels', label: t('columns.labels'), width: 100, align: 'left', visible: true },
   ]);
+
+  // Apply persisted visibility to columns
+  const visibleColumns = createMemo(() => {
+    const vis = columnVisibility();
+    return columns().map(col => ({ ...col, visible: vis[col.id] ?? col.visible }));
+  });
 
   // Handle Sort Toggle
   const handleSort = (colId: ColumnId) => {
@@ -171,9 +189,7 @@ export const TorrentTable: Component<{
   };
 
   const toggleColumnVisible = (id: ColumnId) => {
-    setColumns(
-      columns().map((c) => (c.id === id ? { ...c, visible: !c.visible } : c))
-    );
+    setColumnVisibility(prev => ({ ...prev, [id]: !(prev[id] ?? true) }));
   };
 
   // Close context menu on click outside
@@ -200,7 +216,7 @@ export const TorrentTable: Component<{
           onClick={(e) => e.stopPropagation()}
         >
           <div class="trwm-header-menu-title">{t('toolbar.settings')}</div>
-          <For each={columns()}>
+          <For each={visibleColumns()}>
             {(col) => (
               <label class="trwm-header-menu-item">
                 <input
@@ -220,7 +236,7 @@ export const TorrentTable: Component<{
       <div class="trwm-torrent-table">
         {/* Table Header */}
         <div class="trwm-table-header" onContextMenu={onHeaderContextMenu}>
-          <For each={columns().filter((c) => c.visible)}>
+          <For each={visibleColumns().filter((c) => c.visible)}>
             {(col) => (
               <div
                 class={`trwm-table-th align-${col.align} ${
@@ -291,7 +307,7 @@ export const TorrentTable: Component<{
                       props.onContextMenu(e, selectedIds());
                     }}
                   >
-                    <For each={columns().filter((c) => c.visible)}>
+                    <For each={visibleColumns().filter((c) => c.visible)}>
                       {(col) => {
                         const cellStyle = { width: `${col.width}px` };
 

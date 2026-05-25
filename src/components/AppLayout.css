@@ -45,4 +45,38 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.trwm-resize-handle {
+  height: 5px;
+  cursor: ns-resize;
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.trwm-resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--border-color);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.trwm-resize-handle:hover::after,
+.trwm-resize-handle.active::after {
+  opacity: 1;
+  background-color: var(--color-primary-500);
+}
+
+.trwm-resize-handle.active {
+  background-color: color-mix(in srgb, var(--color-primary-500) 8%, transparent);
 }
