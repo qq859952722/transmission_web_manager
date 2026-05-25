@@ -162,10 +162,10 @@ export const StatusBar: Component = () => {
       <div class="sb-separator" />
 
       {/* Total downloaded / uploaded */}
-      <div class="sb-item text-xs text-muted" title={t('detail.speed.total_download') || 'Total Download'}>
+      <div class="sb-item text-xs text-muted" title={t('detail.speed.total_download')}>
         <span class="font-semibold text-primary">↓</span> {formatBytes(totalDl())}
       </div>
-      <div class="sb-item text-xs text-muted" title={t('detail.speed.total_upload') || 'Total Upload'}>
+      <div class="sb-item text-xs text-muted" title={t('detail.speed.total_upload')}>
         <span class="font-semibold text-success">↑</span> {formatBytes(totalUl())}
       </div>
 
@@ -173,7 +173,7 @@ export const StatusBar: Component = () => {
 
       {/* Free space */}
       <Show when={freeSpace.data !== undefined && freeSpace.data !== null}>
-        <div class="sb-item text-xs text-muted" title={t('stats.free_space') || 'Free Space'}>
+        <div class="sb-item text-xs text-muted" title={t('stats.free_space')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sb-icon">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>

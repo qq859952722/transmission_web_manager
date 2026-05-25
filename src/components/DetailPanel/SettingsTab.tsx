@@ -226,7 +226,7 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
 
           {/* Sequential Download section */}
           <div class="settings-section">
-            <h3>{t('detail.general.sequential') || 'Sequential Download'}</h3>
+            <h3>{t('detail.general.sequential')}</h3>
             <div class="form-row">
               <label class="checkbox-label">
                 <input
@@ -234,11 +234,11 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
                   checked={sequentialDownload()}
                   onChange={(e) => setSequentialDownload(e.currentTarget.checked)}
                 />
-                <span>{t('detail.general.sequential') || 'Sequential Download'}</span>
+                <span>{t('detail.general.sequential')}</span>
               </label>
             </div>
             <div class="form-row">
-              <span>{t('detail.general.from_piece') || 'From Piece'}:</span>
+              <span>{t('detail.general.from_piece')}:</span>
               <input
                 type="number"
                 class="num-input"

@@ -237,17 +237,17 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
       <div class="peers-bottom-drawer">
         <Show when={props.torrent.peers_from}>
           <button class="drawer-toggle-btn" onClick={() => setShowSources(!showSources())}>
-            <span>{t('detail.peers.source_stats') || 'Peer Sources'}</span>
+            <span>{t('detail.peers.source_stats')}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class={`chevron-icon ${showSources() ? 'expanded' : ''}`}>
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
           <Show when={showSources()}>
             <div class="drawer-content peers-source-grid">
-              <div class="source-item"><span class="source-label">{t('detail.peers.source_tracker') || 'Tracker'}:</span><span class="source-count">{props.torrent.peers_from!.from_tracker}</span></div>
+              <div class="source-item"><span class="source-label">{t('detail.peers.source_tracker')}:</span><span class="source-count">{props.torrent.peers_from!.from_tracker}</span></div>
               <div class="source-item"><span class="source-label">DHT:</span><span class="source-count">{props.torrent.peers_from!.from_dht}</span></div>
               <div class="source-item"><span class="source-label">PEX:</span><span class="source-count">{props.torrent.peers_from!.from_pex}</span></div>
-              <div class="source-item"><span class="source-label">{t('detail.peers.getting') || 'Incoming'}:</span><span class="source-count">{props.torrent.peers_from!.from_incoming}</span></div>
+              <div class="source-item"><span class="source-label">{t('detail.peers.getting')}:</span><span class="source-count">{props.torrent.peers_from!.from_incoming}</span></div>
               <div class="source-item"><span class="source-label">LPD:</span><span class="source-count">{props.torrent.peers_from!.from_lpd}</span></div>
               <div class="source-item"><span class="source-label">LTEP:</span><span class="source-count">{props.torrent.peers_from!.from_ltep}</span></div>
             </div>

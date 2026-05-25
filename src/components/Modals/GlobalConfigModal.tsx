@@ -471,7 +471,7 @@ export const GlobalConfigModal: Component = () => {
     } catch (e: any) {
       const msg = e?.message || '';
       if (msg.includes('No Response') || msg.includes('Couldn')) {
-        setPortTestResult(`✗ ${t('dialog.settings.port_closed')} - No Response`);
+        setPortTestResult(`✗ ${t('dialog.settings.port_closed')} - ${t('dialog.settings.no_response')}`);
       } else {
         setPortTestResult(`✗ ${t('dialog.settings.test_failed')}`);
       }

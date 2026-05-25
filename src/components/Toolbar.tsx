@@ -245,8 +245,8 @@ export const Toolbar: Component<{
       </button>
 
       {/* Language Toggle */}
-      <button class="tb-btn icon-only lang-btn" onClick={toggleLanguage} title={currentLang() === 'zh-CN' ? 'Switch to English' : '切换到中文'}>
-        <span class="lang-label">{currentLang() === 'zh-CN' ? 'EN' : '中'}</span>
+      <button class="tb-btn icon-only lang-btn" onClick={toggleLanguage} title={t('toolbar.switch_lang')}>
+        <span class="lang-label">{t('toolbar.lang_label')}</span>
       </button>
 
       {/* Theme Toggle */}

@@ -189,7 +189,7 @@ export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
                   {single().sequential_download ? t('common.yes') : t('common.no')}
                   <Show when={single().sequential_download && single().sequential_download_from_piece > 0}>
                     <span class="text-mono" style={{ "margin-left": "4px", color: "var(--text-muted)" }}>
-                      (from {single().sequential_download_from_piece})
+                      {t('detail.general.sequential_from', { piece: single().sequential_download_from_piece })}
                     </span>
                   </Show>
                 </span>

@@ -134,7 +134,7 @@
   display: flex;
   align-items: center;
   border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-  height: 34px;
+  height: 30px;
   cursor: pointer;
   background-color: var(--bg-primary);
   transition: background-color 0.12s ease;
@@ -154,7 +154,7 @@
 }
 
 .trwm-table-td {
-  padding: 4px 10px;
+  padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -21,9 +21,12 @@ export const en = {
     "stats": "Stats",
     "history": "History",
     "settings": "Settings",
+    "settings_short": "Settings",
     "logo": "Transmission",
     "shortcut": "Shortcut",
-    "network": "Network"
+    "network": "Network",
+    "switch_lang": "切换到中文",
+    "lang_label": "中"
   },
   "sidebar": {
     "status": "Torrent Status",
@@ -105,7 +108,8 @@ export const en = {
       "eta": "ETA",
       "mime": "MIME Type",
       "torrent_file": "Torrent File",
-      "file_count": "File Count"
+      "file_count": "File Count",
+      "sequential_from": "(from {piece})"
     },
     "pieces": {
       "no_data": "No piece data available",
@@ -355,7 +359,13 @@ export const en = {
       "options": "OPTIONS",
       "tracker_url": "Tracker URL",
       "tier": "Tier",
-      "magnet_link": "Magnet Link"
+      "magnet_link": "Magnet Link",
+      "source": "Source",
+      "required": "Required",
+      "optional": "Optional",
+      "or": "OR",
+      "mutual_exclusive_hint": "URL and file are mutually exclusive, URL selected",
+      "empty_source_hint": "Enter a magnet/torrent URL, or select a local .torrent file"
     },
     "delete": {
       "title": "Confirm Delete",
@@ -459,6 +469,7 @@ export const en = {
       "port_closed": "Port Closed",
       "port_closed_hint": "Port forwarding (UPnP) may be working, but the port is not reachable from the internet. Check your firewall, router settings, or ISP restrictions.",
       "test_failed": "Test failed",
+      "no_response": "No Response",
       "enabled": "Enabled",
       "disabled": "Disabled",
       "blocklist": "Blocklist",
@@ -513,6 +524,8 @@ export const en = {
       "max_dl": "Max Active Downloads",
       "seed_queue": "Seed Queue",
       "max_seed": "Max Active Seeds",
+      "seed_ratio": "Seed Ratio Limit",
+      "seed_idle": "Idle Seeding Limit",
       "stalled_detection": "Stalled Detection",
       "stalled_timeout": "Stalled Timeout",
       "script": "Script",
@@ -530,6 +543,7 @@ export const en = {
       "group_edit": "Edit",
       "group_delete": "Delete",
       "no_groups": "No bandwidth groups yet. Click the button above to add one.",
+      "group": "Bandwidth Group",
       "group_name": "Group Name",
       "group_download_limit": "Download Limit",
       "group_upload_limit": "Upload Limit",
@@ -695,7 +709,16 @@ export const en = {
     "snapshot_time": "Time",
     "magnet_link": "Magnet Link",
     "export_failed": "Export failed",
-    "exported": "Exported {n} records"
+    "exported": "Exported {n} records",
+    "copy_magnet": "Copy Links",
+    "copy_all_magnet": "Copy all magnet links",
+    "copy_selected_magnet": "Copy selected magnet links",
+    "copied_magnet_links": "Copied {n} magnet links",
+    "no_magnet_links": "No magnet links to copy",
+    "copy_failed": "Copy failed",
+    "magnet_copied": "Magnet link copied",
+    "batch_delete": "Batch Delete",
+    "batch_deleted": "Deleted {n} records"
   },
   "context": {
     "start": "Start",

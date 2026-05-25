@@ -55,7 +55,7 @@ export const StatsModal: Component = () => {
         ctx.fillStyle = textColor;
         ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(t('status.loading') || 'Loading...', w / 2, h / 2);
+        ctx.fillText(t('status.loading'), w / 2, h / 2);
         chartAnimFrame = requestAnimationFrame(drawChart);
         return;
       }
@@ -131,12 +131,12 @@ export const StatsModal: Component = () => {
       ctx.fillStyle = textColor;
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(t('detail.speed.download') || 'Download', padding.left + 14, h - 10);
+      ctx.fillText(t('detail.speed.download'), padding.left + 14, h - 10);
 
       ctx.fillStyle = uploadColor;
       ctx.fillRect(padding.left + 55, h - 14, 10, 3);
       ctx.fillStyle = textColor;
-      ctx.fillText(t('detail.speed.upload') || 'Upload', padding.left + 69, h - 10);
+      ctx.fillText(t('detail.speed.upload'), padding.left + 69, h - 10);
       
       chartAnimFrame = requestAnimationFrame(drawChart);
     };
@@ -160,17 +160,17 @@ export const StatsModal: Component = () => {
           <div class="stats-dashboard">
             {/* Speed Chart and Global Speed */}
             <div class="stats-card-sec">
-              <h3>{t('stats.speed_title') || 'Speed History'}</h3>
+              <h3>{t('stats.speed_title')}</h3>
               <div style={{ width: '100%', height: '180px' }}>
                 <canvas ref={canvasRef} />
               </div>
               <div class="form-grid-2col" style={{ "margin-top": "12px" }}>
                 <div class="stats-group-row">
-                  <span class="text-info font-bold">{t('detail.speed.current_download') || 'Current Download'}:</span>
+                  <span class="text-info font-bold">{t('detail.speed.current_download')}:</span>
                   <strong class="text-mono text-info">{formatSpeed(speedHistory().download[speedHistory().download.length - 1] || 0)}</strong>
                 </div>
                 <div class="stats-group-row">
-                  <span class="text-success font-bold">{t('detail.speed.current_upload') || 'Current Upload'}:</span>
+                  <span class="text-success font-bold">{t('detail.speed.current_upload')}:</span>
                   <strong class="text-mono text-success">{formatSpeed(speedHistory().upload[speedHistory().upload.length - 1] || 0)}</strong>
                 </div>
               </div>
@@ -178,7 +178,7 @@ export const StatsModal: Component = () => {
 
             {/* Torrents Status Bar */}
             <div class="stats-card-sec">
-              <h3>{t('stats.torrent_stats') || 'Torrent Statistics'}</h3>
+              <h3>{t('stats.torrent_stats')}</h3>
               <div class="status-bar-chart">
                 <Show when={sidebarCounts().all > 0}>
                   <div class="status-bar-segment" style={{ width: `${(sidebarCounts().downloading / sidebarCounts().all) * 100}%`, background: 'var(--color-primary-500)' }} title={`Downloading: ${sidebarCounts().downloading}`}>{sidebarCounts().downloading > 0 && (sidebarCounts().downloading / sidebarCounts().all) * 100 >= 5 ? sidebarCounts().downloading : ''}</div>
@@ -224,7 +224,7 @@ export const StatsModal: Component = () => {
                     </strong>
                   </div>
                   <div class="stats-group-row">
-                    <span>{t('stats.file_count') || 'Files Added'}:</span>
+                    <span>{t('stats.file_count')}:</span>
                     <strong class="text-mono">{formatNumber(stats.data!.cumulative_stats.files_added)}</strong>
                   </div>
                   <div class="stats-group-row">
@@ -255,7 +255,7 @@ export const StatsModal: Component = () => {
                     </strong>
                   </div>
                   <div class="stats-group-row">
-                    <span>{t('stats.file_count') || 'Files Added'}:</span>
+                    <span>{t('stats.file_count')}:</span>
                     <strong class="text-mono">{formatNumber(stats.data!.current_stats.files_added)}</strong>
                   </div>
                   <div class="stats-group-row">
@@ -278,7 +278,7 @@ export const StatsModal: Component = () => {
                     <strong class="text-mono">{session.data?.rpc_version_semver || session.data?.rpc_version || '-'}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.config_dir') || 'Config Dir'}:</span>
+                    <span>{t('dialog.settings.config_dir')}:</span>
                     <strong class="text-xs text-mono selectable-text">{session.data?.config_dir || '-'}</strong>
                   </div>
                   <div class="sys-info-item">
@@ -286,35 +286,35 @@ export const StatsModal: Component = () => {
                     <strong class="text-xs text-mono selectable-text">{session.data?.download_dir || '-'}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('stats.free_space') || 'Free Space'}:</span>
+                    <span>{t('stats.free_space')}:</span>
                     <strong class="text-mono">{freeSpace.data !== undefined && freeSpace.data !== null ? formatBytes(freeSpace.data) : '-'}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.listen_port') || 'Peer Port'}:</span>
+                    <span>{t('dialog.settings.listen_port')}:</span>
                     <strong class="text-mono">{session.data?.peer_port || '-'}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.port_forwarding') || 'Port Forwarding'}:</span>
+                    <span>{t('dialog.settings.port_forwarding')}:</span>
                     <strong class="text-mono">{session.data?.port_forwarding_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.dht') || 'DHT'}:</span>
+                    <span>{t('dialog.settings.dht')}:</span>
                     <strong class="text-mono">{session.data?.dht_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.pex') || 'PEX'}:</span>
+                    <span>{t('dialog.settings.pex')}:</span>
                     <strong class="text-mono">{session.data?.pex_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.lpd') || 'LPD'}:</span>
+                    <span>{t('dialog.settings.lpd')}:</span>
                     <strong class="text-mono">{session.data?.lpd_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('dialog.settings.utp') || 'uTP'}:</span>
+                    <span>{t('dialog.settings.utp')}:</span>
                     <strong class="text-mono">{session.data?.utp_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                   <div class="sys-info-item">
-                    <span>{t('toolbar.alt_speed') || 'Alt Speed'}:</span>
+                    <span>{t('toolbar.alt_speed')}:</span>
                     <strong class="text-mono">{session.data?.alt_speed_enabled ? t('dialog.settings.enabled') : t('dialog.settings.disabled')}</strong>
                   </div>
                 </div>

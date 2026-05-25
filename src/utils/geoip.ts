@@ -1,9 +1,9 @@
 import { t } from './i18n';
+import inlineMmdbBase64 from 'virtual:inline-mmdb';
+import inlineFlags from 'virtual:inline-flags';
 
 let _loaded = false;
-let _loading = false;
 let _reader: InstanceType<typeof MMDBReader> | null = null;
-const _flagBasePath = './flags/';
 const _flagCache: Record<string, string> = {};
 
 const _availableFlags: Record<string, number> = {
@@ -440,49 +440,24 @@ function init(callback: (success: boolean) => void): void {
         if (callback) callback(true);
         return;
     }
-    if (_loading) {
-        _waitLoad(callback);
-        return;
-    }
 
-    _loading = true;
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', './geo/dbip-country-lite-2026-05.mmdb', true);
-    xhr.responseType = 'arraybuffer';
-    xhr.timeout = 60000;
-
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                _reader = new MMDBReader(new Uint8Array(xhr.response));
-                _loaded = true;
-                _loading = false;
-                console.log('GeoIP: MMDB database loaded, IP version:', _reader.metadata.ipVersion,
-                    'nodes:', _reader.metadata.nodeCount,
-                    'record size:', _reader.metadata.recordSize,
-                    'type:', _reader.metadata.databaseType);
-                if (callback) callback(true);
-            } catch (e) {
-                console.error('GeoIP: Failed to parse MMDB database', e);
-                _loading = false;
-                if (callback) callback(false);
-            }
-        } else {
-            _loading = false;
-            if (callback) callback(false);
+    try {
+        const binaryStr = atob(inlineMmdbBase64);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
         }
-    };
-
-    xhr.onerror = function() { _loading = false; if (callback) callback(false); };
-    xhr.ontimeout = function() { _loading = false; if (callback) callback(false); };
-    xhr.send();
-}
-
-function _waitLoad(callback: (success: boolean) => void): void {
-    const check = setInterval(function() {
-        if (_loaded) { clearInterval(check); if (callback) callback(true); }
-        if (!_loading) { clearInterval(check); if (callback) callback(false); }
-    }, 100);
+        _reader = new MMDBReader(bytes);
+        _loaded = true;
+        console.log('GeoIP: MMDB database loaded (inline), IP version:', _reader.metadata.ipVersion,
+            'nodes:', _reader.metadata.nodeCount,
+            'record size:', _reader.metadata.recordSize,
+            'type:', _reader.metadata.databaseType);
+        if (callback) callback(true);
+    } catch (e) {
+        console.error('GeoIP: Failed to parse inline MMDB database', e);
+        if (callback) callback(false);
+    }
 }
 
 function lookup(ipStr: string): GeoIPResult | null {
@@ -545,9 +520,9 @@ function getCountryFlag(code: string): string {
     const lc = code.toLowerCase();
     if (_flagCache[lc] !== undefined) return _flagCache[lc];
 
-    const flagPath = _flagBasePath + lc + '.svg';
-    _flagCache[lc] = flagPath;
-    return flagPath;
+    const flagDataUri = inlineFlags[lc] || '';
+    _flagCache[lc] = flagDataUri;
+    return flagDataUri;
 }
 
 function hasFlag(code: string): boolean {
@@ -559,8 +534,8 @@ function getCountryFlagHtml(code: string): string {
     if (!code) return '';
     const lc = code.toLowerCase();
     if (_availableFlags[lc]) {
-        const flagPath = _flagBasePath + lc + '.svg';
-        return '<img class="twc-country-flag-img" src="' + flagPath + '" alt="' + code + '" title="' + code.toUpperCase() + '" style="width:16px;height:12px;vertical-align:middle;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
+        const flagDataUri = inlineFlags[lc] || '';
+        return '<img class="twc-country-flag-img" src="' + flagDataUri + '" alt="' + code + '" title="' + code.toUpperCase() + '" style="width:16px;height:12px;vertical-align:middle;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
             '<span style="display:none;font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
     }
     return '<span style="font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';

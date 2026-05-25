@@ -134,7 +134,7 @@ export const AddTorrentModal: Component = () => {
           .split('\n')
           .map((u) => u.trim())
           .filter((u) => u.length > 0);
-        
+
         for (const url of list) {
           const res = await rpcCall<any>('torrent_add', {
           ...commonArgs,
@@ -189,7 +189,7 @@ export const AddTorrentModal: Component = () => {
       setDownloadLimit('');
       setUploadLimit('');
       setGroup('');
-      
+
       await fetchTorrents(true);
     } catch (err) {
       console.error('Failed to add torrent', err);
@@ -208,34 +208,53 @@ export const AddTorrentModal: Component = () => {
             <button class="close-btn" onClick={closeAddModal}>×</button>
           </div>
 
-          <form onSubmit={handleAdd} class="modal-form">
-            <div style={{ "padding": "8px 20px" }}>
+          <form onSubmit={handleAdd} class="modal-form add-torrent-form">
+            {/* === Source Section: URL or File (Required) === */}
+            <div class="add-section add-section-source">
+              <div class="add-section-header">
+                <span class="add-section-title">{t('dialog.add.source')}</span>
+                <span class="add-required-badge">{t('dialog.add.required')}</span>
+              </div>
+
               {/* Input URL */}
-              <div class="form-group" style={{ "padding": "0", "margin-bottom": "16px" }}>
-                <label>{t('dialog.add.url_label')}</label>
+              <div class="form-group">
+                <label>
+                  {t('dialog.add.url_label')}
+                  <span class="label-hint label-hint-required">*</span>
+                </label>
                 <textarea
                   rows="3"
                   placeholder={t('dialog.add.url_placeholder')}
                   value={urls()}
                   onInput={(e) => setUrls(e.currentTarget.value)}
                   disabled={adding() || !!fileBase64()}
-                  style={{ height: '70px', resize: 'none' }}
+                  class="add-textarea"
                 />
               </div>
 
+              {/* Divider hint */}
+              <div class="add-or-divider">
+                <span>{t('dialog.add.or')}</span>
+              </div>
+
               {/* Input Local File */}
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.file_label')}</label>
-                <div class="file-uploader-row" style={{ "align-items": "center" }}>
+              <div class="form-group">
+                <label>
+                  {t('dialog.add.file_label')}
+                  <span class="label-hint label-hint-optional">{t('dialog.add.optional')}</span>
+                </label>
+                <div class="file-uploader-row">
                   <button
                     type="button"
-                    class="trwm-btn"
+                    class="trwm-btn add-file-btn"
                     onClick={() => fileInputRef?.click()}
                     disabled={adding() || !!urls().trim()}
                   >
                     {fileName() ? t('mobile.select_file') : t('dialog.add.file_label')}
                   </button>
-                  <span class="file-name text-mono">{fileName() || t('dialog.add.url_placeholder')}</span>
+                  <span class={`file-name text-mono ${fileName() ? 'file-name-active' : ''}`}>
+                    {fileName() || t('dialog.add.url_placeholder')}
+                  </span>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -245,140 +264,170 @@ export const AddTorrentModal: Component = () => {
                   />
                 </div>
               </div>
-            </div>
 
-            <div class="form-divider" style={{"margin":"0 20px"}}><span>{t('dialog.add.options')}</span></div>
-
-            {/* Optional parameters */}
-            <div class="form-group">
-              <label>{t('dialog.add.download_dir')}</label>
-              <input
-                type="text"
-                placeholder={t('dialog.add.dir_placeholder')}
-                value={downloadDir()}
-                onInput={(e) => setDownloadDir(e.currentTarget.value)}
-                disabled={adding()}
-              />
-            </div>
-
-            <div class="form-grid-3col" style={{ "padding": "8px 20px" }}>
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.peer_limit') || 'Peer Limit'}</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder={t('dialog.add.default')}
-                  value={peerLimit()}
-                  onInput={(e) => setPeerLimit(e.currentTarget.value)}
-                  disabled={adding()}
-                />
-              </div>
-
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.priority')}</label>
-                <select
-                  value={priority()}
-                  onChange={(e) => setPriority(Number(e.currentTarget.value))}
-                  disabled={adding()}
-                >
-                  <option value="-1">{t('detail.settings.priority_low')}</option>
-                  <option value="0">{t('detail.settings.priority_normal')}</option>
-                  <option value="1">{t('detail.settings.priority_high')}</option>
-                </select>
-              </div>
-
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.group') || 'Bandwidth Group'}</label>
-                <select
-                  value={group()}
-                  onChange={(e) => setGroup(e.currentTarget.value)}
-                  disabled={adding() || !groupsData.isSuccess}
-                >
-                  <option value="">{t('dialog.add.group_default') || 'Default'}</option>
-                  <Show when={groupsData.isSuccess}>
-                    <For each={groupsData.data}>
-                      {(g) => <option value={g.name}>{g.name}</option>}
-                    </For>
-                  </Show>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid-2col" style={{ "padding": "8px 20px" }}>
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.download_limit') || 'Download Limit (KB/s)'}</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder={t('dialog.add.unlimited') || 'Unlimited'}
-                  value={downloadLimit()}
-                  onInput={(e) => setDownloadLimit(e.currentTarget.value)}
-                  disabled={adding()}
-                />
-              </div>
-
-              <div class="form-group" style={{ "padding": "0" }}>
-                <label>{t('dialog.add.upload_limit') || 'Upload Limit (KB/s)'}</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder={t('dialog.add.unlimited') || 'Unlimited'}
-                  value={uploadLimit()}
-                  onInput={(e) => setUploadLimit(e.currentTarget.value)}
-                  disabled={adding()}
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>{t('dialog.add.labels')} <span style={{ "font-weight":"normal", color:"var(--text-muted)", "font-size":"11px" }}>({t('dialog.add.labels_hint')})</span></label>
-              <input
-                type="text"
-                placeholder={t('dialog.add.labels_hint')}
-                value={labels()}
-                onInput={(e) => setLabels(e.currentTarget.value)}
-                disabled={adding()}
-              />
-              <Show when={availableLabels().length > 0}>
-                <div style={{ "font-size": "11px", "color": "var(--text-muted)", "margin-bottom": "4px" }}>
-                  {t('dialog.label.saved_label')}
+              {/* Mutual exclusion hint */}
+              <Show when={urls().trim() && fileBase64()}>
+                <div class="add-hint add-hint-warning">
+                  {t('dialog.add.mutual_exclusive_hint')}
                 </div>
-                <div class="label-picker-chips">
-                  <For each={availableLabels()}>
-                    {(l) => (
-                      <span 
-                        class={`label-chip ${labels().split(',').map(x=>x.trim()).includes(l) ? 'active' : ''}`}
-                        onClick={() => toggleLabel(l)}
-                      >
-                        {l}
-                      </span>
-                    )}
-                  </For>
+              </Show>
+              <Show when={!urls().trim() && !fileBase64()}>
+                <div class="add-hint add-hint-info">
+                  {t('dialog.add.empty_source_hint')}
                 </div>
               </Show>
             </div>
 
-            {/* Checkboxes */}
-            <div class="form-checkbox-row">
-              <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={paused()}
-                  onChange={(e) => setPaused(e.currentTarget.checked)}
-                  disabled={adding()}
-                />
-                <span>{t('dialog.add.paused')}</span>
-              </label>
+            {/* === Options Section (Optional) === */}
+            <div class="add-section add-section-options">
+              <div class="add-section-header">
+                <span class="add-section-title">{t('dialog.add.options')}</span>
+                <span class="add-optional-badge">{t('dialog.add.optional')}</span>
+              </div>
 
-              <label class="checkbox-label">
+              {/* Download Dir */}
+              <div class="form-group">
+                <label>{t('dialog.add.download_dir')}</label>
                 <input
-                  type="checkbox"
-                  checked={sequential()}
-                  onChange={(e) => setSequential(e.currentTarget.checked)}
+                  type="text"
+                  placeholder={t('dialog.add.dir_placeholder')}
+                  value={downloadDir()}
+                  onInput={(e) => setDownloadDir(e.currentTarget.value)}
                   disabled={adding()}
                 />
-                <span>{t('dialog.add.sequential')}</span>
-              </label>
+              </div>
+
+              {/* Peer Limit / Priority / Group - 3 columns */}
+              <div class="form-grid-3col">
+                <div class="form-group">
+                  <label>{t('dialog.add.peer_limit')}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={t('dialog.add.default')}
+                    value={peerLimit()}
+                    onInput={(e) => setPeerLimit(e.currentTarget.value)}
+                    disabled={adding()}
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>{t('dialog.add.priority')}</label>
+                  <select
+                    value={priority()}
+                    onChange={(e) => setPriority(Number(e.currentTarget.value))}
+                    disabled={adding()}
+                  >
+                    <option value="-1">{t('detail.settings.priority_low')}</option>
+                    <option value="0">{t('detail.settings.priority_normal')}</option>
+                    <option value="1">{t('detail.settings.priority_high')}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>{t('dialog.add.group')}</label>
+                  <select
+                    value={group()}
+                    onChange={(e) => setGroup(e.currentTarget.value)}
+                    disabled={adding() || !groupsData.isSuccess}
+                  >
+                    <option value="">{t('dialog.add.group_default')}</option>
+                    <Show when={groupsData.isSuccess}>
+                      <For each={groupsData.data}>
+                        {(g) => <option value={g.name}>{g.name}</option>}
+                      </For>
+                    </Show>
+                  </select>
+                </div>
+              </div>
+
+              {/* Speed Limits - 2 columns with unit suffix */}
+              <div class="form-grid-2col">
+                <div class="form-group">
+                  <label>{t('dialog.add.download_limit')}</label>
+                  <div class="input-with-suffix">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={t('dialog.add.unlimited')}
+                      value={downloadLimit()}
+                      onInput={(e) => setDownloadLimit(e.currentTarget.value)}
+                      disabled={adding()}
+                    />
+                    <span class="input-suffix">KB/s</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>{t('dialog.add.upload_limit')}</label>
+                  <div class="input-with-suffix">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={t('dialog.add.unlimited')}
+                      value={uploadLimit()}
+                      onInput={(e) => setUploadLimit(e.currentTarget.value)}
+                      disabled={adding()}
+                    />
+                    <span class="input-suffix">KB/s</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Labels */}
+              <div class="form-group">
+                <label>
+                  {t('dialog.add.labels')}
+                  <span class="label-hint label-hint-optional">{t('dialog.add.labels_hint')}</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder={t('dialog.add.labels_hint')}
+                  value={labels()}
+                  onInput={(e) => setLabels(e.currentTarget.value)}
+                  disabled={adding()}
+                />
+                <Show when={availableLabels().length > 0}>
+                  <div class="label-picker-header">
+                    {t('dialog.label.saved_label')}
+                  </div>
+                  <div class="label-picker-chips">
+                    <For each={availableLabels()}>
+                      {(l) => (
+                        <span
+                          class={`label-chip ${labels().split(',').map(x=>x.trim()).includes(l) ? 'active' : ''}`}
+                          onClick={() => toggleLabel(l)}
+                        >
+                          {l}
+                        </span>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+
+              {/* Checkboxes */}
+              <div class="form-checkbox-row">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={paused()}
+                    onChange={(e) => setPaused(e.currentTarget.checked)}
+                    disabled={adding()}
+                  />
+                  <span>{t('dialog.add.paused')}</span>
+                </label>
+
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={sequential()}
+                    onChange={(e) => setSequential(e.currentTarget.checked)}
+                    disabled={adding()}
+                  />
+                  <span>{t('dialog.add.sequential')}</span>
+                </label>
+              </div>
             </div>
 
             <div class="modal-footer">

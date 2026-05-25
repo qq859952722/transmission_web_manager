@@ -32,7 +32,10 @@ import {
   selectAll,
   clearSelection
 } from './store/torrentStore';
-import { openDeleteModal, openAddModal, setDroppedFile, openSettingsModal } from './store/modalStore';
+import { 
+  openDeleteModal, openAddModal, setDroppedFile, openSettingsModal,
+  showSettingsModal, showDeleteModal, showHistoryModal, showStatsModal, showAddModal
+} from './store/modalStore';
 import { t } from './utils/i18n';
 import { showToast } from './utils/toast';
 
@@ -124,6 +127,11 @@ const App: Component = () => {
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Check if any modal is open to prevent drop zone conflicts
+      if (showSettingsModal() || showDeleteModal() || showHistoryModal() || showStatsModal() || showAddModal() || showLabelDialog() || promptConfig().open) {
+        return;
+      }
 
       const files = e.dataTransfer?.files;
       if (!files || files.length === 0) return;

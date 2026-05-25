@@ -1,4 +1,4 @@
-import { type Component, createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
+import { type Component, createSignal, createMemo, For, Index, Show, onMount, onCleanup } from 'solid-js';
 import { createPersistedSignal } from '../../utils/persist';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { Torrent } from '../../types/transmission';
@@ -80,16 +80,16 @@ export const TorrentTable: Component<{
     { id: 'queue_position', label: '#', width: 40, align: 'center', visible: true },
     { id: 'name', label: t('columns.name'), width: 280, align: 'left', visible: true },
     { id: 'total_size', label: t('columns.size'), width: 80, align: 'right', visible: true },
-    { id: 'percent_done', label: t('columns.progress'), width: 120, align: 'left', visible: true },
-    { id: 'status', label: t('columns.status'), width: 85, align: 'center', visible: true },
+    { id: 'percent_done', label: t('columns.progress'), width: 130, align: 'left', visible: true },
+    { id: 'status', label: t('columns.status'), width: 100, align: 'center', visible: true },
     { id: 'seeds', label: t('columns.seeds'), width: 70, align: 'center', visible: true },
     { id: 'peers', label: t('columns.peers'), width: 70, align: 'center', visible: true },
-    { id: 'rate_download', label: t('columns.rate_dl'), width: 90, align: 'right', visible: true },
-    { id: 'rate_upload', label: t('columns.rate_ul'), width: 90, align: 'right', visible: true },
+    { id: 'rate_download', label: t('columns.rate_dl'), width: 100, align: 'right', visible: true },
+    { id: 'rate_upload', label: t('columns.rate_ul'), width: 100, align: 'right', visible: true },
     { id: 'eta', label: t('columns.eta'), width: 90, align: 'center', visible: true },
     { id: 'upload_ratio', label: t('columns.ratio'), width: 60, align: 'right', visible: true },
-    { id: 'downloaded_ever', label: t('columns.downloaded'), width: 95, align: 'right', visible: false },
-    { id: 'uploaded_ever', label: t('columns.uploaded'), width: 95, align: 'right', visible: false },
+    { id: 'downloaded_ever', label: t('columns.downloaded'), width: 110, align: 'right', visible: false },
+    { id: 'uploaded_ever', label: t('columns.uploaded'), width: 110, align: 'right', visible: false },
     { id: 'added_date', label: t('columns.added'), width: 130, align: 'center', visible: false },
     { id: 'done_date', label: t('columns.done_date'), width: 130, align: 'center', visible: false },
     { id: 'download_dir', label: t('columns.download_dir'), width: 150, align: 'left', visible: false },
@@ -151,7 +151,7 @@ export const TorrentTable: Component<{
   const rowVirtualizer = createVirtualizer({
     get count() { return sortedTorrentsList().length; },
     getScrollElement: () => parentRef || null,
-    estimateSize: () => 38,
+    estimateSize: () => 30,
     overscan: 10,
   });
 
@@ -267,8 +267,9 @@ export const TorrentTable: Component<{
               position: 'relative',
             }}
           >
-            <For each={rowVirtualizer.getVirtualItems()}>
-              {(virtualRow) => {
+            <Index each={rowVirtualizer.getVirtualItems()}>
+              {(virtualRowAccessor) => {
+                const virtualRow = virtualRowAccessor();
                 const torrent = sortedTorrentsList()[virtualRow.index];
                 const isSelected = createMemo(() => selectedIds().includes(torrent.id));
 
@@ -434,7 +435,7 @@ export const TorrentTable: Component<{
                   </div>
                 );
               }}
-            </For>
+            </Index>
           </div>
         </div>
       </div>

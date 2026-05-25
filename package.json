@@ -15,7 +15,6 @@
   "dependencies": {
     "@tanstack/solid-query": "^5.100.14",
     "@tanstack/solid-virtual": "^3.13.25",
-    "dayjs": "^1.11.20",
     "dexie": "^4.4.2",
     "lucide-solid": "^1.16.0",
     "solid-js": "^1.9.12"

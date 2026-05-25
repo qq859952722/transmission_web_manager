@@ -21,9 +21,12 @@ export const zhCN = {
     "stats": "统计",
     "history": "历史",
     "settings": "设置",
+    "settings_short": "设置",
     "logo": "Transmission",
     "shortcut": "快捷键",
-    "network": "网络"
+    "network": "网络",
+    "switch_lang": "Switch to English",
+    "lang_label": "EN"
   },
   "sidebar": {
     "status": "种子状态",
@@ -105,7 +108,8 @@ export const zhCN = {
       "eta": "剩余时间",
       "mime": "MIME 类型",
       "torrent_file": "种子文件",
-      "file_count": "文件数量"
+      "file_count": "文件数量",
+      "sequential_from": "(从 {piece} 开始)"
     },
     "pieces": {
       "no_data": "暂无分片数据",
@@ -355,7 +359,13 @@ export const zhCN = {
       "options": "选项",
       "tracker_url": "Tracker URL",
       "tier": "组 (Tier)",
-      "magnet_link": "磁力链接"
+      "magnet_link": "磁力链接",
+      "source": "来源",
+      "required": "必填",
+      "optional": "选填",
+      "or": "或",
+      "mutual_exclusive_hint": "URL 和文件只能选择其一，已选择 URL",
+      "empty_source_hint": "请输入磁力链接/种子 URL，或选择本地 .torrent 文件"
     },
     "delete": {
       "title": "确认删除",
@@ -459,6 +469,7 @@ export const zhCN = {
       "port_closed": "端口关闭",
       "port_closed_hint": "端口转发(UPnP)可能已生效，但端口从公网不可达。请检查防火墙、路由器设置或运营商限制。",
       "test_failed": "测试失败",
+      "no_response": "无响应",
       "enabled": "已启用",
       "disabled": "已禁用",
       "blocklist": "屏蔽列表",
@@ -513,6 +524,8 @@ export const zhCN = {
       "max_dl": "最大同时下载数",
       "seed_queue": "做种队列",
       "max_seed": "最大同时做种数",
+      "seed_ratio": "分享率限制",
+      "seed_idle": "闲置做种限制",
       "stalled_detection": "停滞检测",
       "stalled_timeout": "停滞超时",
       "script": "脚本",
@@ -529,6 +542,7 @@ export const zhCN = {
       "group_add": "添加组",
       "group_edit": "编辑",
       "group_delete": "删除",
+      "group": "带宽组",
       "no_groups": "暂无带宽组，点击上方按钮添加",
       "group_name": "组名称",
       "group_download_limit": "下载限速",
@@ -695,7 +709,16 @@ export const zhCN = {
     "snapshot_time": "时间",
     "magnet_link": "磁力链接",
     "export_failed": "导出失败",
-    "exported": "已导出 {n} 条记录"
+    "exported": "已导出 {n} 条记录",
+    "copy_magnet": "复制链接",
+    "copy_all_magnet": "复制全部磁力链接",
+    "copy_selected_magnet": "复制选中磁力链接",
+    "copied_magnet_links": "已复制 {n} 条磁力链接",
+    "no_magnet_links": "没有可复制的磁力链接",
+    "copy_failed": "复制失败",
+    "magnet_copied": "磁力链接已复制",
+    "batch_delete": "批量删除",
+    "batch_deleted": "已删除 {n} 条记录"
   },
   "context": {
     "start": "开始",
