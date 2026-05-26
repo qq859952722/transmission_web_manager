@@ -13,11 +13,15 @@
     "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'"
   },
   "dependencies": {
+    "@kobalte/core": "^0.13.11",
     "@tanstack/solid-query": "^5.100.14",
     "@tanstack/solid-virtual": "^3.13.25",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dexie": "^4.4.2",
     "lucide-solid": "^1.16.0",
-    "solid-js": "^1.9.12"
+    "solid-js": "^1.9.12",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

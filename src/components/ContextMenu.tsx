@@ -21,9 +21,11 @@ import {
   X,
   Trash2,
   ChevronRight,
+  Circle
 } from 'lucide-solid';
 import { t } from '../utils/i18n';
 import { showToast } from '../utils/toast';
+import { cn } from '../lib/utils';
 import {
   selectedIds,
   torrentStore,
@@ -175,138 +177,153 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     await removeTorrents(selectedIds(), true);
   };
 
+  const Item = (props: any) => (
+    <div
+      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground", props.class)}
+      onClick={props.onClick}
+      onMouseEnter={props.onMouseEnter}
+      onMouseLeave={props.onMouseLeave}
+    >
+      {props.children}
+    </div>
+  );
+
+  const Divider = () => <div class="h-px bg-border my-1 mx-1" />;
+
   return (
     <div
-      class="trwm-context-menu fixed"
+      class="fixed z-[99999] bg-popover/80 backdrop-blur-xl border border-border rounded-lg shadow-xl min-w-[220px] py-1 flex flex-col text-popover-foreground animate-in fade-in zoom-in-95 duration-100"
       style={{
         left: `${props.x}px`,
         top: `${props.y}px`,
-        'z-index': 99999,
       }}
       onClick={(e) => {
         e.stopPropagation();
-        // Auto-close menu when any item is clicked (except items with submenus)
-        const target = e.target as HTMLElement;
-        if (!target.closest('.cm-has-submenu')) {
+        if (!(e.target as HTMLElement).closest('.cm-has-submenu')) {
           props.onClose();
         }
       }}
     >
-      <div class="cm-item" onClick={() => startTorrents()}>
-        <Play size={14} class="cm-icon text-success" />
+      <Item onClick={() => startTorrents()}>
+        <Play size={14} class="text-success" />
         <span>{t('context.start')}</span>
-      </div>
-      <div class="cm-item" onClick={() => startNowTorrents()}>
-        <FastForward size={14} class="cm-icon text-success" />
+      </Item>
+      <Item onClick={() => startNowTorrents()}>
+        <FastForward size={14} class="text-success" />
         <span>{t('context.start_now')}</span>
-      </div>
-      <div class="cm-item" onClick={() => pauseTorrents()}>
-        <Pause size={14} class="cm-icon text-warning" />
+      </Item>
+      <Item onClick={() => pauseTorrents()}>
+        <Pause size={14} class="text-warning" />
         <span>{t('context.pause')}</span>
-      </div>
-      <div class="cm-item" onClick={() => verifyTorrents()}>
-        <ShieldCheck size={14} class="cm-icon text-primary" />
+      </Item>
+      <Item onClick={() => verifyTorrents()}>
+        <ShieldCheck size={14} class="text-primary" />
         <span>{t('context.verify')}</span>
-      </div>
-      <div class="cm-item" onClick={() => reannounceTorrents()}>
-        <Globe size={14} class="cm-icon text-primary" />
+      </Item>
+      <Item onClick={() => reannounceTorrents()}>
+        <Globe size={14} class="text-primary" />
         <span>{t('context.reannounce')}</span>
-      </div>
+      </Item>
 
-      <div class="cm-divider" />
+      <Divider />
 
-      <div class="cm-item" onClick={() => moveQueueUp()}>
-        <ChevronUp size={14} />
+      <Item onClick={() => moveQueueUp()}>
+        <ChevronUp size={14} class="text-muted-foreground" />
         <span>{t('context.queue_up')}</span>
-      </div>
-      <div class="cm-item" onClick={() => moveQueueDown()}>
-        <ChevronDown size={14} />
+      </Item>
+      <Item onClick={() => moveQueueDown()}>
+        <ChevronDown size={14} class="text-muted-foreground" />
         <span>{t('context.queue_down')}</span>
-      </div>
-      <div class="cm-item" onClick={() => moveQueueTop()}>
-        <ChevronsUp size={14} />
+      </Item>
+      <Item onClick={() => moveQueueTop()}>
+        <ChevronsUp size={14} class="text-muted-foreground" />
         <span>{t('context.queue_top')}</span>
-      </div>
-      <div class="cm-item" onClick={() => moveQueueBottom()}>
-        <ChevronsDown size={14} />
+      </Item>
+      <Item onClick={() => moveQueueBottom()}>
+        <ChevronsDown size={14} class="text-muted-foreground" />
         <span>{t('context.queue_bottom')}</span>
-      </div>
+      </Item>
 
-      <div class="cm-divider" />
+      <Divider />
 
-      <div class="cm-item" onClick={copyHash}>
-        <Hash size={14} />
+      <Item onClick={copyHash}>
+        <Hash size={14} class="text-muted-foreground" />
         <span>{t('context.copy_hash')}</span>
-      </div>
-      <div class="cm-item" onClick={copyMagnet}>
-        <Magnet size={14} />
+      </Item>
+      <Item onClick={copyMagnet}>
+        <Magnet size={14} class="text-muted-foreground" />
         <span>{t('context.copy_magnet')}</span>
-      </div>
+      </Item>
 
-      <div class="cm-divider" />
+      <Divider />
 
-      <div class="cm-item" onClick={props.onOpenLabelDialog}>
-        <Tag size={14} />
+      <Item onClick={props.onOpenLabelDialog}>
+        <Tag size={14} class="text-primary" />
         <span>{t('context.set_labels')}</span>
-      </div>
+      </Item>
 
-      <div
-        class="cm-item cm-has-submenu"
-        onMouseEnter={() => setShowPrioritySubmenu(true)}
-        onMouseLeave={() => setShowPrioritySubmenu(false)}
-      >
-        <Zap size={14} />
-        <span>{t('context.bandwidth_priority')}</span>
-        <ChevronRight size={12} class="ml-auto" />
+      <div class="relative cm-has-submenu">
+        <Item
+          onMouseEnter={() => setShowPrioritySubmenu(true)}
+          onMouseLeave={() => setShowPrioritySubmenu(false)}
+        >
+          <Zap size={14} class="text-warning" />
+          <span>{t('context.bandwidth_priority')}</span>
+          <ChevronRight size={12} class="ml-auto text-muted-foreground" />
+        </Item>
         <Show when={showPrioritySubmenu()}>
-          <div class="cm-submenu">
-            <div class="cm-item" onClick={(e) => { e.stopPropagation(); setBandwidthPriority(1); props.onClose(); }}>
+          <div
+            class="absolute top-0 left-full ml-1 bg-popover/90 backdrop-blur-xl border border-border rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in slide-in-from-left-1 duration-150"
+            onMouseEnter={() => setShowPrioritySubmenu(true)}
+            onMouseLeave={() => setShowPrioritySubmenu(false)}
+          >
+            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(1); props.onClose(); }}>
               <ChevronUp size={14} class="text-success" />
               <span>{t('context.priority_high')}</span>
-            </div>
-            <div class="cm-item" onClick={(e) => { e.stopPropagation(); setBandwidthPriority(0); props.onClose(); }}>
-              <span class="text-[10px]">●</span>
+            </Item>
+            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(0); props.onClose(); }}>
+              <Circle size={10} class="text-muted-foreground ml-0.5 mr-[2px]" />
               <span>{t('context.priority_normal')}</span>
-            </div>
-            <div class="cm-item" onClick={(e) => { e.stopPropagation(); setBandwidthPriority(-1); props.onClose(); }}>
+            </Item>
+            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(-1); props.onClose(); }}>
               <ChevronDown size={14} class="text-danger" />
               <span>{t('context.priority_low')}</span>
-            </div>
+            </Item>
           </div>
         </Show>
       </div>
 
-      <div class="cm-item" onClick={setDownloadLimit}>
-        <ArrowDown size={14} />
+      <Item onClick={setDownloadLimit}>
+        <ArrowDown size={14} class="text-muted-foreground" />
         <span>{t('context.download_limit')}</span>
-      </div>
-      <div class="cm-item" onClick={setUploadLimit}>
-        <ArrowUp size={14} />
+      </Item>
+      <Item onClick={setUploadLimit}>
+        <ArrowUp size={14} class="text-muted-foreground" />
         <span>{t('context.upload_limit')}</span>
-      </div>
-      <div class="cm-item" onClick={setPeerLimit}>
-        <Users size={14} />
+      </Item>
+      <Item onClick={setPeerLimit}>
+        <Users size={14} class="text-muted-foreground" />
         <span>{t('context.peer_limit')}</span>
-      </div>
-      <div class="cm-item" onClick={changeDownloadDir}>
-        <FolderOpen size={14} />
+      </Item>
+      <Item onClick={changeDownloadDir}>
+        <FolderOpen size={14} class="text-muted-foreground" />
         <span>{t('context.change_dir')}</span>
-      </div>
-      <div class="cm-item" onClick={toggleSequentialDownload}>
-        <ListOrdered size={14} />
+      </Item>
+      <Item onClick={toggleSequentialDownload}>
+        <ListOrdered size={14} class="text-muted-foreground" />
         <span>{t('context.sequential_download')}</span>
-      </div>
+      </Item>
 
-      <div class="cm-divider" />
+      <Divider />
 
-      <div class="cm-item text-danger" onClick={openDeleteModal}>
-        <X size={14} class="cm-icon text-danger" />
+      <Item class="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={openDeleteModal}>
+        <X size={14} class="text-destructive" />
         <span>{t('context.remove')}</span>
-      </div>
-      <div class="cm-item text-danger" onClick={handleRemoveWithData}>
-        <Trash2 size={14} class="cm-icon text-danger" />
+      </Item>
+      <Item class="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleRemoveWithData}>
+        <Trash2 size={14} class="text-destructive" />
         <span>{t('context.remove_data')}</span>
-      </div>
+      </Item>
     </div>
   );
 };

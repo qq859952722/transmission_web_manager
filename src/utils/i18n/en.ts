@@ -137,6 +137,8 @@ export const en = {
       "current_upload": "Current Upload",
       "total_download": "Total Downloaded",
       "total_upload": "Total Uploaded",
+      "avg_download": "Average Download",
+      "avg_upload": "Average Upload",
       "ratio": "Share Ratio",
       "download_time": "Download Time",
       "seed_time": "Seed Time"
@@ -595,6 +597,7 @@ export const en = {
     "no_files": "Could not get file info",
     "no_trackers": "Could not get tracker info",
     "no_torrents": "No torrents found",
+    "refreshed": "Refreshed",
     "alt_speed_on": "Alt speed enabled",
     "alt_speed_off": "Alt speed disabled",
     "stopped": "Stopped",
@@ -690,6 +693,9 @@ export const en = {
   "history": {
     "title": "History",
     "search_placeholder": "Search name, hash, tracker...",
+    "exported_torrents": "Exported {n} torrent(s)",
+    "export_torrent": "Export Torrent",
+    "added_at": "Added At",
     "export_json": "Export JSON",
     "export_csv": "Export CSV",
     "clear_all": "Clear All",

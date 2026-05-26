@@ -9,15 +9,14 @@ import { PeersTab } from './PeersTab';
 import { PiecesTab } from './PiecesTab';
 import { SpeedTab } from './SpeedTab';
 import { SettingsTab } from './SettingsTab';
-import './DetailPanel.css';
+import { cn } from '../../lib/utils';
+import { X, Search } from 'lucide-solid';
 
 export const DetailPanel: Component<{
   onClose: () => void;
 }> = (props) => {
   const [activeTab, setActiveTab] = createSignal<string>('general');
 
-  // Selected torrents reactive memo
-  // Access individual torrent properties to establish fine-grained reactivity
   const selectedTorrents = createMemo(() => {
     const ids = selectedIds();
     const items = torrentStore.items;
@@ -25,8 +24,6 @@ export const DetailPanel: Component<{
     for (const id of ids) {
       const t = items[id];
       if (!t) continue;
-      // Access key properties to establish reactive dependencies
-      // so changes to rate_download, percent_done, etc. trigger re-renders
       void t.rate_download;
       void t.rate_upload;
       void t.percent_done;
@@ -55,51 +52,51 @@ export const DetailPanel: Component<{
   ];
 
   return (
-    <div class="trwm-detail-panel flex flex-col h-full w-full overflow-hidden">
+    <div class="flex flex-col h-full w-full overflow-hidden bg-background border-t border-border">
       {/* Panel Tabs Header */}
-      <div class="trwm-detail-tabs flex items-center shrink-0">
+      <div class="flex items-center h-9 bg-secondary/80 backdrop-blur-md border-b border-border px-1.5 shrink-0 relative z-10">
         <Show when={torrentCount() > 0}>
-          <div class="trwm-tab-scroller flex items-center gap-1 h-full">
-            <For each={tabs
-              .filter((tab) => !tab.singleOnly || torrentCount() === 1)}>{(tab) => (
+          <div class="flex items-center gap-1 h-full overflow-x-auto no-scrollbar mask-fade-right">
+            <For each={tabs.filter((tab) => !tab.singleOnly || torrentCount() === 1)}>
+              {(tab) => (
                 <button
-                  class={`trwm-detail-tab ${activeTab() === tab.id ? 'active' : ''}`}
+                  class={cn(
+                    "h-full px-3 text-xs font-medium border-b-2 transition-all duration-200 whitespace-nowrap outline-none",
+                    activeTab() === tab.id 
+                      ? "text-primary border-primary font-semibold"
+                      : "text-muted-foreground border-transparent hover:text-foreground hover:bg-muted"
+                  )}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   {tab.label}
                 </button>
-              )}</For>
+              )}
+            </For>
           </div>
         </Show>
-        <div class="trwm-detail-spacer flex-1" />
+        <div class="flex-1" />
         <button
-          class="trwm-detail-close-btn"
+          class="w-7 h-7 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           onClick={props.onClose}
           title={t('toolbar.detail_toggle')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <X size={16} stroke-width={2.5} />
         </button>
       </div>
 
       {/* Tabs Content Panel */}
-      <div class="trwm-detail-content flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-in fade-in duration-200">
         <Switch>
           <Match when={torrentCount() === 0}>
-            <div class="trwm-detail-empty flex flex-col items-center justify-center h-full gap-3">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon size-12">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              <span>{t('detail.empty_msg')}</span>
+            <div class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/60">
+              <Search size={48} stroke-width={1.5} class="opacity-50" />
+              <span class="text-sm font-medium">{t('detail.empty_msg')}</span>
             </div>
           </Match>
 
           <Match when={torrentCount() > 1}>
-            <div class="trwm-detail-multi-view flex flex-col h-full">
-              <div class="multi-title">{t('detail.multi_msg', { n: torrentCount() })}</div>
+            <div class="flex flex-col h-full">
+              <div class="text-sm font-bold text-foreground mb-3 tracking-wide">{t('detail.multi_msg', { n: torrentCount() })}</div>
               <Show when={activeTab() === 'general'}>
                 <GeneralTab torrents={selectedTorrents()} />
               </Show>
@@ -110,7 +107,7 @@ export const DetailPanel: Component<{
           </Match>
 
           <Match when={torrentCount() === 1}>
-            <div class="trwm-detail-single-view h-full">
+            <div class="h-full">
               <Switch>
                 <Match when={activeTab() === 'general'}>
                   <GeneralTab torrents={[singleTorrent()]} />

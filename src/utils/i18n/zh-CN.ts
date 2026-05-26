@@ -137,6 +137,8 @@ export const zhCN = {
       "current_upload": "当前上传",
       "total_download": "累计下载",
       "total_upload": "累计上传",
+      "avg_download": "平均下载速度",
+      "avg_upload": "平均上传速度",
       "ratio": "分享率",
       "download_time": "下载时长",
       "seed_time": "做种时长"
@@ -596,6 +598,7 @@ export const zhCN = {
     "no_files": "无法获取文件信息",
     "no_trackers": "无法获取 Tracker 信息",
     "no_torrents": "暂无种子",
+    "refreshed": "已刷新",
     "alt_speed_on": "已启用备用限速",
     "alt_speed_off": "已关闭备用限速",
     "stopped": "已停止",
@@ -690,6 +693,9 @@ export const zhCN = {
   "history": {
     "title": "历史任务",
     "search_placeholder": "搜索名称、Hash、Tracker...",
+    "exported_torrents": "已导出 {n} 个种子文件",
+    "export_torrent": "导出种子文件",
+    "added_at": "添加时间",
     "export_json": "导出 JSON",
     "export_csv": "导出 CSV",
     "clear_all": "清空历史",

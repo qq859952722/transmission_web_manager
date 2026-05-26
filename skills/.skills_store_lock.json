@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "skills": {
+    "ui-ux-pro-max": {
+      "name": "UI/UX Pro Max",
+      "zip_url": "https://api.skillhub.cn/api/v1/download?slug=ui-ux-pro-max",
+      "source": "community",
+      "version": "0.1.0",
+      "installedAt": "2026-05-25T15:23:40Z"
+    },
+    "tailwind-design-system": {
+      "name": "Tailwind Design System",
+      "zip_url": "https://api.skillhub.cn/api/v1/download?slug=tailwind-design-system",
+      "source": "community",
+      "version": "1.0.0",
+      "installedAt": "2026-05-25T15:23:57Z"
+    }
+  }
+}

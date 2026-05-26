@@ -1,5 +1,6 @@
 import { Component, Show } from 'solid-js';
 import { t } from '../../../utils/i18n';
+import { SettingsSection, SettingsRow, SettingsInput, SettingsSwitch } from './SettingsUI';
 
 interface DownloadTabProps {
   downloadDir: () => string;
@@ -18,69 +19,35 @@ interface DownloadTabProps {
 
 export const DownloadTab: Component<DownloadTabProps> = (props) => {
   return (
-    <div class="settings-group">
-      <div class="form-group">
-        <label>{t('dialog.settings.download_dir')}</label>
-        <input
-          type="text"
-          value={props.downloadDir()}
-          onInput={(e) => props.setDownloadDir(e.currentTarget.value)}
-        />
-      </div>
+    <div class="animate-in fade-in duration-300">
+      <SettingsSection title={t('dialog.settings.download_dir')}>
+        <SettingsRow label={t('dialog.settings.download_dir')} desc="Default directory for all downloaded files">
+          <SettingsInput type="text" class="w-64 text-left" value={props.downloadDir()} onInput={(e) => props.setDownloadDir(e.currentTarget.value)} />
+        </SettingsRow>
+      </SettingsSection>
 
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input
-            type="checkbox"
-            checked={props.incompleteDirEnabled()}
-            onChange={(e) => props.setIncompleteDirEnabled(e.currentTarget.checked)}
-          />
-          <span>{t('dialog.settings.incomplete_enabled')}</span>
-        </label>
+      <SettingsSection title="Incomplete Downloads">
+        <SettingsRow label={t('dialog.settings.incomplete_enabled')} desc="Keep incomplete torrents in a separate directory">
+          <SettingsSwitch checked={props.incompleteDirEnabled()} onCheckedChange={props.setIncompleteDirEnabled} />
+        </SettingsRow>
         <Show when={props.incompleteDirEnabled()}>
-          <input
-            type="text"
-            placeholder={t('dialog.settings.incomplete_dir_hint')}
-            value={props.incompleteDir()}
-            onInput={(e) => props.setIncompleteDir(e.currentTarget.value)}
-            class="mt-1.5"
-          />
+          <SettingsRow label={t('dialog.settings.incomplete_dir_hint')}>
+            <SettingsInput type="text" class="w-64 text-left" value={props.incompleteDir()} onInput={(e) => props.setIncompleteDir(e.currentTarget.value)} />
+          </SettingsRow>
         </Show>
-      </div>
+      </SettingsSection>
 
-      <div class="form-divider" />
-
-      <div class="settings-section">
-        <h4>{t('dialog.settings.add_behavior')}</h4>
-        <div class="checkbox-stack">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              checked={props.startAddedTorrents()}
-              onChange={(e) => props.setStartAddedTorrents(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.start_added')}</span>
-          </label>
-
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              checked={props.renamePartialFiles()}
-              onChange={(e) => props.setRenamePartialFiles(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.rename_partial')}</span>
-          </label>
-
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              checked={props.trashOriginalTorrentFiles()}
-              onChange={(e) => props.setTrashOriginalTorrentFiles(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.trash_torrent')}</span>
-          </label>
-        </div>
-      </div>
+      <SettingsSection title={t('dialog.settings.add_behavior')}>
+        <SettingsRow label={t('dialog.settings.start_added')} desc="Automatically start downloading new torrents">
+          <SettingsSwitch checked={props.startAddedTorrents()} onCheckedChange={props.setStartAddedTorrents} />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.rename_partial')} desc="Append '.part' to incomplete files">
+          <SettingsSwitch checked={props.renamePartialFiles()} onCheckedChange={props.setRenamePartialFiles} />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.trash_torrent')} desc="Delete .torrent file after adding">
+          <SettingsSwitch checked={props.trashOriginalTorrentFiles()} onCheckedChange={props.setTrashOriginalTorrentFiles} />
+        </SettingsRow>
+      </SettingsSection>
     </div>
   );
 };

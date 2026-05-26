@@ -1,4 +1,4 @@
-import { Component, Show, For, createSignal, onMount } from 'solid-js';
+import { Component, Show, For, createSignal } from 'solid-js';
 import { useSession } from '../api/queries';
 import { rpcCall } from '../api/rpc';
 import { openSettingsModal } from '../store/modalStore';
@@ -6,35 +6,15 @@ import { fetchTorrents } from '../store/torrentStore';
 import { t } from '../utils/i18n';
 import { showToast } from '../utils/toast';
 import { Settings, Zap, Globe, Users, Router, Shield, RefreshCw } from 'lucide-solid';
+import { Switch } from './ui/switch';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 interface QuickSettingsProps {
   open: boolean;
   onClose: () => void;
   anchorEl?: HTMLElement;
 }
-
-const toggleSwitchStyle = (on: boolean): string => `
-  position: relative;
-  width: 36px;
-  height: 20px;
-  border-radius: 10px;
-  background: ${on ? 'var(--color-primary-500, #3b82f6)' : 'var(--color-neutral-400, #9ca3af)'};
-  cursor: pointer;
-  transition: background 0.2s ease;
-  flex-shrink: 0;
-`;
-
-const toggleKnobStyle = (on: boolean): string => `
-  position: absolute;
-  top: 2px;
-  left: ${on ? '18px' : '2px'};
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: white;
-  transition: left 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-`;
 
 export const QuickSettings: Component<QuickSettingsProps> = (props) => {
   const session = useSession();
@@ -99,115 +79,54 @@ export const QuickSettings: Component<QuickSettingsProps> = (props) => {
     <Show when={props.open}>
       {/* Overlay for click-outside close */}
       <div
-        style={{
-          position: 'fixed',
-          inset: '0',
-          'z-index': '99998',
-        }}
+        class="fixed inset-0 z-[99998]"
         onClick={props.onClose}
       />
 
       {/* Panel */}
       <div
-        style={{
-          position: 'fixed',
-          bottom: '48px',
-          right: '12px',
-          'z-index': '99999',
-          width: '280px',
-          'background-color': 'var(--bg-primary, rgba(255,255,255,0.85))',
-          'backdrop-filter': 'blur(12px)',
-          '-webkit-backdrop-filter': 'blur(12px)',
-          border: '1px solid var(--border-color, rgba(0,0,0,0.1))',
-          'border-radius': '12px',
-          'box-shadow': '0 8px 32px rgba(0,0,0,0.18)',
-          overflow: 'hidden',
-          animation: 'quickSettingsSlideUp 0.2s ease-out',
-        }}
+        class="fixed bottom-12 right-3 z-[99999] w-[280px] bg-background/85 backdrop-blur-2xl border border-border/60 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
       >
         {/* Header */}
-        <div
-          class="flex items-center gap-2 px-4 py-3"
-          style={{
-            'border-bottom': '1px solid var(--border-color, rgba(0,0,0,0.08))',
-          }}
-        >
-          <Settings size={16} style={{ color: 'var(--text-secondary, #6b7280)' }} />
-          <span
-            class="font-semibold text-sm"
-            style={{ color: 'var(--text-primary, #111827)' }}
-          >
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/40">
+          <Settings size={16} class="text-muted-foreground" />
+          <span class="font-bold text-sm text-foreground">
             {t('toolbar.settings_short')}
           </span>
         </div>
 
         {/* Settings rows */}
-        <div class="py-1">
+        <div class="py-1.5 flex flex-col gap-0.5">
           <For each={settingsItems()}>
             {(item) => {
               const Icon = item.icon;
               const isToggling = () => toggling() === item.key;
               return (
                 <div
-                  class="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
-                  style={{
-                    'transition': 'background 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      'var(--bg-hover, rgba(0,0,0,0.04))';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                  }}
+                  class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-muted/60 active:bg-muted"
                   onClick={() => toggleSetting(item.key, item.value, item.label)}
                 >
                   <Icon
                     size={16}
-                    style={{
-                      color: item.value
-                        ? 'var(--color-primary-500, #3b82f6)'
-                        : 'var(--text-tertiary, #9ca3af)',
-                      'flex-shrink': '0',
-                      transition: 'color 0.2s ease',
-                    }}
+                    class={cn("flex-shrink-0 transition-colors", item.value ? "text-primary" : "text-muted-foreground")}
                   />
-                  <span
-                    class="text-sm flex-1"
-                    style={{
-                      color: 'var(--text-primary, #111827)',
-                    }}
-                  >
+                  <span class="text-sm font-semibold text-foreground flex-1">
                     {item.label}
                   </span>
+                  
                   <Show
                     when={!isToggling()}
                     fallback={
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '20px',
-                          display: 'flex',
-                          'align-items': 'center',
-                          'justify-content': 'center',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '12px',
-                            height: '12px',
-                            border: '2px solid var(--text-tertiary, #9ca3af)',
-                            'border-top-color': 'transparent',
-                            'border-radius': '50%',
-                            animation: 'quickSettingsSpin 0.6s linear infinite',
-                          }}
-                        />
+                      <div class="w-9 h-5 flex items-center justify-center">
+                        <div class="w-3.5 h-3.5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
                       </div>
                     }
                   >
-                    <div style={toggleSwitchStyle(item.value)}>
-                      <div style={toggleKnobStyle(item.value)} />
-                    </div>
+                    <Switch
+                      checked={item.value}
+                      onCheckedChange={() => {}} // handled by parent div onClick
+                      class="pointer-events-none" // prevent double firing
+                    />
                   </Show>
                 </div>
               );
@@ -216,112 +135,29 @@ export const QuickSettings: Component<QuickSettingsProps> = (props) => {
         </div>
 
         {/* Action buttons */}
-        <div
-          class="flex gap-2 px-4 py-2.5"
-          style={{
-            'border-top': '1px solid var(--border-color, rgba(0,0,0,0.08))',
-          }}
-        >
-          <button
-            class="flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md"
-            style={{
-              'background': 'linear-gradient(180deg, var(--color-primary-400, #60a5fa) 0%, var(--color-primary-600, #2563eb) 100%)',
-              color: '#fff',
-              border: '1px solid var(--color-primary-700, #1d4ed8)',
-              'border-top-color': 'var(--color-primary-500, #3b82f6)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              'box-shadow': '0 2px 0 var(--color-primary-800, #1e40af), 0 3px 6px rgba(0,0,0,0.15)',
-              'text-shadow': '0 1px 1px rgba(0,0,0,0.2)',
-            }}
-            onMouseDown={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.boxShadow = '0 0px 0 var(--color-primary-800, #1e40af), 0 1px 2px rgba(0,0,0,0.15)';
-              el.style.transform = 'translateY(2px)';
-            }}
-            onMouseUp={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.boxShadow = '0 2px 0 var(--color-primary-800, #1e40af), 0 3px 6px rgba(0,0,0,0.15)';
-              el.style.transform = 'translateY(0)';
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'linear-gradient(180deg, var(--color-primary-300, #93c5fd) 0%, var(--color-primary-500, #3b82f6) 100%)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'linear-gradient(180deg, var(--color-primary-400, #60a5fa) 0%, var(--color-primary-600, #2563eb) 100%)';
-              el.style.boxShadow = '0 2px 0 var(--color-primary-800, #1e40af), 0 3px 6px rgba(0,0,0,0.15)';
-              el.style.transform = 'translateY(0)';
-            }}
+        <div class="flex gap-2 px-4 py-3 border-t border-border/50 bg-secondary/20">
+          <Button
+            variant="default"
+            class="flex-1 flex items-center justify-center gap-1.5 h-8 text-xs font-bold rounded-lg shadow-sm"
             onClick={() => {
               props.onClose();
               openSettingsModal();
             }}
           >
-            <Settings size={11} />
+            <Settings size={14} />
             {t('dialog.settings.title')}
-          </button>
-          <button
-            class="flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md"
-            style={{
-              'background': 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)',
-              color: 'var(--text-secondary, #4b5563)',
-              border: '1px solid rgba(0,0,0,0.15)',
-              'border-top-color': 'rgba(255,255,255,0.8)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              'box-shadow': '0 2px 0 rgba(0,0,0,0.12), 0 3px 6px rgba(0,0,0,0.08)',
-              'text-shadow': '0 1px 0 rgba(255,255,255,0.5)',
-            }}
-            onMouseDown={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.boxShadow = '0 0px 0 rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)';
-              el.style.transform = 'translateY(2px)';
-            }}
-            onMouseUp={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.boxShadow = '0 2px 0 rgba(0,0,0,0.12), 0 3px 6px rgba(0,0,0,0.08)';
-              el.style.transform = 'translateY(0)';
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'linear-gradient(180deg, #fff 0%, rgba(245,245,245,0.95) 100%)';
-              el.style.color = 'var(--text-primary, #111827)';
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%)';
-              el.style.color = 'var(--text-secondary, #4b5563)';
-              el.style.boxShadow = '0 2px 0 rgba(0,0,0,0.12), 0 3px 6px rgba(0,0,0,0.08)';
-              el.style.transform = 'translateY(0)';
-            }}
+          </Button>
+          
+          <Button
+            variant="secondary"
+            class="flex-1 flex items-center justify-center gap-1.5 h-8 text-xs font-bold rounded-lg bg-background border border-border/60 hover:bg-muted shadow-sm hover:shadow-md"
             onClick={handleRefresh}
           >
-            <RefreshCw size={11} />
+            <RefreshCw size={14} />
             {t('toolbar.refresh')}
-          </button>
+          </Button>
         </div>
       </div>
-
-      {/* Keyframe animations injected once */}
-      <style>{`
-        @keyframes quickSettingsSlideUp {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes quickSettingsSpin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </Show>
   );
 };

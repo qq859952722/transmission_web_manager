@@ -1,5 +1,6 @@
-import { Component } from 'solid-js';
+import { Component, Show } from 'solid-js';
 import { t } from '../../../utils/i18n';
+import { SettingsSection, SettingsRow, SettingsInput, SettingsSwitch } from './SettingsUI';
 
 interface QueueTabProps {
   downloadQueueSize: () => number;
@@ -18,73 +19,57 @@ interface QueueTabProps {
 
 export const QueueTab: Component<QueueTabProps> = (props) => {
   return (
-    <div class="settings-group">
-      <div class="settings-section">
-        <h4>{t('dialog.settings.dl_queue')}</h4>
-        <div class="form-row">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              id="dl-q-en"
-              checked={props.downloadQueueEnabled()}
-              onChange={(e) => props.setDownloadQueueEnabled(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.max_dl')}:</span>
-          </label>
-          <input
-            type="number"
-            class="w-24 text-right"
-            disabled={!props.downloadQueueEnabled()}
-            value={props.downloadQueueSize()}
-            onInput={(e) => props.setDownloadQueueSize(Number(e.currentTarget.value))}
-          />
-        </div>
-      </div>
+    <div class="animate-in fade-in duration-300">
+      <SettingsSection title={t('dialog.settings.dl_queue')}>
+        <SettingsRow label={t('dialog.settings.max_dl')} desc="Maximum number of active downloads">
+          <div class="flex items-center gap-4">
+            <Show when={props.downloadQueueEnabled()}>
+              <SettingsInput
+                type="number"
+                class="w-24"
+                value={props.downloadQueueSize()}
+                onInput={(e) => props.setDownloadQueueSize(Number(e.currentTarget.value))}
+              />
+            </Show>
+            <SettingsSwitch checked={props.downloadQueueEnabled()} onCheckedChange={props.setDownloadQueueEnabled} />
+          </div>
+        </SettingsRow>
+      </SettingsSection>
 
-      <div class="settings-section">
-        <h4>{t('dialog.settings.seed_queue')}</h4>
-        <div class="form-row">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              id="ul-q-en"
-              checked={props.seedQueueEnabled()}
-              onChange={(e) => props.setSeedQueueEnabled(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.max_seed')}:</span>
-          </label>
-          <input
-            type="number"
-            class="w-24 text-right"
-            disabled={!props.seedQueueEnabled()}
-            value={props.seedQueueSize()}
-            onInput={(e) => props.setSeedQueueSize(Number(e.currentTarget.value))}
-          />
-        </div>
-      </div>
+      <SettingsSection title={t('dialog.settings.seed_queue')}>
+        <SettingsRow label={t('dialog.settings.max_seed')} desc="Maximum number of active seeds">
+          <div class="flex items-center gap-4">
+            <Show when={props.seedQueueEnabled()}>
+              <SettingsInput
+                type="number"
+                class="w-24"
+                value={props.seedQueueSize()}
+                onInput={(e) => props.setSeedQueueSize(Number(e.currentTarget.value))}
+              />
+            </Show>
+            <SettingsSwitch checked={props.seedQueueEnabled()} onCheckedChange={props.setSeedQueueEnabled} />
+          </div>
+        </SettingsRow>
+      </SettingsSection>
 
-      <div class="settings-section">
-        <h4>{t('dialog.settings.stalled_detection')}</h4>
-        <div class="form-row">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              id="stall-en"
-              checked={props.queueStalledEnabled()}
-              onChange={(e) => props.setQueueStalledEnabled(e.currentTarget.checked)}
-            />
-            <span>{t('dialog.settings.stalled_timeout')}:</span>
-          </label>
-          <input
-            type="number"
-            class="w-24 text-right"
-            disabled={!props.queueStalledEnabled()}
-            value={props.queueStalledMinutes()}
-            onInput={(e) => props.setQueueStalledMinutes(Number(e.currentTarget.value))}
-          />
-          <span class="text-sm text-secondary">({t('times.min')})</span>
-        </div>
-      </div>
+      <SettingsSection title={t('dialog.settings.stalled_detection')}>
+        <SettingsRow label={t('dialog.settings.stalled_timeout')} desc="Ignore torrents in queue that are stalled">
+          <div class="flex items-center gap-4">
+            <Show when={props.queueStalledEnabled()}>
+              <div class="flex items-center gap-2">
+                <SettingsInput
+                  type="number"
+                  class="w-24"
+                  value={props.queueStalledMinutes()}
+                  onInput={(e) => props.setQueueStalledMinutes(Number(e.currentTarget.value))}
+                />
+                <span class="text-xs text-muted-foreground">{t('times.min')}</span>
+              </div>
+            </Show>
+            <SettingsSwitch checked={props.queueStalledEnabled()} onCheckedChange={props.setQueueStalledEnabled} />
+          </div>
+        </SettingsRow>
+      </SettingsSection>
     </div>
   );
 };

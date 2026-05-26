@@ -120,15 +120,28 @@ export function getStatusClass(status: number): string {
 
 export function getStatusColor(status: number): string {
   const map: Record<number, string> = {
-    0: 'var(--text-muted)',
-    1: 'var(--color-warning-500)',
-    2: 'var(--color-warning-500)',
-    3: 'var(--color-primary-500)',
-    4: 'var(--color-primary-500)',
-    5: 'var(--color-success-500)',
-    6: 'var(--color-success-500)',
+    0: '#71717a', // stopped (zinc-500)
+    1: '#d946ef', // check_wait (fuchsia-500)
+    2: '#8b5cf6', // checking (violet-500)
+    3: '#0ea5e9', // download_wait (sky-500)
+    4: '#3b82f6', // downloading (blue-500)
+    5: '#10b981', // seed_wait (emerald-500)
+    6: '#22c55e', // seeding (green-500)
   };
-  return map[status] || 'var(--text-muted)';
+  return map[status] || '#71717a';
+}
+
+export function getStatusTextColorClass(status: number): string {
+  const map: Record<number, string> = {
+    0: 'text-zinc-500',
+    1: 'text-fuchsia-500',
+    2: 'text-violet-500',
+    3: 'text-sky-500',
+    4: 'text-blue-500',
+    5: 'text-emerald-500',
+    6: 'text-green-500',
+  };
+  return map[status] || 'text-muted-foreground';
 }
 
 export function getPriorityText(priority: number): string {

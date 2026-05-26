@@ -9,16 +9,15 @@ import {
   formatTimestamp,
   formatDuration,
   getRatioClass,
-  formatSpeed
+  formatSpeed,
+  getStatusTextColorClass
 } from '../../utils/format';
 import { t } from '../../utils/i18n';
-import './GeneralTab.css';
 
 export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
   const isMulti = () => props.torrents.length > 1;
   const single = () => props.torrents[0];
 
-  // Calculated combined fields for multiple selection
   const multiStats = createMemo(() => {
     if (!isMulti()) return null;
     let total_size = 0;
@@ -44,201 +43,105 @@ export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
     };
   });
 
+  const Section = (props: { title: string; children: any }) => (
+    <div class="flex flex-col gap-1.5 bg-secondary/50 border border-border p-2.5 rounded-xl shadow-sm">
+      <h3 class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/50 pb-1.5 mb-0.5 m-0">
+        {props.title}
+      </h3>
+      <div class="flex flex-col gap-0">{props.children}</div>
+    </div>
+  );
+
+  const InfoGroup = (props: { label: string; value: any; class?: string; valueClass?: string }) => (
+    <div class={`flex justify-between items-start text-xs gap-2 py-0.5 ${props.class || ''}`}>
+      <span class="text-muted-foreground font-medium shrink-0">{props.label}:</span>
+      <span class={`text-foreground text-right break-all ${props.valueClass || ''}`}>{props.value}</span>
+    </div>
+  );
+
   return (
-    <div class="trwm-general-tab">
+    <div class="flex flex-col gap-4 h-full">
       <Show
         when={isMulti()}
         fallback={
-          // Single Torrent General View
-          <div class="general-grid">
-            <div class="info-section">
-              <h3>{t('detail.general.pieces_progress')}</h3>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.name')}:</span>
-                <span class="info-val selectable-text">{single().name}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.hash')}:</span>
-                <span class="info-val selectable-text code-font">{single().hash_string}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.id')}:</span>
-                <span class="info-val text-mono">{single().id}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.status')}:</span>
-                <span class="info-val font-semibold">{getStatusText(single().status)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.progress')}:</span>
-                <span class="info-val text-mono">{formatPercent(single().percent_done)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.download_dir')}:</span>
-                <span class="info-val selectable-text">{single().download_dir}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.torrent_file')}:</span>
-                <span class="info-val selectable-text">{single().torrent_file || '-'}</span>
-              </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Section title={t('detail.general.pieces_progress')}>
+              <InfoGroup label={t('detail.general.name')} value={single().name} valueClass="select-text font-medium" />
+              <InfoGroup label={t('detail.general.hash')} value={single().hash_string} valueClass="select-text font-mono text-[10px] text-muted-foreground" />
+              <InfoGroup label={t('detail.general.id')} value={single().id} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.status')} value={getStatusText(single().status)} valueClass={`font-semibold ${getStatusTextColorClass(single().status)}`} />
+              <InfoGroup label={t('detail.general.progress')} value={formatPercent(single().percent_done)} valueClass="font-mono" />
+              <InfoGroup label={t('detail.general.download_dir')} value={single().download_dir} valueClass="select-text text-muted-foreground" />
+              <InfoGroup label={t('detail.general.torrent_file')} value={single().torrent_file || '-'} valueClass="select-text text-muted-foreground" />
               <Show when={single().primary_mime_type}>
-                <div class="info-group">
-                  <span class="info-label">{t('detail.general.mime')}:</span>
-                  <span class="info-val text-mono">{single().primary_mime_type}</span>
-                </div>
+                <InfoGroup label={t('detail.general.mime')} value={single().primary_mime_type} valueClass="font-mono text-muted-foreground" />
               </Show>
               <Show when={single().error_string}>
-                <div class="info-group error-text">
-                  <span class="info-label">{t('filter.error')}:</span>
-                  <span class="info-val selectable-text">{single().error_string}</span>
-                </div>
+                <InfoGroup 
+                  label={t('filter.error')} 
+                  value={single().error_string} 
+                  class="text-destructive" 
+                  valueClass="text-destructive select-text text-left font-medium" 
+                />
               </Show>
-            </div>
+            </Section>
 
-            <div class="info-section">
-              <h3>{t('stats.title')}</h3>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.size')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().total_size)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.left')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().left_until_done)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.downloaded')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().downloaded_ever)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.uploaded')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().uploaded_ever)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.ratio')}:</span>
-                <span class={`info-val text-mono ${getRatioClass(single().upload_ratio)}`}>
-                  {formatRatio(single().upload_ratio)}
-                </span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.corrupt')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().corrupt_ever)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.eta')}:</span>
-                <span class="info-val text-mono">{formatETA(single().eta)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.download_time')}:</span>
-                <span class="info-val text-mono">{formatDuration(single().seconds_downloading)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.upload_time')}:</span>
-                <span class="info-val text-mono">{formatDuration(single().seconds_seeding)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.activity')}:</span>
-                <span class="info-val text-mono">{single().activity_date ? formatTimestamp(single().activity_date) : '-'}</span>
-              </div>
-            </div>
+            <Section title={t('stats.title')}>
+              <InfoGroup label={t('detail.general.size')} value={formatBytes(single().total_size)} valueClass="font-mono" />
+              <InfoGroup label={t('detail.general.left')} value={formatBytes(single().left_until_done)} valueClass="font-mono" />
+              <InfoGroup label={t('detail.general.downloaded')} value={formatBytes(single().downloaded_ever)} valueClass="font-mono text-primary" />
+              <InfoGroup label={t('detail.general.uploaded')} value={formatBytes(single().uploaded_ever)} valueClass="font-mono text-success" />
+              <InfoGroup 
+                label={t('detail.general.ratio')} 
+                value={formatRatio(single().upload_ratio)} 
+                valueClass={`font-mono font-medium ${getRatioClass(single().upload_ratio)}`} 
+              />
+              <InfoGroup label={t('detail.general.corrupt')} value={formatBytes(single().corrupt_ever)} valueClass="font-mono text-destructive" />
+              <InfoGroup label={t('detail.general.eta')} value={formatETA(single().eta)} valueClass="font-mono" />
+              <InfoGroup label={t('detail.general.download_time')} value={formatDuration(single().seconds_downloading)} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.upload_time')} value={formatDuration(single().seconds_seeding)} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.activity')} value={single().activity_date ? formatTimestamp(single().activity_date) : '-'} valueClass="font-mono text-muted-foreground" />
+            </Section>
 
-            <div class="info-section">
-              <h3>{t('sidebar.status')}</h3>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.added_date')}:</span>
-                <span class="info-val text-mono">{formatTimestamp(single().added_date)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.done_date')}:</span>
-                <span class="info-val text-mono">
-                  {single().done_date ? formatTimestamp(single().done_date) : '-'}
-                </span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.creator')}:</span>
-                <span class="info-val selectable-text">{single().creator || '-'}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.source')}:</span>
-                <span class="info-val selectable-text">{single().source || '-'}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.comment')}:</span>
-                <span class="info-val selectable-text">{single().comment || '-'}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.private')}:</span>
-                <span class="info-val">
-                  {single().is_private ? t('common.yes') : t('common.no')}
-                </span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.piece_count')}:</span>
-                <span class="info-val text-mono">{single().piece_count}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.piece_size')}:</span>
-                <span class="info-val text-mono">{formatBytes(single().piece_size)}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.file_count')}:</span>
-                <span class="info-val text-mono">{single().files?.length ?? single().file_count ?? 0}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('detail.general.sequential')}:</span>
-                <span class="info-val">
-                  {single().sequential_download ? t('common.yes') : t('common.no')}
-                  <Show when={single().sequential_download && single().sequential_download_from_piece > 0}>
-                    <span class="text-mono" style={{ "margin-left": "4px", color: "var(--text-muted)" }}>
-                      {t('detail.general.sequential_from', { piece: single().sequential_download_from_piece })}
-                    </span>
-                  </Show>
-                </span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('columns.labels')}:</span>
-                <span class="info-val selectable-text">{single().labels?.join(', ') || '-'}</span>
-              </div>
-              <div class="info-group">
-                <span class="info-label">{t('dialog.settings.group')}:</span>
-                <span class="info-val selectable-text">{single().group || '-'}</span>
-              </div>
-            </div>
+            <Section title={t('sidebar.status')}>
+              <InfoGroup label={t('detail.general.added_date')} value={formatTimestamp(single().added_date)} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.done_date')} value={single().done_date ? formatTimestamp(single().done_date) : '-'} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.creator')} value={single().creator || '-'} valueClass="select-text text-muted-foreground" />
+              <InfoGroup label={t('detail.general.source')} value={single().source || '-'} valueClass="select-text text-muted-foreground" />
+              <InfoGroup label={t('detail.general.comment')} value={single().comment || '-'} valueClass="select-text text-muted-foreground italic" />
+              <InfoGroup label={t('detail.general.private')} value={single().is_private ? t('common.yes') : t('common.no')} valueClass="font-medium" />
+              <InfoGroup label={t('detail.general.piece_count')} value={single().piece_count} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.piece_size')} value={formatBytes(single().piece_size)} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup label={t('detail.general.file_count')} value={single().files?.length ?? single().file_count ?? 0} valueClass="font-mono text-muted-foreground" />
+              <InfoGroup 
+                label={t('detail.general.sequential')} 
+                value={
+                  <>
+                    {single().sequential_download ? t('common.yes') : t('common.no')}
+                    <Show when={single().sequential_download && single().sequential_download_from_piece > 0}>
+                      <span class="font-mono ml-1 text-muted-foreground">
+                        {t('detail.general.sequential_from', { piece: single().sequential_download_from_piece })}
+                      </span>
+                    </Show>
+                  </>
+                } 
+              />
+              <InfoGroup label={t('columns.labels')} value={single().labels?.join(', ') || '-'} valueClass="select-text font-medium text-primary" />
+              <InfoGroup label={t('dialog.settings.group')} value={single().group || '-'} valueClass="select-text font-medium" />
+            </Section>
           </div>
         }
       >
-        {/* Multi Torrent Summary Grid */}
-        <div class="general-grid">
-          <div class="info-section">
-            <h3>{t('stats.title')}</h3>
-            <div class="info-group">
-              <span class="info-label">{t('detail.general.size')}:</span>
-              <span class="info-val text-mono">{formatBytes(multiStats()!.total_size)}</span>
-            </div>
-            <div class="info-group">
-              <span class="info-label">{t('detail.general.progress')}:</span>
-              <span class="info-val text-mono">{formatPercent(multiStats()!.progress)}</span>
-            </div>
-            <div class="info-group">
-              <span class="info-label">{t('detail.general.rate_dl')}:</span>
-              <span class="info-val text-mono active-download">
-                {formatSpeed(multiStats()!.rate_download)}
-              </span>
-            </div>
-            <div class="info-group">
-              <span class="info-label">{t('detail.general.rate_ul')}:</span>
-              <span class="info-val text-mono active-upload">
-                {formatSpeed(multiStats()!.rate_upload)}
-              </span>
-            </div>
-            <div class="info-group">
-              <span class="info-label">{t('detail.peers.title')}:</span>
-              <span class="info-val text-mono">{multiStats()!.peers_connected}</span>
-            </div>
-          </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Section title={t('stats.title')}>
+            <InfoGroup label={t('detail.general.size')} value={formatBytes(multiStats()!.total_size)} valueClass="font-mono" />
+            <InfoGroup label={t('detail.general.progress')} value={formatPercent(multiStats()!.progress)} valueClass="font-mono font-medium" />
+            <InfoGroup label={t('detail.general.rate_dl')} value={formatSpeed(multiStats()!.rate_download)} valueClass="font-mono text-primary font-bold" />
+            <InfoGroup label={t('detail.general.rate_ul')} value={formatSpeed(multiStats()!.rate_upload)} valueClass="font-mono text-success font-bold" />
+            <InfoGroup label={t('detail.peers.title')} value={multiStats()!.peers_connected} valueClass="font-mono text-muted-foreground" />
+          </Section>
         </div>
       </Show>
-
-
     </div>
   );
 };

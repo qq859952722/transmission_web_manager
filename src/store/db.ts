@@ -13,13 +13,10 @@ export interface HistoryRecord {
   upload_ratio: number;
   downloaded_ever: number;
   uploaded_ever: number;
-  snapshots: {
-    timestamp: number;
-    percent_done: number;
-    rate_download: number;
-    rate_upload: number;
-    peers_connected: number;
-  }[];
+  avg_rate_download: number;
+  avg_rate_upload: number;
+  status: number;
+  error?: number;
   magnet_link?: string;
   comment?: string;
   creator?: string;
@@ -30,7 +27,7 @@ export class TrwmDatabase extends Dexie {
 
   constructor() {
     super('TrwmDatabase');
-    this.version(1).stores({
+    this.version(2).stores({
       // Primary key is auto-increment id, we index hash_string and name for search
       history: '++id, hash_string, name, added_date, deleted_date',
     });

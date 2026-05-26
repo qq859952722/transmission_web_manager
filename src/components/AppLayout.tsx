@@ -1,5 +1,5 @@
-import { Component, JSX, createSignal, onCleanup } from 'solid-js';
-import './AppLayout.css';
+import { Component, JSX, createSignal } from 'solid-js';
+import { cn } from '../lib/utils';
 
 interface AppLayoutProps {
   sidebar: JSX.Element;
@@ -44,25 +44,33 @@ export const AppLayout: Component<AppLayoutProps> = (props) => {
   };
 
   return (
-    <div class="trwm-app-layout">
-      <aside class="trwm-sidebar">
+    <div class="flex h-screen w-screen overflow-hidden">
+      <aside class="flex flex-col shrink-0 w-[var(--sidebar-width,240px)] bg-secondary/20 border-r border-border/50">
         {props.sidebar}
       </aside>
-      <div class="trwm-content">
-        <header class="trwm-toolbar">
+      <div class="flex flex-1 flex-col min-w-0">
+        <header class="flex shrink-0 items-center h-12 bg-background border-b border-border/50 px-4">
           {props.toolbar}
         </header>
-        <main class="trwm-main">
+        <main class="flex-1 relative overflow-hidden bg-background">
           {props.main}
         </main>
         {props.bottomPanel && (
           <>
             <div
-              class={`trwm-resize-handle ${isDragging() ? 'active' : ''}`}
+              class={cn(
+                "relative shrink-0 h-1.5 cursor-ns-resize bg-transparent transition-colors group",
+                isDragging() ? "bg-primary/10" : "hover:bg-primary/5"
+              )}
               onMouseDown={handleMouseDown}
-            />
+            >
+              <div class={cn(
+                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-[3px] rounded-sm transition-all duration-200",
+                isDragging() ? "bg-primary opacity-100" : "bg-border/80 opacity-0 group-hover:opacity-100"
+              )} />
+            </div>
             <footer
-              class="trwm-bottom-panel"
+              class="flex flex-col shrink-0 overflow-hidden bg-background border-t border-border/50"
               style={{ height: `${panelHeight()}px` }}
             >
               {props.bottomPanel}

@@ -3,7 +3,7 @@ import { closeDeleteModal, showDeleteModal } from '../../store/modalStore';
 import { removeTorrents, selectedIds } from '../../store/torrentStore';
 import { t } from '../../utils/i18n';
 import { showToast } from '../../utils/toast';
-import './Modals.css';
+import { X } from 'lucide-solid';
 
 export const DeleteTorrentModal: Component = () => {
   const [deleteData, setDeleteData] = createSignal(false);
@@ -30,15 +30,17 @@ export const DeleteTorrentModal: Component = () => {
 
   return (
     <Show when={showDeleteModal()}>
-      <div class="trwm-modal-overlay" onClick={closeDeleteModal}>
-        <div class="trwm-modal-box" onClick={(e) => e.stopPropagation()}>
-          <div class="modal-header">
-            <h2>{t('dialog.delete.title')}</h2>
-            <button class="close-btn" onClick={closeDeleteModal}>×</button>
+      <div class="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={closeDeleteModal}>
+        <div class="bg-popover/90 backdrop-blur-xl border border-border w-full max-w-md rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+          <div class="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-secondary/30 shrink-0">
+            <h2 class="m-0 text-base font-bold text-foreground">{t('dialog.delete.title')}</h2>
+            <button class="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" onClick={closeDeleteModal}>
+              <X size={20} />
+            </button>
           </div>
 
-          <form onSubmit={handleDelete} class="modal-form">
-            <div class="confirm-message">
+          <form onSubmit={handleDelete} class="flex flex-col">
+            <div class="p-6 text-[13px] text-foreground leading-relaxed">
               <Show
                 when={deleteData()}
                 fallback={<p>{t('dialog.delete.confirm', { n: count() })}</p>}
@@ -49,21 +51,22 @@ export const DeleteTorrentModal: Component = () => {
               </Show>
             </div>
 
-            <label class="checkbox-label delete-data-checkbox">
+            <label class="flex items-center gap-2 px-6 pb-6 cursor-pointer text-[13px] group">
               <input
                 type="checkbox"
+                class="w-4 h-4 rounded border-border/80 text-destructive focus:ring-destructive/20 cursor-pointer"
                 checked={deleteData()}
                 onChange={(e) => setDeleteData(e.currentTarget.checked)}
                 disabled={deleting()}
               />
-              <span class="text-danger">{t('dialog.delete.also_data')}</span>
+              <span class="text-destructive font-medium group-hover:text-destructive/80 transition-colors">{t('dialog.delete.also_data')}</span>
             </label>
 
-            <div class="modal-footer">
-              <button type="submit" class="trwm-btn danger" disabled={deleting()}>
+            <div class="flex justify-end gap-2 px-6 py-4 border-t border-border/50 bg-secondary/30 shrink-0">
+              <button type="submit" class="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-2 rounded-xl text-[13px] font-bold shadow-lg shadow-destructive/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none" disabled={deleting()}>
                 {deleting() ? t('common.loading') : t('dialog.delete.submit')}
               </button>
-              <button type="button" class="trwm-btn" onClick={closeDeleteModal} disabled={deleting()}>
+              <button type="button" class="bg-background border border-border/80 text-foreground hover:bg-muted px-4 py-2 rounded-xl text-[13px] font-medium shadow-sm transition-colors active:scale-[0.98] disabled:opacity-50" onClick={closeDeleteModal} disabled={deleting()}>
                 {t('dialog.cancel')}
               </button>
             </div>

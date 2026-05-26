@@ -1,5 +1,6 @@
 import { Component } from 'solid-js';
 import { t } from '../../../utils/i18n';
+import { SettingsSection, SettingsRow, SettingsInput } from './SettingsUI';
 
 interface RpcTabProps {
   rpcVersion: () => number;
@@ -10,26 +11,21 @@ interface RpcTabProps {
 
 export const RpcTab: Component<RpcTabProps> = (props) => {
   return (
-    <div class="settings-group">
-      <div class="settings-section">
-        <h4>RPC</h4>
-        <div class="form-group">
-          <label>{t('dialog.about.rpc_version')}</label>
-          <input type="text" class="readonly-input" readOnly value={props.rpcVersion()} />
-        </div>
-        <div class="form-group">
-          <label>{t('dialog.settings.rpc_semver')}</label>
-          <input type="text" class="readonly-input" readOnly value={props.rpcVersionSemver() || '-'} />
-        </div>
-        <div class="form-group">
-          <label>{t('dialog.settings.rpc_min_version')}</label>
-          <input type="text" class="readonly-input" readOnly value={props.rpcVersionMinimum()} />
-        </div>
-        <div class="form-group">
-          <label>{t('dialog.settings.session_id')}</label>
-          <input type="text" class="readonly-input text-mono text-xs" readOnly value={props.sessionId()} />
-        </div>
-      </div>
+    <div class="animate-in fade-in duration-300">
+      <SettingsSection title="RPC Information">
+        <SettingsRow label={t('dialog.about.rpc_version')}>
+          <SettingsInput type="text" readOnly value={props.rpcVersion()} class="w-48 text-muted-foreground cursor-default bg-secondary/50 border-transparent focus:ring-0" />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.rpc_semver')}>
+          <SettingsInput type="text" readOnly value={props.rpcVersionSemver() || '-'} class="w-48 text-muted-foreground cursor-default bg-secondary/50 border-transparent focus:ring-0" />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.rpc_min_version')}>
+          <SettingsInput type="text" readOnly value={props.rpcVersionMinimum()} class="w-48 text-muted-foreground cursor-default bg-secondary/50 border-transparent focus:ring-0" />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.session_id')}>
+          <SettingsInput type="text" readOnly value={props.sessionId()} class="w-64 font-mono text-[11px] text-muted-foreground cursor-default bg-secondary/50 border-transparent focus:ring-0" />
+        </SettingsRow>
+      </SettingsSection>
     </div>
   );
 };

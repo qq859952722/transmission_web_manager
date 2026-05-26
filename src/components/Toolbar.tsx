@@ -22,7 +22,31 @@ import {
   openStatsModal
 } from '../store/modalStore';
 import { t, currentLang, setLanguage, type LanguageType } from '../utils/i18n';
-import './Toolbar.css';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
+import {
+  Plus,
+  Play,
+  ChevronsRight,
+  Pause,
+  RefreshCcw,
+  CheckCircle2,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUp,
+  ChevronsDown,
+  Search,
+  X,
+  RefreshCw,
+  Sidebar as SidebarIcon,
+  PanelRight,
+  Moon,
+  Sun,
+  Activity,
+  History,
+  Settings
+} from 'lucide-solid';
 
 export const Toolbar: Component<{
   sidebarOpen: boolean;
@@ -32,13 +56,11 @@ export const Toolbar: Component<{
 }> = (props) => {
   const hasSelection = () => selectedIds().length > 0;
 
-  // Theme toggle with localStorage persistence
   const [theme, setTheme] = createSignal(
     localStorage.getItem('trwm-theme') ||
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   );
 
-  // Apply initial theme
   document.documentElement.setAttribute('data-theme', theme());
 
   const toggleTheme = () => {
@@ -48,253 +70,128 @@ export const Toolbar: Component<{
     localStorage.setItem('trwm-theme', next);
   };
 
-  // Language switcher
   const toggleLanguage = () => {
     const next: LanguageType = currentLang() === 'zh-CN' ? 'en' : 'zh-CN';
     setLanguage(next);
   };
 
+  const ToolBtn = (btnProps: any) => (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      class={cn("h-8 px-2 text-muted-foreground hover:text-foreground", btnProps.class)} 
+      {...btnProps} 
+    />
+  );
+  
+  const IconBtn = (btnProps: any) => (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      class={cn("h-8 w-8 text-muted-foreground hover:text-foreground", btnProps.class)} 
+      {...btnProps} 
+    />
+  );
+
+  const Separator = () => <div class="w-px h-[18px] bg-border mx-1 opacity-60" />;
+
   return (
-    <div class="trwm-toolbar-inner">
+    <div class="flex items-center gap-0.5 w-full h-full bg-background border-b border-border select-none px-1.5 overflow-x-auto no-scrollbar">
       {/* Add torrent button */}
-      <button class="tb-btn text-success" onClick={openAddModal} title={t('toolbar.add')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        <span class="btn-label">{t('toolbar.add')}</span>
-      </button>
+      <ToolBtn class="text-success hover:text-success hover:bg-success/10" onClick={openAddModal} title={t('toolbar.add')}>
+        <Plus size={16} stroke-width={2.5} class="mr-1.5" />
+        <span class="font-semibold text-xs hidden md:inline">{t('toolbar.add')}</span>
+      </ToolBtn>
 
-      <div class="tb-separator" />
+      <Separator />
 
-      {/* Start button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => startTorrents()}
-        title={t('toolbar.start')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success">
-          <polygon points="5,3 19,12 5,21" />
-        </svg>
-      </button>
+      {/* Control buttons */}
+      <IconBtn disabled={!hasSelection()} onClick={() => startTorrents()} title={t('toolbar.start')} class="hover:text-success hover:bg-success/10">
+        <Play size={16} stroke-width={2.5} class={hasSelection() ? "text-success" : ""} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => startNowTorrents()} title={t('toolbar.start_now')} class="hover:text-success hover:bg-success/10">
+        <ChevronsRight size={16} stroke-width={2.5} class={hasSelection() ? "text-success" : ""} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => pauseTorrents()} title={t('toolbar.pause')} class="hover:text-warning hover:bg-warning/10">
+        <Pause size={16} stroke-width={2.5} class={hasSelection() ? "text-warning" : ""} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => reannounceTorrents()} title={t('toolbar.reannounce')} class="hover:text-primary hover:bg-primary/10">
+        <RefreshCcw size={16} stroke-width={2.5} class={hasSelection() ? "text-primary" : ""} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => verifyTorrents()} title={t('toolbar.verify')} class="hover:text-success hover:bg-success/10">
+        <CheckCircle2 size={16} stroke-width={2.5} class={hasSelection() ? "text-success" : ""} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={openDeleteModal} title={t('toolbar.remove')} class="hover:text-destructive hover:bg-destructive/10">
+        <Trash2 size={16} stroke-width={2.5} class={hasSelection() ? "text-destructive" : ""} />
+      </IconBtn>
 
-      {/* Start Now button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => startNowTorrents()}
-        title={t('toolbar.start_now')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success">
-          <polygon points="5,3 19,12 5,21" />
-          <line x1="19" y1="3" x2="19" y2="21" />
-        </svg>
-      </button>
+      <Separator />
 
-      {/* Pause button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => pauseTorrents()}
-        title={t('toolbar.pause')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-warning">
-          <rect x="6" y="4" width="4" height="16" />
-          <rect x="14" y="4" width="4" height="16" />
-        </svg>
-      </button>
+      {/* Queue buttons */}
+      <IconBtn disabled={!hasSelection()} onClick={() => moveQueueUp()} title={t('toolbar.queue_up')}>
+        <ChevronUp size={16} stroke-width={2.5} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => moveQueueDown()} title={t('toolbar.queue_down')}>
+        <ChevronDown size={16} stroke-width={2.5} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => moveQueueTop()} title={t('toolbar.queue_top')}>
+        <ChevronsUp size={16} stroke-width={2.5} />
+      </IconBtn>
+      <IconBtn disabled={!hasSelection()} onClick={() => moveQueueBottom()} title={t('toolbar.queue_bottom')}>
+        <ChevronsDown size={16} stroke-width={2.5} />
+      </IconBtn>
 
-      {/* Reannounce button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => reannounceTorrents()}
-        title={t('toolbar.reannounce')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
-          <circle cx="12" cy="12" r="1" />
-          <path d="M7.33 16.67a7 7 0 0 1 9.34 0" />
-          <path d="M4.93 20.42a11 11 0 0 1 14.14 0" />
-        </svg>
-      </button>
-
-      {/* Verify button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => verifyTorrents()}
-        title={t('toolbar.verify')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-      </button>
-
-      {/* Remove button */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={openDeleteModal}
-        title={t('toolbar.remove')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
-      </button>
-
-      <div class="tb-separator" />
-
-      {/* Queue position controls */}
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => moveQueueUp()}
-        title={t('toolbar.queue_up')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="18 15 12 9 6 15" />
-        </svg>
-      </button>
-
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => moveQueueDown()}
-        title={t('toolbar.queue_down')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => moveQueueTop()}
-        title={t('toolbar.queue_top')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 19V5M5 12l7-7 7 7" />
-        </svg>
-      </button>
-
-      <button
-        class="tb-btn"
-        disabled={!hasSelection()}
-        onClick={() => moveQueueBottom()}
-        title={t('toolbar.queue_bottom')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M19 12l-7 7-7-7" />
-        </svg>
-      </button>
-
-      <div class="tb-spacer" />
+      <div class="flex-1" />
 
       {/* Search Box */}
-      <div class="tb-search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+      <div class="group relative flex items-center bg-secondary border border-border rounded-md px-2 h-8 w-32 md:w-44 transition-all duration-200 focus-within:w-40 md:focus-within:w-60 focus-within:border-primary focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/20">
+        <Search size={14} class="text-muted-foreground shrink-0 transition-colors group-focus-within:text-primary" />
         <input
           type="text"
+          class="bg-transparent border-none text-foreground text-xs w-full h-full outline-none pl-2 placeholder:text-muted-foreground/70"
           placeholder={t('toolbar.search_placeholder')}
           value={searchQuery()}
           onInput={(e) => setSearchQuery(e.currentTarget.value)}
         />
         <Show when={searchQuery()}>
-          <button class="clear-search" onClick={() => setSearchQuery('')}>×</button>
+          <button class="absolute right-1.5 w-4 h-4 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" onClick={() => setSearchQuery('')}>
+            <X size={12} stroke-width={3} />
+          </button>
         </Show>
       </div>
 
-      <div class="tb-separator" />
+      <Separator />
 
-      {/* Refresh */}
-      <button class="tb-btn icon-only" onClick={() => fetchTorrents(true)} title={t('toolbar.refresh')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
-          <path d="M1 4v6h6M23 20v-6h-6" />
-          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-        </svg>
-      </button>
-
-      {/* Toggle Sidebar */}
-      <button
-        class={`tb-btn icon-only ${props.sidebarOpen ? 'active' : ''}`}
-        onClick={props.onToggleSidebar}
-        title={t('toolbar.sidebar_toggle')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="9" y1="3" x2="9" y2="21" />
-        </svg>
-      </button>
-
-      {/* Toggle Details Panel */}
-      <button
-        class={`tb-btn icon-only ${props.detailOpen ? 'active' : ''}`}
-        onClick={props.onToggleDetail}
-        title={t('toolbar.detail_toggle')}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="15" x2="21" y2="15" />
-        </svg>
-      </button>
-
-      {/* Language Toggle */}
-      <button class="tb-btn icon-only lang-btn" onClick={toggleLanguage} title={t('toolbar.switch_lang')}>
-        <span class="lang-label">{t('toolbar.lang_label')}</span>
-      </button>
-
-      {/* Theme Toggle */}
-      <button class="tb-btn icon-only" onClick={toggleTheme} title={t('toolbar.theme')}>
-        <Show
-          when={theme() === 'light'}
-          fallback={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" />
-              <line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
-          }
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
+      {/* Global Actions */}
+      <IconBtn onClick={() => fetchTorrents(true)} title={t('toolbar.refresh')}>
+        <RefreshCw size={16} stroke-width={2.5} class="text-primary" />
+      </IconBtn>
+      <IconBtn class={props.sidebarOpen ? "bg-muted text-foreground" : ""} onClick={props.onToggleSidebar} title={t('toolbar.sidebar_toggle')}>
+        <SidebarIcon size={16} stroke-width={2.5} />
+      </IconBtn>
+      <IconBtn class={props.detailOpen ? "bg-muted text-foreground" : ""} onClick={props.onToggleDetail} title={t('toolbar.detail_toggle')}>
+        <PanelRight size={16} stroke-width={2.5} />
+      </IconBtn>
+      <IconBtn onClick={toggleLanguage} title={t('toolbar.switch_lang')}>
+        <span class="text-[11px] font-bold tracking-wide">{t('toolbar.lang_label')}</span>
+      </IconBtn>
+      <IconBtn onClick={toggleTheme} title={t('toolbar.theme')}>
+        <Show when={theme() === 'light'} fallback={<Sun size={16} stroke-width={2.5} />}>
+          <Moon size={16} stroke-width={2.5} />
         </Show>
-      </button>
-
-      {/* Stats modal */}
-      <button class="tb-btn icon-only" onClick={openStatsModal} title={t('toolbar.stats')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-purple">
-          <path d="M18 20V10M12 20V4M6 20v-6" />
-        </svg>
-      </button>
-
-      {/* History modal */}
-      <button class="tb-btn icon-only" onClick={openHistoryModal} title={t('toolbar.history')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      </button>
-
-      {/* Global settings */}
-      <button class="tb-btn icon-only" onClick={openSettingsModal} title={t('toolbar.settings')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      </button>
+      </IconBtn>
+      
+      <Separator />
+      
+      <IconBtn onClick={openStatsModal} title={t('toolbar.stats')}>
+        <Activity size={16} stroke-width={2.5} class="text-purple-500" />
+      </IconBtn>
+      <IconBtn onClick={openHistoryModal} title={t('toolbar.history')}>
+        <History size={16} stroke-width={2.5} class="text-primary" />
+      </IconBtn>
+      <IconBtn onClick={openSettingsModal} title={t('toolbar.settings')}>
+        <Settings size={16} stroke-width={2.5} />
+      </IconBtn>
     </div>
   );
 };

@@ -535,15 +535,15 @@ function getCountryFlagHtml(code: string): string {
     const lc = code.toLowerCase();
     if (_availableFlags[lc]) {
         const flagDataUri = inlineFlags[lc] || '';
-        return '<img class="twc-country-flag-img" src="' + flagDataUri + '" alt="' + code + '" title="' + code.toUpperCase() + '" style="width:16px;height:12px;vertical-align:middle;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
-            '<span style="display:none;font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
+        return '<img class="twc-country-flag-img rounded-[2px]" src="' + flagDataUri + '" alt="' + code + '" title="' + code.toUpperCase() + '" style="width:16px;height:12px;vertical-align:middle;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
+            '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50 hidden">' + code.toUpperCase() + '</span>';
     }
-    return '<span style="font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + code.toUpperCase() + '</span>';
+    return '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50">' + code.toUpperCase() + '</span>';
 }
 
 function getCountryDisplayHtml(ip: string): string {
     if (is_privateIP(ip)) {
-        return '<span style="font-size:10px;background:var(--bg-tertiary);padding:0 3px;border-radius:2px;color:var(--text-muted)">' + t('peer.lan') + '</span>';
+        return '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50">' + t('peer.lan') + '</span>';
     }
     const info = lookup(ip);
     if (info) {

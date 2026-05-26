@@ -294,6 +294,8 @@ export async function fetchTorrents(forceFull = false) {
                   upload_ratio: plain.upload_ratio,
                   downloaded_ever: plain.downloaded_ever,
                   uploaded_ever: plain.uploaded_ever,
+                  status: plain.status,
+                  error: plain.error,
                   magnet_link: plain.magnet_link,
                   comment: plain.comment,
                   creator: plain.creator
@@ -311,7 +313,10 @@ export async function fetchTorrents(forceFull = false) {
                   upload_ratio: plain.upload_ratio,
                   downloaded_ever: plain.downloaded_ever,
                   uploaded_ever: plain.uploaded_ever,
-                  snapshots: [],
+                  avg_rate_download: 0,
+                  avg_rate_upload: 0,
+                  status: plain.status,
+                  error: plain.error,
                   magnet_link: plain.magnet_link,
                   comment: plain.comment,
                   creator: plain.creator
@@ -337,61 +342,74 @@ export async function fetchTorrents(forceFull = false) {
       upload: [...prev.upload, currentUl].slice(-60)
     }));
 
-    // Periodic throttled snapshotting of active items
+    // Periodic throttled syncing to history (every 15s)
     const now = Math.floor(Date.now() / 1000);
-    if (now - lastSnapshotTime >= 300) {
+    if (now - lastSnapshotTime >= 15) {
       lastSnapshotTime = now;
       const allItems = Object.values(torrentStore.items);
+      const hashMap = new Map<string, any>();
       for (const t of allItems) {
-        const plain = toPlain(t);
-        const hasActivity = (plain.rate_download && plain.rate_download > 1024) || (plain.rate_upload && plain.rate_upload > 1024) || (plain.percent_done !== undefined && plain.percent_done < 1);
-        if (hasActivity) {
-          db.history.where('hash_string').equals(plain.hash_string).first().then(record => {
-            const newSnapshot = {
-              timestamp: now,
-              percent_done: plain.percent_done || 0,
-              rate_download: plain.rate_download || 0,
-              rate_upload: plain.rate_upload || 0,
-              peers_connected: plain.peers_connected || 0
-            };
+        hashMap.set(t.hash_string, toPlain(t));
+      }
+      
+      db.history.toArray().then(records => {
+        const toPut: any[] = [];
+        for (const record of records) {
+          const plain = hashMap.get(record.hash_string);
+          if (plain) {
+            let dlAvg = record.avg_rate_download || 0;
+            let ulAvg = record.avg_rate_upload || 0;
+            if (plain.rate_download > 0) dlAvg = dlAvg === 0 ? plain.rate_download : (dlAvg * 0.8 + plain.rate_download * 0.2);
+            if (plain.rate_upload > 0) ulAvg = ulAvg === 0 ? plain.rate_upload : (ulAvg * 0.8 + plain.rate_upload * 0.2);
 
-            if (record && record.id) {
-              const snapshots = [...(record.snapshots || [])];
-              snapshots.push(newSnapshot);
-              if (snapshots.length > 100) snapshots.shift();
-              db.history.update(record.id!, {
-                snapshots,
-                upload_ratio: plain.upload_ratio !== undefined ? plain.upload_ratio : record.upload_ratio,
-                downloaded_ever: plain.downloaded_ever !== undefined ? plain.downloaded_ever : record.downloaded_ever,
-                uploaded_ever: plain.uploaded_ever !== undefined ? plain.uploaded_ever : record.uploaded_ever,
-                done_date: plain.done_date !== undefined ? plain.done_date : record.done_date,
-                name: plain.name || record.name,
-                magnet_link: plain.magnet_link || record.magnet_link,
-                comment: plain.comment || record.comment,
-                creator: plain.creator || record.creator
-              }).catch(e => console.warn('Failed to append snapshot', e));
-            } else {
-              db.history.add({
-                hash_string: plain.hash_string,
-                name: plain.name || 'Unknown',
-                total_size: plain.total_size || 0,
-                download_dir: plain.download_dir || '',
-                labels: plain.labels || [],
-                added_date: plain.added_date || now,
-                done_date: plain.done_date || 0,
-                deleted_date: 0,
-                upload_ratio: plain.upload_ratio || 0,
-                downloaded_ever: plain.downloaded_ever || 0,
-                uploaded_ever: plain.uploaded_ever || 0,
-                snapshots: [newSnapshot],
-                magnet_link: plain.magnet_link,
-                comment: plain.comment,
-                creator: plain.creator
-              }).catch(e => console.warn('Failed to pre-archive active torrent', e));
-            }
+            toPut.push({
+              ...record,
+              avg_rate_download: dlAvg,
+              avg_rate_upload: ulAvg,
+              upload_ratio: plain.upload_ratio !== undefined ? plain.upload_ratio : record.upload_ratio,
+              downloaded_ever: plain.downloaded_ever !== undefined ? plain.downloaded_ever : record.downloaded_ever,
+              uploaded_ever: plain.uploaded_ever !== undefined ? plain.uploaded_ever : record.uploaded_ever,
+              done_date: plain.done_date !== undefined ? plain.done_date : record.done_date,
+              name: plain.name || record.name,
+              magnet_link: plain.magnet_link || record.magnet_link,
+              comment: plain.comment || record.comment,
+              creator: plain.creator || record.creator,
+              total_size: plain.total_size || record.total_size,
+              download_dir: plain.download_dir || record.download_dir,
+              labels: plain.labels || record.labels,
+              deleted_date: 0 // Reset deleted_date if it somehow came back
+            });
+            hashMap.delete(plain.hash_string);
+          }
+        }
+        
+        for (const plain of hashMap.values()) {
+          toPut.push({
+            hash_string: plain.hash_string,
+            name: plain.name || 'Unknown',
+            total_size: plain.total_size || 0,
+            download_dir: plain.download_dir || '',
+            labels: plain.labels || [],
+            added_date: plain.added_date || now,
+            done_date: plain.done_date || 0,
+            deleted_date: 0,
+            upload_ratio: plain.upload_ratio || 0,
+            downloaded_ever: plain.downloaded_ever || 0,
+            uploaded_ever: plain.uploaded_ever || 0,
+            avg_rate_download: plain.rate_download || 0,
+            avg_rate_upload: plain.rate_upload || 0,
+            status: plain.status || 0,
+            error: plain.error || 0,
+            magnet_link: plain.magnet_link,
+            comment: plain.comment,
+            creator: plain.creator
           });
         }
-      }
+        
+        if (toPut.length > 0) {
+          db.history.bulkPut(toPut).catch(e => console.warn('Failed to bulk sync history', e));
+        }
+      });
     }
   } catch (err: any) {
     console.error('Failed to fetch torrents', err);
@@ -445,6 +463,8 @@ export async function removeTorrents(ids?: number[], deleteData = false) {
             upload_ratio: plain.upload_ratio,
             downloaded_ever: plain.downloaded_ever,
             uploaded_ever: plain.uploaded_ever,
+            status: plain.status,
+            error: plain.error,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
             creator: plain.creator
@@ -462,7 +482,10 @@ export async function removeTorrents(ids?: number[], deleteData = false) {
             upload_ratio: plain.upload_ratio,
             downloaded_ever: plain.downloaded_ever,
             uploaded_ever: plain.uploaded_ever,
-            snapshots: [],
+            avg_rate_download: 0,
+            avg_rate_upload: 0,
+            status: plain.status,
+            error: plain.error,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
             creator: plain.creator

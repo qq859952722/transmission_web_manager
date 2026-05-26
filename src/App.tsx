@@ -9,8 +9,6 @@ import { DetailPanel } from './components/DetailPanel/DetailPanel';
 import { ToastContainer } from './components/ToastContainer';
 import { ContextMenu } from './components/ContextMenu';
 import { LabelDialog } from './components/LabelDialog';
-import './components/Toast.css';
-import './App.css';
 import * as geoip from './utils/geoip';
 
 // Modals - eagerly loaded (small or always needed)
@@ -196,7 +194,7 @@ const App: Component = () => {
   };
 
   return (
-    <div class="trwm-app-root">
+    <div class="flex flex-col h-screen w-screen overflow-hidden bg-background">
       {/* App Skeleton Layout */}
       <AppLayout
         sidebar={
@@ -226,7 +224,7 @@ const App: Component = () => {
       />
 
       {/* Bottom Status bar */}
-      <div class="trwm-statusbar-container">
+      <div class="h-7 shrink-0">
         <StatusBar />
       </div>
 
