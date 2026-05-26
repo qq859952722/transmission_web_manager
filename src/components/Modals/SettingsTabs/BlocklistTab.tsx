@@ -8,7 +8,7 @@ export const BlocklistTab: Component<BlocklistTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.blocklist')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Enable IP blocklist">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.blocklist_desc')}>
           <SettingsSwitch checked={props.blocklistEnabled()} onCheckedChange={props.setBlocklistEnabled} />
         </SettingsRow>
         
@@ -16,11 +16,11 @@ export const BlocklistTab: Component<BlocklistTabProps> = (props) => {
           <SettingsInput type="text" class="w-64 text-left" value={props.blocklistUrl()} onInput={(e) => props.setBlocklistUrl(e.currentTarget.value)} disabled={!props.blocklistEnabled()} />
         </SettingsRow>
 
-        <SettingsRow label={t('dialog.settings.rules_count')} desc="Number of rules in current blocklist">
+        <SettingsRow label={t('dialog.settings.rules_count')} desc={t('dialog.settings.rules_count_desc')}>
           <span class="font-mono text-primary font-bold">{props.blocklistSize()}</span>
         </SettingsRow>
 
-        <SettingsRow label="Action" desc="Update blocklist from URL">
+        <SettingsRow label={t('dialog.settings.action')} desc={t('dialog.settings.update_blocklist_desc')}>
           <SettingsButton variant="primary" onClick={props.onUpdateBlocklist} disabled={!props.blocklistEnabled()}>
             {t('dialog.settings.update_blocklist')}
           </SettingsButton>
@@ -30,15 +30,20 @@ export const BlocklistTab: Component<BlocklistTabProps> = (props) => {
       <SettingsSection title={t('dialog.settings.test_port')}>
         <Show when={props.rpcVersion() >= 19}>
           <SettingsRow label={t('dialog.settings.ip_protocol')}>
-            <SettingsSelect class="w-32" value={props.ipProtocol()} onChange={(e) => props.setIpProtocol(e.currentTarget.value)}>
-              <option value="">{t('dialog.settings.ip_protocol_auto')}</option>
-              <option value="ipv4">IPv4</option>
-              <option value="ipv6">IPv6</option>
-            </SettingsSelect>
+            <SettingsSelect
+              class="w-32"
+              value={props.ipProtocol()}
+              onChange={(val) => props.setIpProtocol(String(val))}
+              options={[
+                { value: "", label: t('dialog.settings.ip_protocol_auto') },
+                { value: "ipv4", label: "IPv4" },
+                { value: "ipv6", label: "IPv6" }
+              ]}
+            />
           </SettingsRow>
         </Show>
 
-        <SettingsRow label="Test" desc="Test if your port is open to the internet">
+        <SettingsRow label={t('dialog.settings.test')} desc={t('dialog.settings.test_port_desc')}>
           <div class="flex items-center gap-3">
             <Show when={props.portTestResult()}>
               <span class={`text-[11px] font-bold px-2 py-1 rounded-md ${props.portTestClass() === 'stat-port-open' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>

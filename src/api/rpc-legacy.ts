@@ -33,6 +33,7 @@ export const LEGACY_METHOD_MAP: Record<string, string> = {
   torrent_rename_path: 'torrent-rename-path',
   torrent_add: 'torrent-add',
   session_stats: 'session-stats',
+  session_close: 'session-close',
   port_test: 'port-test',
   blocklist_update: 'blocklist-update',
   free_space: 'free-space',
@@ -308,6 +309,8 @@ const FIELD_MAP: Record<string, string> = {
   'honors-session-limits': 'honors_session_limits',
   seedRatioLimited: 'seed_ratio_limited',
   'seed-ratio-limited': 'seed_ratio_limited',
+  preferredTransports: 'preferred_transports',
+  'preferred-transports': 'preferred_transports',
 
   // Request / action fields
   sizeBytes: 'size_bytes',
@@ -480,8 +483,6 @@ export function isLegacyProtocol(): boolean {
 // ---------------------------------------------------------------------------
 // Legacy RPC call
 // ---------------------------------------------------------------------------
-
-const _requestId = 0;
 
 /**
  * Send an RPC request using the old Transmission protocol format.

@@ -17,7 +17,7 @@ export const SeedingTab: Component<SeedingTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('detail.settings.seed_ratio')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Stop seeding when ratio is reached">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.seed_ratio_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.seedRatioLimited()}>
               <SettingsInput
@@ -34,7 +34,7 @@ export const SeedingTab: Component<SeedingTabProps> = (props) => {
       </SettingsSection>
       
       <SettingsSection title={t('detail.settings.seed_idle')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Stop seeding if idle for a specified time">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.seed_idle_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.idleSeedingLimitEnabled()}>
               <div class="flex items-center gap-2">

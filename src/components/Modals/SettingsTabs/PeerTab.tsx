@@ -13,7 +13,7 @@ export const PeerTab: Component<PeerTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.conn_limits')}>
-        <SettingsRow label={t('dialog.settings.global_peer_limit')} desc="Maximum total number of peers across all torrents">
+        <SettingsRow label={t('dialog.settings.global_peer_limit')} desc={t('dialog.settings.global_peer_limit_desc')}>
           <SettingsInput
             type="number"
             class="w-24"
@@ -21,7 +21,7 @@ export const PeerTab: Component<PeerTabProps> = (props) => {
             onInput={(e) => props.setPeerLimitGlobal(Number(e.currentTarget.value))}
           />
         </SettingsRow>
-        <SettingsRow label={t('mobile.max_peers')} desc="Maximum number of peers for a single torrent">
+        <SettingsRow label={t('mobile.max_peers')} desc={t('dialog.settings.peer_limit_desc')}>
           <SettingsInput
             type="number"
             class="w-24"

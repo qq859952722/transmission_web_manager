@@ -36,7 +36,7 @@ export const SpeedTab: Component<SpeedTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.global_speed')}>
-        <SettingsRow label={t('dialog.settings.dl_limit_enabled')} desc="Enable global download limit">
+        <SettingsRow label={t('dialog.settings.dl_limit_enabled')} desc={t('dialog.settings.dl_limit_enabled_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.speedLimitDownEnabled()}>
               <div class="flex items-center gap-2">
@@ -47,7 +47,7 @@ export const SpeedTab: Component<SpeedTabProps> = (props) => {
             <SettingsSwitch checked={props.speedLimitDownEnabled()} onCheckedChange={props.setSpeedLimitDownEnabled} />
           </div>
         </SettingsRow>
-        <SettingsRow label={t('dialog.settings.ul_limit_enabled')} desc="Enable global upload limit">
+        <SettingsRow label={t('dialog.settings.ul_limit_enabled')} desc={t('dialog.settings.ul_limit_enabled_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.speedLimitUpEnabled()}>
               <div class="flex items-center gap-2">
@@ -75,8 +75,8 @@ export const SpeedTab: Component<SpeedTabProps> = (props) => {
         </SettingsRow>
       </SettingsSection>
 
-      <SettingsSection title="Scheduled Alternative Speed Limits">
-        <SettingsRow label={t('dialog.settings.alt_speed_time')} desc="Schedule when alternative limits are active">
+      <SettingsSection title={t('dialog.settings.alt_speed_time')}>
+        <SettingsRow label={t('dialog.settings.alt_speed_time')} desc={t('dialog.settings.alt_speed_time_desc')}>
           <SettingsSwitch checked={props.altSpeedTimeEnabled()} onCheckedChange={props.setAltSpeedTimeEnabled} />
         </SettingsRow>
 

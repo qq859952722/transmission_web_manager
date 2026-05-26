@@ -1,4 +1,4 @@
-import { Component, createSignal, Show, onMount, onCleanup, lazy } from 'solid-js';
+import { Component, createSignal, Show, onMount, onCleanup, lazy, ErrorBoundary } from 'solid-js';
 import { createPersistedSignal } from './utils/persist';
 import { AppLayout } from './components/AppLayout';
 import { Sidebar } from './components/Sidebar';
@@ -42,10 +42,6 @@ const App: Component = () => {
   const [sidebarOpen, setSidebarOpen] = createPersistedSignal('trwm-sidebar-open', true);
   const [detailOpen, setDetailOpen] = createPersistedSignal('trwm-detail-open', false);
 
-  // Custom Context Menu state
-  const [showContextMenu, setShowContextMenu] = createSignal(false);
-  const [contextMenuPos, setContextMenuPos] = createSignal({ x: 0, y: 0 });
-
   // Label dialog state
   const [showLabelDialog, setShowLabelDialog] = createSignal(false);
 
@@ -70,11 +66,7 @@ const App: Component = () => {
 
   onMount(() => {
     geoip.init(() => {});
-    startPolling(2000); // Polling every 2s
-
-    // Close context menu on any document click
-    const closeMenu = () => setShowContextMenu(false);
-    window.addEventListener('click', closeMenu);
+    startPolling(2000, () => detailOpen()); // Polling every 2s, full fields when detail open
 
     // Global keyboard shortcuts
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -96,7 +88,6 @@ const App: Component = () => {
         selectAll();
       } else if (e.key === 'Escape') {
         clearSelection();
-        setShowContextMenu(false);
       } else if (e.key === 'Delete') {
         const ids = selectedIds();
         if (ids.length > 0) {
@@ -158,7 +149,6 @@ const App: Component = () => {
 
     onCleanup(() => {
       stopPolling();
-      window.removeEventListener('click', closeMenu);
       window.removeEventListener('keydown', handleGlobalKeyDown);
       window.removeEventListener('dragenter', handleDragEnter);
       window.removeEventListener('dragover', handleDragOver);
@@ -174,27 +164,21 @@ const App: Component = () => {
     }
   };
 
-  const handleContextMenu = (e: MouseEvent, ids: number[]) => {
-    e.preventDefault();
-    // Calculate position to prevent menu from going off-screen
-    const menuWidth = 180;
-    const menuHeight = 500; // approximate max height
-    let x = e.clientX;
-    let y = e.clientY;
-    if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
-    if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
-    if (x < 0) x = 8;
-    if (y < 0) y = 8;
-    setContextMenuPos({ x, y });
-    setShowContextMenu(true);
-  };
-
   const openLabelDialog = () => {
     setShowLabelDialog(true);
   };
 
   return (
     <div class="flex flex-col h-screen w-screen overflow-hidden bg-background">
+      <ErrorBoundary fallback={(err) => (
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center p-8">
+            <p class="text-destructive text-lg font-medium">Something went wrong</p>
+            <p class="text-muted-foreground text-sm mt-2">{err.message}</p>
+            <button class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm" onClick={() => window.location.reload()}>Reload</button>
+          </div>
+        </div>
+      )}>
       {/* App Skeleton Layout */}
       <AppLayout
         sidebar={
@@ -211,10 +195,15 @@ const App: Component = () => {
           />
         }
         main={
-          <TorrentTable
-            onSelect={handleRowSelect}
-            onContextMenu={handleContextMenu}
-          />
+          <ContextMenu
+            onOpenLabelDialog={openLabelDialog}
+            onPrompt={openPrompt}
+          >
+            <TorrentTable
+              onSelect={handleRowSelect}
+              onContextMenu={() => {}}
+            />
+          </ContextMenu>
         }
         bottomPanel={
           <Show when={detailOpen()}>
@@ -246,23 +235,13 @@ const App: Component = () => {
         onCancel={closePrompt}
       />
 
-      {/* Context Menu */}
-      <Show when={showContextMenu()}>
-        <ContextMenu
-          x={contextMenuPos().x}
-          y={contextMenuPos().y}
-          onClose={() => setShowContextMenu(false)}
-          onOpenLabelDialog={openLabelDialog}
-          onPrompt={openPrompt}
-        />
-      </Show>
-
       {/* Label Dialog */}
       <LabelDialog
         open={showLabelDialog()}
         onClose={() => setShowLabelDialog(false)}
       />
 
+      </ErrorBoundary>
     </div>
   );
 };

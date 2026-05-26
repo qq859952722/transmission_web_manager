@@ -6,6 +6,7 @@ import { fetchTorrents } from '../../store/torrentStore';
 import { t } from '../../utils/i18n';
 import { cn } from '../../lib/utils';
 import { Server, Plus, Trash2, Info, Activity, Clock, BarChart3, Database } from 'lucide-solid';
+import { Checkbox } from '../ui/checkbox';
 
 function announceStateText(state: number): string {
   switch (state) {
@@ -182,7 +183,7 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
                 {(stat, i) => (
                   <tr class={cn("transition-colors group", selectedTrackerIds().includes(stat.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50")}>
                     <td class="py-1 px-1.5 text-center">
-                      <input type="checkbox" class="accent-primary" checked={selectedTrackerIds().includes(stat.id)} onChange={() => toggleSelectTracker(stat.id)} />
+                      <Checkbox checked={selectedTrackerIds().includes(stat.id)} onChange={(checked) => toggleSelectTracker(stat.id)} />
                     </td>
                     <td class="py-1 px-1.5 text-muted-foreground/50 font-mono text-[10px]">{i() + 1}</td>
                     <td class="py-1 px-1.5 flex items-center gap-2 select-text" title={stat.announce}>

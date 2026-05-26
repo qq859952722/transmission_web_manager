@@ -12,7 +12,7 @@ interface RpcTabProps {
 export const RpcTab: Component<RpcTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
-      <SettingsSection title="RPC Information">
+      <SettingsSection title={t('dialog.settings.rpc_info')}>
         <SettingsRow label={t('dialog.about.rpc_version')}>
           <SettingsInput type="text" readOnly value={props.rpcVersion()} class="w-48 text-muted-foreground cursor-default bg-secondary/50 border-transparent focus:ring-0" />
         </SettingsRow>

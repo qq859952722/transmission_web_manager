@@ -15,7 +15,7 @@ interface AdvancedTabProps {
 export const AdvancedTab: Component<AdvancedTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
-      <SettingsSection title="Default Trackers">
+      <SettingsSection title={t('dialog.settings.default_trackers')}>
         <div class="p-4 flex flex-col gap-2">
           <span class="text-[13px] font-medium text-foreground">{t('dialog.tracker.add_label')}</span>
           <textarea
@@ -28,8 +28,8 @@ export const AdvancedTab: Component<AdvancedTabProps> = (props) => {
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Memory">
-        <SettingsRow label={t('dialog.settings.cache_size')} desc="Size of disk cache in MB">
+      <SettingsSection title={t('dialog.settings.memory')}>
+        <SettingsRow label={t('dialog.settings.cache_size')} desc={t('dialog.settings.cache_size_desc')}>
           <Show
             when={props.rpcVersion() >= 17}
             fallback={

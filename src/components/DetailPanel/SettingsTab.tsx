@@ -6,6 +6,7 @@ import { t } from '../../utils/i18n';
 import { showToast } from '../../utils/toast';
 import { cn } from '../../lib/utils';
 import { Switch } from '../ui/switch';
+import { Select as UISelect } from '../ui/select';
 import { Save, FolderInput, Activity, Zap, Users, Download, Upload, Clock } from 'lucide-solid';
 
 export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }> = (props) => {
@@ -120,23 +121,6 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
     />
   );
 
-  const Select = (props: any) => (
-    <div class="relative w-full">
-      <select
-        {...props}
-        class={cn(
-          "w-full appearance-none bg-background/80 border border-border rounded-md px-1 py-0 h-5 pr-4 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50",
-          props.class
-        )}
-      >
-        {props.children}
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-muted-foreground">
-        <svg class="h-[10px] w-[10px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </div>
-    </div>
-  );
-
   return (
     <div class="h-full pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <form class="flex flex-col h-full gap-2" onSubmit={handleSave}>
@@ -172,11 +156,24 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
             <FormRow>
               <span class="font-medium text-foreground">{t('detail.settings.priority')}:</span>
               <div class="w-36">
-                <Select value={bandwidthPriority()} onChange={(e: any) => setBandwidthPriority(Number(e.currentTarget.value))}>
-                  <option value="-1">{t('detail.settings.priority_low')}</option>
-                  <option value="0">{t('detail.settings.priority_normal')}</option>
-                  <option value="1">{t('detail.settings.priority_high')}</option>
-                </Select>
+                <UISelect
+                  options={[
+                    { value: -1, label: t('detail.settings.priority_low') },
+                    { value: 0, label: t('detail.settings.priority_normal') },
+                    { value: 1, label: t('detail.settings.priority_high') },
+                  ]}
+                  optionValue="value"
+                  optionTextValue="label"
+                  value={[
+                    { value: -1, label: t('detail.settings.priority_low') },
+                    { value: 0, label: t('detail.settings.priority_normal') },
+                    { value: 1, label: t('detail.settings.priority_high') },
+                  ].find((o) => o.value === bandwidthPriority())}
+                  onChange={(v: any) => v && setBandwidthPriority(v.value)}
+                  itemComponent={(props) => <>{props.item.label}</>}
+                  renderValue={(v) => <>{v.label}</>}
+                  triggerClass="bg-background/80 border-border rounded-md px-1 py-0 h-5 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20"
+                />
               </div>
             </FormRow>
           </Card>
@@ -192,11 +189,24 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
               <div class="flex flex-col gap-1">
                 <span class="font-medium text-foreground text-[10px]">{t('dialog.settings.seed_ratio')}:</span>
                 <div class="flex gap-2">
-                  <Select value={seedRatioMode()} onChange={(e: any) => setSeedRatioMode(Number(e.currentTarget.value))}>
-                    <option value="0">{t('dialog.add.default')}</option>
-                    <option value="1">{t('dialog.label.source_custom')}</option>
-                    <option value="2">{t('dialog.add.unlimited')}</option>
-                  </Select>
+                  <UISelect
+                    options={[
+                      { value: 0, label: t('dialog.add.default') },
+                      { value: 1, label: t('dialog.label.source_custom') },
+                      { value: 2, label: t('dialog.add.unlimited') },
+                    ]}
+                    optionValue="value"
+                    optionTextValue="label"
+                    value={[
+                      { value: 0, label: t('dialog.add.default') },
+                      { value: 1, label: t('dialog.label.source_custom') },
+                      { value: 2, label: t('dialog.add.unlimited') },
+                    ].find((o) => o.value === seedRatioMode())}
+                    onChange={(v: any) => v && setSeedRatioMode(v.value)}
+                    itemComponent={(props) => <>{props.item.label}</>}
+                    renderValue={(v) => <>{v.label}</>}
+                    triggerClass="bg-background/80 border-border rounded-md px-1 py-0 h-5 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20 w-24"
+                  />
                   <Show when={seedRatioMode() === 1}>
                     <Input type="number" step="0.1" class="w-20 text-right" value={seedRatioLimit()} onInput={(e: any) => setSeedRatioLimit(Number(e.currentTarget.value))} />
                   </Show>
@@ -206,11 +216,24 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
               <div class="flex flex-col gap-1 lg:col-start-2">
                 <span class="font-medium text-foreground text-[10px]">{t('dialog.settings.seed_idle')}:</span>
                 <div class="flex gap-2">
-                  <Select value={seedIdleMode()} onChange={(e: any) => setSeedIdleMode(Number(e.currentTarget.value))}>
-                    <option value="0">{t('dialog.add.default')}</option>
-                    <option value="1">{t('dialog.label.source_custom')}</option>
-                    <option value="2">{t('dialog.add.unlimited')}</option>
-                  </Select>
+                  <UISelect
+                    options={[
+                      { value: 0, label: t('dialog.add.default') },
+                      { value: 1, label: t('dialog.label.source_custom') },
+                      { value: 2, label: t('dialog.add.unlimited') },
+                    ]}
+                    optionValue="value"
+                    optionTextValue="label"
+                    value={[
+                      { value: 0, label: t('dialog.add.default') },
+                      { value: 1, label: t('dialog.label.source_custom') },
+                      { value: 2, label: t('dialog.add.unlimited') },
+                    ].find((o) => o.value === seedIdleMode())}
+                    onChange={(v: any) => v && setSeedIdleMode(v.value)}
+                    itemComponent={(props) => <>{props.item.label}</>}
+                    renderValue={(v) => <>{v.label}</>}
+                    triggerClass="bg-background/80 border-border rounded-md px-1 py-0 h-5 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20 w-24"
+                  />
                   <Show when={seedIdleMode() === 1}>
                     <Input type="number" class="w-20 text-right" value={seedIdleLimit()} onInput={(e: any) => setSeedIdleLimit(Number(e.currentTarget.value))} />
                   </Show>

@@ -1,6 +1,7 @@
 import { Component, JSX, splitProps, Show } from 'solid-js';
 import { cn } from '../../../lib/utils';
 import { Switch as UISwitch } from '../../ui/switch';
+import { Select as UISelect } from '../../ui/select';
 
 /**
  * SettingsSection: The grouped container for a section of settings.
@@ -64,20 +65,25 @@ export const SettingsInput: Component<JSX.InputHTMLAttributes<HTMLInputElement> 
 /**
  * SettingsSelect: A standardized select dropdown for settings.
  */
-export const SettingsSelect: Component<JSX.SelectHTMLAttributes<HTMLSelectElement> & { class?: string; children: any }> = (props) => {
-  const [local, others] = splitProps(props, ['class', 'children']);
+export const SettingsSelect: Component<{
+  options: { value: string | number; label: string }[];
+  value: string | number;
+  onChange: (value: string | number) => void;
+  class?: string;
+  disabled?: boolean;
+}> = (props) => {
   return (
-    <div class={cn("relative", local.class)}>
-      <select
-        class="w-full appearance-none bg-background hover:bg-muted/40 focus:bg-background border border-border rounded-lg pl-2.5 pr-7 py-1 text-sm font-medium text-foreground outline-none transition-all hover:border-primary/50 focus:border-primary focus:ring-[2px] focus:ring-primary/20 shadow-sm disabled:opacity-50 text-right cursor-pointer"
-        {...others}
-      >
-        {local.children}
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </div>
-    </div>
+    <UISelect
+      options={props.options}
+      optionValue="value"
+      optionTextValue="label"
+      value={props.options.find(o => o.value === props.value)}
+      onChange={(v: any) => v && props.onChange(v.value ?? v)}
+      disabled={props.disabled}
+      itemComponent={(p) => <>{p.item.label}</>}
+      renderValue={(v) => <>{v.label}</>}
+      triggerClass={cn("w-full appearance-none bg-background hover:bg-muted/40 focus:bg-background border border-border rounded-lg pl-2.5 pr-7 py-1 text-sm font-medium text-foreground outline-none transition-all hover:border-primary/50 focus:border-primary focus:ring-[2px] focus:ring-primary/20 shadow-sm disabled:opacity-50 text-right cursor-pointer h-[30px]", props.class)}
+    />
   );
 };
 

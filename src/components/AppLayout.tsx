@@ -1,4 +1,4 @@
-import { Component, JSX, createSignal } from 'solid-js';
+import { Component, JSX, createSignal, onCleanup } from 'solid-js';
 import { cn } from '../lib/utils';
 
 interface AppLayoutProps {
@@ -14,6 +14,16 @@ export const AppLayout: Component<AppLayoutProps> = (props) => {
 
   const MIN_HEIGHT = 120;
   const MAX_HEIGHT = 600;
+
+  let currentMouseMove: ((ev: MouseEvent) => void) | null = null;
+  let currentMouseUp: (() => void) | null = null;
+
+  onCleanup(() => {
+    if (currentMouseMove) document.removeEventListener('mousemove', currentMouseMove);
+    if (currentMouseUp) document.removeEventListener('mouseup', currentMouseUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
 
   const handleMouseDown = (e: MouseEvent) => {
     e.preventDefault();
@@ -33,9 +43,14 @@ export const AppLayout: Component<AppLayoutProps> = (props) => {
       setIsDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      currentMouseMove = null;
+      currentMouseUp = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
+
+    currentMouseMove = handleMouseMove;
+    currentMouseUp = handleMouseUp;
 
     document.body.style.cursor = 'ns-resize';
     document.body.style.userSelect = 'none';

@@ -1,60 +1,28 @@
-import { Component, Show, createSignal } from 'solid-js';
+import { Component, JSX } from 'solid-js';
+import { ContextMenu as KContextMenu } from '@kobalte/core/context-menu';
 import {
-  Play,
-  FastForward,
-  Pause,
-  ShieldCheck,
-  Globe,
-  ChevronUp,
-  ChevronDown,
-  ChevronsUp,
-  ChevronsDown,
-  Hash,
-  Magnet,
-  Tag,
-  Zap,
-  ArrowDown,
-  ArrowUp,
-  Users,
-  FolderOpen,
-  ListOrdered,
-  X,
-  Trash2,
-  ChevronRight,
-  Circle
+  Play, FastForward, Pause, ShieldCheck, Globe, ChevronUp, ChevronDown, ChevronsUp,
+  ChevronsDown, Hash, Magnet, Tag, Zap, ArrowDown, ArrowUp, Users, FolderOpen,
+  ListOrdered, X, Trash2, ChevronRight, Circle
 } from 'lucide-solid';
 import { t } from '../utils/i18n';
 import { showToast } from '../utils/toast';
 import { cn } from '../lib/utils';
 import {
-  selectedIds,
-  torrentStore,
-  startTorrents,
-  startNowTorrents,
-  pauseTorrents,
-  reannounceTorrents,
-  verifyTorrents,
-  moveQueueUp,
-  moveQueueDown,
-  moveQueueTop,
-  moveQueueBottom,
-  fetchTorrents,
-  removeTorrents,
+  selectedIds, torrentStore, startTorrents, startNowTorrents, pauseTorrents,
+  reannounceTorrents, verifyTorrents, moveQueueUp, moveQueueDown, moveQueueTop,
+  moveQueueBottom, fetchTorrents, removeTorrents,
 } from '../store/torrentStore';
 import { rpcCall } from '../api/rpc';
 import { openDeleteModal } from '../store/modalStore';
 
 interface ContextMenuProps {
-  x: number;
-  y: number;
-  onClose: () => void;
+  children?: JSX.Element;
   onOpenLabelDialog: () => void;
   onPrompt: (cfg: { title: string; inputType?: 'text' | 'number'; placeholder?: string; defaultValue?: string; onConfirm: (value: string) => void }) => void;
 }
 
 export const ContextMenu: Component<ContextMenuProps> = (props) => {
-  const [showPrioritySubmenu, setShowPrioritySubmenu] = createSignal(false);
-
   const copyToClipboard = (text: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
@@ -98,8 +66,12 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
   };
 
   const setBandwidthPriority = async (priority: number) => {
-    await rpcCall('torrent_set', { ids: selectedIds(), bandwidth_priority: priority });
-    fetchTorrents(true);
+    try {
+      await rpcCall('torrent_set', { ids: selectedIds(), bandwidth_priority: priority });
+      fetchTorrents(true);
+    } catch (err) {
+      showToast(t('status.request_failed'), 'error');
+    }
   };
 
   const setDownloadLimit = () => {
@@ -108,11 +80,15 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
       title: t('context.speed_limit_prompt'),
       inputType: 'number',
       placeholder: 'KB/s',
-      onConfirm: (val) => {
+      onConfirm: async (val) => {
         const num = parseInt(val, 10);
         if (!isNaN(num)) {
-          rpcCall('torrent_set', { ids, download_limited: true, download_limit: num });
-          fetchTorrents(true);
+          try {
+            await rpcCall('torrent_set', { ids, download_limited: true, download_limit: num });
+            fetchTorrents(true);
+          } catch (err) {
+            showToast(t('status.request_failed'), 'error');
+          }
         }
       },
     });
@@ -124,11 +100,15 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
       title: t('context.speed_limit_prompt'),
       inputType: 'number',
       placeholder: 'KB/s',
-      onConfirm: (val) => {
+      onConfirm: async (val) => {
         const num = parseInt(val, 10);
         if (!isNaN(num)) {
-          rpcCall('torrent_set', { ids, upload_limited: true, upload_limit: num });
-          fetchTorrents(true);
+          try {
+            await rpcCall('torrent_set', { ids, upload_limited: true, upload_limit: num });
+            fetchTorrents(true);
+          } catch (err) {
+            showToast(t('status.request_failed'), 'error');
+          }
         }
       },
     });
@@ -139,11 +119,15 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     props.onPrompt({
       title: t('context.peer_limit_prompt'),
       inputType: 'number',
-      onConfirm: (val) => {
+      onConfirm: async (val) => {
         const num = parseInt(val, 10);
         if (!isNaN(num)) {
-          rpcCall('torrent_set', { ids, peer_limit: num });
-          fetchTorrents(true);
+          try {
+            await rpcCall('torrent_set', { ids, peer_limit: num });
+            fetchTorrents(true);
+          } catch (err) {
+            showToast(t('status.request_failed'), 'error');
+          }
         }
       },
     });
@@ -155,10 +139,14 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     props.onPrompt({
       title: t('context.dir_prompt'),
       defaultValue: first?.download_dir || '',
-      onConfirm: (val) => {
+      onConfirm: async (val) => {
         if (val.trim().length > 0) {
-          rpcCall('torrent_set_location', { ids, location: val.trim(), move: true });
-          fetchTorrents(true);
+          try {
+            await rpcCall('torrent_set_location', { ids, location: val.trim(), move: true });
+            fetchTorrents(true);
+          } catch (err) {
+            showToast(t('status.request_failed'), 'error');
+          }
         }
       },
     });
@@ -169,8 +157,12 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     if (ids.length === 0) return;
     const first = torrentStore.items[ids[0]];
     const current = first?.sequential_download ?? false;
-    await rpcCall('torrent_set', { ids, sequential_download: !current });
-    fetchTorrents(true);
+    try {
+      await rpcCall('torrent_set', { ids, sequential_download: !current });
+      fetchTorrents(true);
+    } catch (err) {
+      showToast(t('status.request_failed'), 'error');
+    }
   };
 
   const handleRemoveWithData = async () => {
@@ -178,152 +170,148 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
   };
 
   const Item = (props: any) => (
-    <div
-      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground", props.class)}
+    <KContextMenu.Item
+      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed", props.class)}
       onClick={props.onClick}
-      onMouseEnter={props.onMouseEnter}
-      onMouseLeave={props.onMouseLeave}
     >
       {props.children}
-    </div>
+    </KContextMenu.Item>
   );
 
-  const Divider = () => <div class="h-px bg-border my-1 mx-1" />;
+  const SubItem = (props: any) => (
+    <KContextMenu.Item
+      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed", props.class)}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </KContextMenu.Item>
+  );
+
+  const Divider = () => <KContextMenu.Separator class="h-px bg-border my-1 mx-1" />;
 
   return (
-    <div
-      class="fixed z-[99999] bg-popover/80 backdrop-blur-xl border border-border rounded-lg shadow-xl min-w-[220px] py-1 flex flex-col text-popover-foreground animate-in fade-in zoom-in-95 duration-100"
-      style={{
-        left: `${props.x}px`,
-        top: `${props.y}px`,
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!(e.target as HTMLElement).closest('.cm-has-submenu')) {
-          props.onClose();
-        }
-      }}
-    >
-      <Item onClick={() => startTorrents()}>
-        <Play size={14} class="text-success" />
-        <span>{t('context.start')}</span>
-      </Item>
-      <Item onClick={() => startNowTorrents()}>
-        <FastForward size={14} class="text-success" />
-        <span>{t('context.start_now')}</span>
-      </Item>
-      <Item onClick={() => pauseTorrents()}>
-        <Pause size={14} class="text-warning" />
-        <span>{t('context.pause')}</span>
-      </Item>
-      <Item onClick={() => verifyTorrents()}>
-        <ShieldCheck size={14} class="text-primary" />
-        <span>{t('context.verify')}</span>
-      </Item>
-      <Item onClick={() => reannounceTorrents()}>
-        <Globe size={14} class="text-primary" />
-        <span>{t('context.reannounce')}</span>
-      </Item>
+    <KContextMenu>
+      <KContextMenu.Trigger class="contents">
+        {props.children}
+      </KContextMenu.Trigger>
+      
+      <KContextMenu.Portal>
+        <KContextMenu.Content class="z-[99999] bg-popover/80 backdrop-blur-xl border border-border rounded-lg shadow-xl min-w-[220px] p-1 flex flex-col text-popover-foreground animate-in fade-in zoom-in-95 duration-100 outline-none">
+          <Item onClick={() => startTorrents()}>
+            <Play size={14} class="text-success" />
+            <span>{t('context.start')}</span>
+          </Item>
+          <Item onClick={() => startNowTorrents()}>
+            <FastForward size={14} class="text-success" />
+            <span>{t('context.start_now')}</span>
+          </Item>
+          <Item onClick={() => pauseTorrents()}>
+            <Pause size={14} class="text-warning" />
+            <span>{t('context.pause')}</span>
+          </Item>
+          <Item onClick={() => verifyTorrents()}>
+            <ShieldCheck size={14} class="text-primary" />
+            <span>{t('context.verify')}</span>
+          </Item>
+          <Item onClick={() => reannounceTorrents()}>
+            <Globe size={14} class="text-primary" />
+            <span>{t('context.reannounce')}</span>
+          </Item>
 
-      <Divider />
+          <Divider />
 
-      <Item onClick={() => moveQueueUp()}>
-        <ChevronUp size={14} class="text-muted-foreground" />
-        <span>{t('context.queue_up')}</span>
-      </Item>
-      <Item onClick={() => moveQueueDown()}>
-        <ChevronDown size={14} class="text-muted-foreground" />
-        <span>{t('context.queue_down')}</span>
-      </Item>
-      <Item onClick={() => moveQueueTop()}>
-        <ChevronsUp size={14} class="text-muted-foreground" />
-        <span>{t('context.queue_top')}</span>
-      </Item>
-      <Item onClick={() => moveQueueBottom()}>
-        <ChevronsDown size={14} class="text-muted-foreground" />
-        <span>{t('context.queue_bottom')}</span>
-      </Item>
+          <Item onClick={() => moveQueueUp()}>
+            <ChevronUp size={14} class="text-muted-foreground" />
+            <span>{t('context.queue_up')}</span>
+          </Item>
+          <Item onClick={() => moveQueueDown()}>
+            <ChevronDown size={14} class="text-muted-foreground" />
+            <span>{t('context.queue_down')}</span>
+          </Item>
+          <Item onClick={() => moveQueueTop()}>
+            <ChevronsUp size={14} class="text-muted-foreground" />
+            <span>{t('context.queue_top')}</span>
+          </Item>
+          <Item onClick={() => moveQueueBottom()}>
+            <ChevronsDown size={14} class="text-muted-foreground" />
+            <span>{t('context.queue_bottom')}</span>
+          </Item>
 
-      <Divider />
+          <Divider />
 
-      <Item onClick={copyHash}>
-        <Hash size={14} class="text-muted-foreground" />
-        <span>{t('context.copy_hash')}</span>
-      </Item>
-      <Item onClick={copyMagnet}>
-        <Magnet size={14} class="text-muted-foreground" />
-        <span>{t('context.copy_magnet')}</span>
-      </Item>
+          <Item onClick={copyHash}>
+            <Hash size={14} class="text-muted-foreground" />
+            <span>{t('context.copy_hash')}</span>
+          </Item>
+          <Item onClick={copyMagnet}>
+            <Magnet size={14} class="text-muted-foreground" />
+            <span>{t('context.copy_magnet')}</span>
+          </Item>
 
-      <Divider />
+          <Divider />
 
-      <Item onClick={props.onOpenLabelDialog}>
-        <Tag size={14} class="text-primary" />
-        <span>{t('context.set_labels')}</span>
-      </Item>
+          <Item onClick={props.onOpenLabelDialog}>
+            <Tag size={14} class="text-primary" />
+            <span>{t('context.set_labels')}</span>
+          </Item>
 
-      <div class="relative cm-has-submenu">
-        <Item
-          onMouseEnter={() => setShowPrioritySubmenu(true)}
-          onMouseLeave={() => setShowPrioritySubmenu(false)}
-        >
-          <Zap size={14} class="text-warning" />
-          <span>{t('context.bandwidth_priority')}</span>
-          <ChevronRight size={12} class="ml-auto text-muted-foreground" />
-        </Item>
-        <Show when={showPrioritySubmenu()}>
-          <div
-            class="absolute top-0 left-full ml-1 bg-popover/90 backdrop-blur-xl border border-border rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in slide-in-from-left-1 duration-150"
-            onMouseEnter={() => setShowPrioritySubmenu(true)}
-            onMouseLeave={() => setShowPrioritySubmenu(false)}
-          >
-            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(1); props.onClose(); }}>
-              <ChevronUp size={14} class="text-success" />
-              <span>{t('context.priority_high')}</span>
-            </Item>
-            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(0); props.onClose(); }}>
-              <Circle size={10} class="text-muted-foreground ml-0.5 mr-[2px]" />
-              <span>{t('context.priority_normal')}</span>
-            </Item>
-            <Item onClick={(e: any) => { e.stopPropagation(); setBandwidthPriority(-1); props.onClose(); }}>
-              <ChevronDown size={14} class="text-danger" />
-              <span>{t('context.priority_low')}</span>
-            </Item>
-          </div>
-        </Show>
-      </div>
+          <KContextMenu.Sub>
+            <KContextMenu.SubTrigger class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[expanded]:bg-muted">
+              <Zap size={14} class="text-warning" />
+              <span>{t('context.bandwidth_priority')}</span>
+              <ChevronRight size={12} class="ml-auto text-muted-foreground" />
+            </KContextMenu.SubTrigger>
+            <KContextMenu.Portal>
+              <KContextMenu.SubContent class="z-[99999] bg-popover/90 backdrop-blur-xl border border-border rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in slide-in-from-left-1 duration-150 outline-none p-1">
+                <SubItem onClick={() => setBandwidthPriority(1)}>
+                  <ChevronUp size={14} class="text-success" />
+                  <span>{t('context.priority_high')}</span>
+                </SubItem>
+                <SubItem onClick={() => setBandwidthPriority(0)}>
+                  <Circle size={10} class="text-muted-foreground ml-0.5 mr-[2px]" />
+                  <span>{t('context.priority_normal')}</span>
+                </SubItem>
+                <SubItem onClick={() => setBandwidthPriority(-1)}>
+                  <ChevronDown size={14} class="text-danger" />
+                  <span>{t('context.priority_low')}</span>
+                </SubItem>
+              </KContextMenu.SubContent>
+            </KContextMenu.Portal>
+          </KContextMenu.Sub>
 
-      <Item onClick={setDownloadLimit}>
-        <ArrowDown size={14} class="text-muted-foreground" />
-        <span>{t('context.download_limit')}</span>
-      </Item>
-      <Item onClick={setUploadLimit}>
-        <ArrowUp size={14} class="text-muted-foreground" />
-        <span>{t('context.upload_limit')}</span>
-      </Item>
-      <Item onClick={setPeerLimit}>
-        <Users size={14} class="text-muted-foreground" />
-        <span>{t('context.peer_limit')}</span>
-      </Item>
-      <Item onClick={changeDownloadDir}>
-        <FolderOpen size={14} class="text-muted-foreground" />
-        <span>{t('context.change_dir')}</span>
-      </Item>
-      <Item onClick={toggleSequentialDownload}>
-        <ListOrdered size={14} class="text-muted-foreground" />
-        <span>{t('context.sequential_download')}</span>
-      </Item>
+          <Item onClick={setDownloadLimit}>
+            <ArrowDown size={14} class="text-muted-foreground" />
+            <span>{t('context.download_limit')}</span>
+          </Item>
+          <Item onClick={setUploadLimit}>
+            <ArrowUp size={14} class="text-muted-foreground" />
+            <span>{t('context.upload_limit')}</span>
+          </Item>
+          <Item onClick={setPeerLimit}>
+            <Users size={14} class="text-muted-foreground" />
+            <span>{t('context.peer_limit')}</span>
+          </Item>
+          <Item onClick={changeDownloadDir}>
+            <FolderOpen size={14} class="text-muted-foreground" />
+            <span>{t('context.change_dir')}</span>
+          </Item>
+          <Item onClick={toggleSequentialDownload}>
+            <ListOrdered size={14} class="text-muted-foreground" />
+            <span>{t('context.sequential_download')}</span>
+          </Item>
 
-      <Divider />
+          <Divider />
 
-      <Item class="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={openDeleteModal}>
-        <X size={14} class="text-destructive" />
-        <span>{t('context.remove')}</span>
-      </Item>
-      <Item class="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleRemoveWithData}>
-        <Trash2 size={14} class="text-destructive" />
-        <span>{t('context.remove_data')}</span>
-      </Item>
-    </div>
+          <Item class="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={openDeleteModal}>
+            <X size={14} class="text-destructive" />
+            <span>{t('context.remove')}</span>
+          </Item>
+          <Item class="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={handleRemoveWithData}>
+            <Trash2 size={14} class="text-destructive" />
+            <span>{t('context.remove_data')}</span>
+          </Item>
+        </KContextMenu.Content>
+      </KContextMenu.Portal>
+    </KContextMenu>
   );
 };

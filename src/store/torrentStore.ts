@@ -9,23 +9,34 @@ function toPlain<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-export const TORRENT_FIELDS = [
+// Minimal fields for list view
+const TORRENT_FIELDS_MINIMAL = [
   'id', 'name', 'hash_string', 'status', 'total_size', 'left_until_done',
   'percent_done', 'rate_download', 'rate_upload', 'peers_connected',
   'peers_sending_to_us', 'peers_getting_from_us', 'eta', 'added_date', 'done_date',
   'upload_ratio', 'labels', 'group', 'queue_position', 'is_finished',
-  'is_stalled', 'error', 'error_string', 'download_dir', 'creator', 'comment',
-  'is_private', 'piece_count', 'piece_size', 'downloaded_ever', 'uploaded_ever',
-  'corrupt_ever', 'peers_known', 'tracker_stats', 'files', 'file_stats', 'peers',
+  'is_stalled', 'error', 'error_string', 'download_dir',
   'bandwidth_priority', 'download_limit', 'download_limited', 'upload_limit',
   'upload_limited', 'peer_limit', 'seed_ratio_limit', 'seed_ratio_mode',
-  'seed_idle_limit', 'seed_idle_mode', 'activity_date', 'seconds_downloading',
-  'seconds_seeding', 'source', 'torrent_file', 'file_count', 'sequential_download',
-  'sequential_download_from_piece', 'primary_mime_type', 'peers_from', 'magnet_link',
-  'pieces', 'availability', 'size_when_done', 'desired_available', 'have_valid', 'have_unchecked',
-  'recheck_progress', 'webseeds_sending_to_us', 'edit_date', 'start_date',
-  'date_created', 'tracker_list', 'metadata_percent_complete'
+  'seed_idle_limit', 'seed_idle_mode', 'activity_date',
+  'downloaded_ever', 'uploaded_ever', 'size_when_done',
+  'recheck_progress', 'file_count', 'start_date'
 ];
+
+// Full fields for detail view
+const TORRENT_FIELDS_DETAIL = [
+  ...TORRENT_FIELDS_MINIMAL,
+  'creator', 'comment', 'is_private', 'piece_count', 'piece_size',
+  'corrupt_ever', 'peers_known', 'tracker_stats', 'files', 'file_stats', 'peers',
+  'seconds_downloading', 'seconds_seeding', 'source', 'torrent_file',
+  'sequential_download', 'sequential_download_from_piece', 'primary_mime_type',
+  'peers_from', 'magnet_link', 'pieces', 'availability',
+  'desired_available', 'have_valid', 'have_unchecked',
+  'webseeds_sending_to_us', 'edit_date', 'date_created',
+  'tracker_list', 'metadata_percent_complete'
+];
+
+export const TORRENT_FIELDS = TORRENT_FIELDS_DETAIL;
 
 interface TorrentState {
   items: Record<number, Torrent>;
@@ -244,10 +255,12 @@ let lastSnapshotTime = 0;
 export async function fetchTorrents(forceFull = false) {
   if (isFetching) return;
   isFetching = true;
+  const fetchTimeout = setTimeout(() => { isFetching = false; }, 10000);
 
   try {
     // Always fetch all torrents from backend (full data)
-    const data = await torrentGet(TORRENT_FIELDS);
+    const fields = forceFull ? TORRENT_FIELDS_DETAIL : TORRENT_FIELDS_MINIMAL;
+    const data = await torrentGet(fields);
     setTorrentStore('error', null);
 
     if (!torrentStore.isInitialized) {
@@ -298,7 +311,8 @@ export async function fetchTorrents(forceFull = false) {
                   error: plain.error,
                   magnet_link: plain.magnet_link,
                   comment: plain.comment,
-                  creator: plain.creator
+                  creator: plain.creator,
+                  files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
                 }).catch(e => console.warn('Failed to update deleted torrent history', e));
               } else {
                 db.history.add({
@@ -319,7 +333,8 @@ export async function fetchTorrents(forceFull = false) {
                   error: plain.error,
                   magnet_link: plain.magnet_link,
                   comment: plain.comment,
-                  creator: plain.creator
+                  creator: plain.creator,
+                  files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
                 }).catch(e => console.warn('Failed to archive torrent history', e));
               }
             });
@@ -374,6 +389,7 @@ export async function fetchTorrents(forceFull = false) {
               magnet_link: plain.magnet_link || record.magnet_link,
               comment: plain.comment || record.comment,
               creator: plain.creator || record.creator,
+              files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : record.files,
               total_size: plain.total_size || record.total_size,
               download_dir: plain.download_dir || record.download_dir,
               labels: plain.labels || record.labels,
@@ -402,7 +418,8 @@ export async function fetchTorrents(forceFull = false) {
             error: plain.error || 0,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
-            creator: plain.creator
+            creator: plain.creator,
+            files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
           });
         }
         
@@ -415,6 +432,7 @@ export async function fetchTorrents(forceFull = false) {
     console.error('Failed to fetch torrents', err);
     setTorrentStore('error', err.message || 'Connection Error');
   } finally {
+    clearTimeout(fetchTimeout);
     isFetching = false;
   }
 }
@@ -467,7 +485,8 @@ export async function removeTorrents(ids?: number[], deleteData = false) {
             error: plain.error,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
-            creator: plain.creator
+            creator: plain.creator,
+            files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
           });
         } else {
           await db.history.add({
@@ -488,7 +507,8 @@ export async function removeTorrents(ids?: number[], deleteData = false) {
             error: plain.error,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
-            creator: plain.creator
+            creator: plain.creator,
+            files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
           });
         }
       } catch (e) {
@@ -509,11 +529,12 @@ export const moveQueueBottom = (ids?: number[]) => torrentOp('queue_move_bottom'
 // Polling Lifecycle
 let pollInterval: any;
 
-export function startPolling(intervalMs = 2000) {
+export function startPolling(intervalMs = 2000, getForceFull?: () => boolean) {
   if (pollInterval) clearInterval(pollInterval);
   fetchTorrents(true); // Initial full fetch
   pollInterval = setInterval(() => {
-    fetchTorrents(false); // Delta updates
+    const forceFull = getForceFull ? getForceFull() : false;
+    fetchTorrents(forceFull); // Delta updates or full when detail is open
   }, intervalMs);
 }
 

@@ -60,6 +60,7 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2023',
     // Only copy favicon.svg from public, mmdb and flags are inlined via virtual modules
     copyPublicDir: false
   },

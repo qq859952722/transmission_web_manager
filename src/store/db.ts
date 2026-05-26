@@ -20,6 +20,7 @@ export interface HistoryRecord {
   magnet_link?: string;
   comment?: string;
   creator?: string;
+  files?: { name: string; length: number }[];
 }
 
 export class TrwmDatabase extends Dexie {

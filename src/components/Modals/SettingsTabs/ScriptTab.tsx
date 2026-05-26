@@ -8,7 +8,7 @@ export const ScriptTab: Component<ScriptTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.script_added')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Run script when a torrent is added">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.script_added_desc')}>
           <SettingsSwitch checked={props.scriptTorrentAddedEnabled()} onCheckedChange={props.setScriptTorrentAddedEnabled} />
         </SettingsRow>
         <Show when={props.scriptTorrentAddedEnabled()}>
@@ -19,7 +19,7 @@ export const ScriptTab: Component<ScriptTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('dialog.settings.script_done')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Run script when a torrent finishes downloading">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.script_done_desc')}>
           <SettingsSwitch checked={props.scriptTorrentDoneEnabled()} onCheckedChange={props.setScriptTorrentDoneEnabled} />
         </SettingsRow>
         <Show when={props.scriptTorrentDoneEnabled()}>
@@ -30,7 +30,7 @@ export const ScriptTab: Component<ScriptTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('dialog.settings.script_done_seeding')}>
-        <SettingsRow label={t('dialog.settings.enabled')} desc="Run script when a torrent finishes seeding">
+        <SettingsRow label={t('dialog.settings.enabled')} desc={t('dialog.settings.script_done_seeding_desc')}>
           <SettingsSwitch checked={props.scriptTorrentDoneSeedingEnabled()} onCheckedChange={props.setScriptTorrentDoneSeedingEnabled} />
         </SettingsRow>
         <Show when={props.scriptTorrentDoneSeedingEnabled()}>

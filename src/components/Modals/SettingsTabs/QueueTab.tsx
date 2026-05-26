@@ -21,7 +21,7 @@ export const QueueTab: Component<QueueTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.dl_queue')}>
-        <SettingsRow label={t('dialog.settings.max_dl')} desc="Maximum number of active downloads">
+        <SettingsRow label={t('dialog.settings.max_dl')} desc={t('dialog.settings.max_dl_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.downloadQueueEnabled()}>
               <SettingsInput
@@ -37,7 +37,7 @@ export const QueueTab: Component<QueueTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('dialog.settings.seed_queue')}>
-        <SettingsRow label={t('dialog.settings.max_seed')} desc="Maximum number of active seeds">
+        <SettingsRow label={t('dialog.settings.max_seed')} desc={t('dialog.settings.max_seed_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.seedQueueEnabled()}>
               <SettingsInput
@@ -53,7 +53,7 @@ export const QueueTab: Component<QueueTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('dialog.settings.stalled_detection')}>
-        <SettingsRow label={t('dialog.settings.stalled_timeout')} desc="Ignore torrents in queue that are stalled">
+        <SettingsRow label={t('dialog.settings.stalled_timeout')} desc={t('dialog.settings.stalled_timeout_desc')}>
           <div class="flex items-center gap-4">
             <Show when={props.queueStalledEnabled()}>
               <div class="flex items-center gap-2">

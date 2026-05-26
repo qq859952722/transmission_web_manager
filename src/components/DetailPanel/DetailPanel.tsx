@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, Show, Switch, Match, For } from 'solid-js';
+import { Component, createSignal, createMemo, Show, For } from 'solid-js';
 import { selectedIds, torrentStore } from '../../store/torrentStore';
 import { Torrent } from '../../types/transmission';
 import { t } from '../../utils/i18n';
@@ -11,6 +11,7 @@ import { SpeedTab } from './SpeedTab';
 import { SettingsTab } from './SettingsTab';
 import { cn } from '../../lib/utils';
 import { X, Search } from 'lucide-solid';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 
 export const DetailPanel: Component<{
   onClose: () => void;
@@ -24,15 +25,6 @@ export const DetailPanel: Component<{
     for (const id of ids) {
       const t = items[id];
       if (!t) continue;
-      void t.rate_download;
-      void t.rate_upload;
-      void t.percent_done;
-      void t.status;
-      void t.pieces;
-      void t.peers;
-      void t.tracker_stats;
-      void t.files;
-      void t.file_stats;
       result.push(t);
     }
     return result;
@@ -53,88 +45,89 @@ export const DetailPanel: Component<{
 
   return (
     <div class="flex flex-col h-full w-full overflow-hidden bg-background border-t border-border">
-      {/* Panel Tabs Header */}
-      <div class="flex items-center h-9 bg-secondary/80 backdrop-blur-md border-b border-border px-1.5 shrink-0 relative z-10">
-        <Show when={torrentCount() > 0}>
-          <div class="flex items-center gap-1 h-full overflow-x-auto no-scrollbar mask-fade-right">
-            <For each={tabs.filter((tab) => !tab.singleOnly || torrentCount() === 1)}>
-              {(tab) => (
-                <button
-                  class={cn(
-                    "h-full px-3 text-xs font-medium border-b-2 transition-all duration-200 whitespace-nowrap outline-none",
-                    activeTab() === tab.id 
-                      ? "text-primary border-primary font-semibold"
-                      : "text-muted-foreground border-transparent hover:text-foreground hover:bg-muted"
-                  )}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              )}
-            </For>
+      {/* Header with tabs and close button */}
+      <Show when={torrentCount() > 0}>
+        <Tabs value={activeTab()} onChange={setActiveTab} class="flex flex-col h-full relative z-10 w-full">
+          <div class="relative shrink-0">
+            <TabsList>
+              <For each={tabs.filter((tab) => !tab.singleOnly || torrentCount() === 1)}>
+                {(tab) => (
+                  <TabsTrigger
+                    value={tab.id}
+                    class={cn(
+                      'data-[selected]:text-primary data-[selected]:border-primary data-[selected]:font-semibold',
+                      'text-muted-foreground border-b-2 border-transparent hover:text-foreground hover:bg-muted -mb-px'
+                    )}
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                )}
+              </For>
+            </TabsList>
+            {/* Close button */}
+            <button
+              class="w-7 h-7 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors absolute right-2 top-1"
+              onClick={props.onClose}
+              title={t('toolbar.detail_toggle')}
+            >
+              <X size={16} stroke-width={2.5} />
+            </button>
           </div>
-        </Show>
-        <div class="flex-1" />
-        <button
-          class="w-7 h-7 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          onClick={props.onClose}
-          title={t('toolbar.detail_toggle')}
-        >
-          <X size={16} stroke-width={2.5} />
-        </button>
-      </div>
 
-      {/* Tabs Content Panel */}
-      <div class="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-in fade-in duration-200">
-        <Switch>
-          <Match when={torrentCount() === 0}>
-            <div class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/60">
-              <Search size={48} stroke-width={1.5} class="opacity-50" />
-              <span class="text-sm font-medium">{t('detail.empty_msg')}</span>
-            </div>
-          </Match>
-
-          <Match when={torrentCount() > 1}>
-            <div class="flex flex-col h-full">
-              <div class="text-sm font-bold text-foreground mb-3 tracking-wide">{t('detail.multi_msg', { n: torrentCount() })}</div>
-              <Show when={activeTab() === 'general'}>
-                <GeneralTab torrents={selectedTorrents()} />
+          {/* Tab contents */}
+          <div class="flex-1 overflow-y-auto bg-background p-3 md:p-4 animate-in fade-in duration-200 min-h-0">
+            <TabsContent value="general" class="m-0 h-full outline-none">
+              <Show when={torrentCount() > 1}>
+                <div class="flex flex-col h-full">
+                  <div class="text-sm font-bold text-foreground mb-3 tracking-wide">
+                    {t('detail.multi_msg', { n: torrentCount() })}
+                  </div>
+                  <GeneralTab torrents={selectedTorrents()} />
+                </div>
               </Show>
-              <Show when={activeTab() === 'settings'}>
-                <SettingsTab torrents={selectedTorrents()} activeTab={activeTab()} />
+              <Show when={torrentCount() === 1}>
+                <GeneralTab torrents={[singleTorrent()]} />
               </Show>
-            </div>
-          </Match>
+            </TabsContent>
+            <TabsContent value="files" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <FilesTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="trackers" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <TrackersTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="peers" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <PeersTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="pieces" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <PiecesTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="speed" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <SpeedTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="settings" class="m-0 h-full outline-none">
+              <SettingsTab torrents={selectedTorrents()} activeTab={activeTab()} />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </Show>
 
-          <Match when={torrentCount() === 1}>
-            <div class="h-full">
-              <Switch>
-                <Match when={activeTab() === 'general'}>
-                  <GeneralTab torrents={[singleTorrent()]} />
-                </Match>
-                <Match when={activeTab() === 'files'}>
-                  <FilesTab torrent={singleTorrent()} />
-                </Match>
-                <Match when={activeTab() === 'trackers'}>
-                  <TrackersTab torrent={singleTorrent()} />
-                </Match>
-                <Match when={activeTab() === 'peers'}>
-                  <PeersTab torrent={singleTorrent()} />
-                </Match>
-                <Match when={activeTab() === 'pieces'}>
-                  <PiecesTab torrent={singleTorrent()} />
-                </Match>
-                <Match when={activeTab() === 'speed'}>
-                  <SpeedTab torrent={singleTorrent()} />
-                </Match>
-                <Match when={activeTab() === 'settings'}>
-                  <SettingsTab torrents={[singleTorrent()]} activeTab={activeTab()} />
-                </Match>
-              </Switch>
-            </div>
-          </Match>
-        </Switch>
-      </div>
+      {/* Empty state */}
+      <Show when={torrentCount() === 0}>
+        <div class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/60">
+          <Search size={48} stroke-width={1.5} class="opacity-50" />
+          <span class="text-sm font-medium">{t('detail.empty_msg')}</span>
+        </div>
+      </Show>
     </div>
   );
 };

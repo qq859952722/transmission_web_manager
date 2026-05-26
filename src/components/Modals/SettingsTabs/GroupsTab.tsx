@@ -47,7 +47,7 @@ export const GroupsTab: Component<GroupsTabProps> = (props) => {
                         </div>
                         <div class="flex items-center justify-between">
                           <span class="text-muted-foreground">{t('dialog.settings.group_honors_session')}:</span>
-                          <span class="font-bold">{g.honors_session_limits ? 'Yes' : 'No'}</span>
+                          <span class="font-bold">{g.honors_session_limits ? t('common.yes') : t('common.no')}</span>
                         </div>
                       </div>
                     </div>
@@ -97,7 +97,7 @@ export const GroupsTab: Component<GroupsTabProps> = (props) => {
               </div>
             </SettingsRow>
 
-            <SettingsRow label={t('dialog.settings.group_honors_session')} desc="Honor global session limits">
+            <SettingsRow label={t('dialog.settings.group_honors_session')} desc={t('dialog.settings.group_honors_session_desc')}>
               <SettingsSwitch checked={props.groupHonors()} onCheckedChange={props.setGroupHonors} />
             </SettingsRow>
           </SettingsSection>

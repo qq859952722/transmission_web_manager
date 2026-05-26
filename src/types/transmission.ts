@@ -169,6 +169,7 @@ export interface Session {
   blocklist_enabled: boolean;
   blocklist_size: number;
   blocklist_url: string;
+  ip_protocol?: string;
   cache_size_mb: number;
   cache_size_mib?: number;
   config_dir: string;

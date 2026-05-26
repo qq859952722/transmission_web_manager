@@ -21,13 +21,13 @@ export const DownloadTab: Component<DownloadTabProps> = (props) => {
   return (
     <div class="animate-in fade-in duration-300">
       <SettingsSection title={t('dialog.settings.download_dir')}>
-        <SettingsRow label={t('dialog.settings.download_dir')} desc="Default directory for all downloaded files">
+        <SettingsRow label={t('dialog.settings.download_dir')} desc={t('dialog.settings.download_dir_desc')}>
           <SettingsInput type="text" class="w-64 text-left" value={props.downloadDir()} onInput={(e) => props.setDownloadDir(e.currentTarget.value)} />
         </SettingsRow>
       </SettingsSection>
 
-      <SettingsSection title="Incomplete Downloads">
-        <SettingsRow label={t('dialog.settings.incomplete_enabled')} desc="Keep incomplete torrents in a separate directory">
+      <SettingsSection title={t('dialog.settings.incomplete_enabled')}>
+        <SettingsRow label={t('dialog.settings.incomplete_enabled')} desc={t('dialog.settings.incomplete_enabled_desc')}>
           <SettingsSwitch checked={props.incompleteDirEnabled()} onCheckedChange={props.setIncompleteDirEnabled} />
         </SettingsRow>
         <Show when={props.incompleteDirEnabled()}>
@@ -38,13 +38,13 @@ export const DownloadTab: Component<DownloadTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('dialog.settings.add_behavior')}>
-        <SettingsRow label={t('dialog.settings.start_added')} desc="Automatically start downloading new torrents">
+        <SettingsRow label={t('dialog.settings.start_added')} desc={t('dialog.settings.start_added_desc')}>
           <SettingsSwitch checked={props.startAddedTorrents()} onCheckedChange={props.setStartAddedTorrents} />
         </SettingsRow>
-        <SettingsRow label={t('dialog.settings.rename_partial')} desc="Append '.part' to incomplete files">
+        <SettingsRow label={t('dialog.settings.rename_partial')} desc={t('dialog.settings.rename_partial_desc')}>
           <SettingsSwitch checked={props.renamePartialFiles()} onCheckedChange={props.setRenamePartialFiles} />
         </SettingsRow>
-        <SettingsRow label={t('dialog.settings.trash_torrent')} desc="Delete .torrent file after adding">
+        <SettingsRow label={t('dialog.settings.trash_torrent')} desc={t('dialog.settings.trash_torrent_desc')}>
           <SettingsSwitch checked={props.trashOriginalTorrentFiles()} onCheckedChange={props.setTrashOriginalTorrentFiles} />
         </SettingsRow>
       </SettingsSection>

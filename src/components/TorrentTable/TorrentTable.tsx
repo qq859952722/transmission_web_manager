@@ -26,8 +26,17 @@ import {
 } from '../../utils/format';
 import { t } from '../../utils/i18n';
 import { cn } from '../../lib/utils';
+import { openDeleteModal } from '../../store/modalStore';
 import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
 import { ChevronUp, ChevronDown, Play, Pause, Clock, CheckCircle2, RotateCw, AlertTriangle } from 'lucide-solid';
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 // Column IDs type
 type ColumnId =
@@ -166,9 +175,10 @@ export const TorrentTable: Component<{
     } else if (e.key === 'Escape') {
       clearSelection();
     } else if (e.key === 'Delete') {
+      e.stopPropagation();
       const ids = selectedIds();
       if (ids.length > 0) {
-        removeTorrents(ids, false);
+        openDeleteModal();
       }
     }
   };
@@ -211,12 +221,10 @@ export const TorrentTable: Component<{
           <For each={visibleColumns()}>
             {(col) => (
               <label class="flex items-center gap-2 px-2 py-1.5 rounded-sm cursor-pointer text-foreground text-xs transition-colors hover:bg-muted">
-                <input
-                  type="checkbox"
-                  class="accent-primary cursor-pointer w-3.5 h-3.5"
+                <Checkbox
                   checked={col.visible}
                   disabled={col.id === 'name'}
-                  onChange={() => toggleColumnVisible(col.id)}
+                  onChange={(checked) => toggleColumnVisible(col.id)}
                 />
                 <span>{col.label}</span>
               </label>
@@ -306,12 +314,10 @@ export const TorrentTable: Component<{
                     }}
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
                       if (!selectedIds().includes(torrent().id)) {
                         toggleSelect(torrent().id, false, false);
                       }
-                      props.onContextMenu(e, selectedIds());
+                      props.onContextMenu?.(e, selectedIds());
                     }}
                   >
                     <For each={visibleColumns().filter((c) => c.visible)}>
@@ -365,8 +371,8 @@ export const TorrentTable: Component<{
                                 class="flex items-center justify-center gap-1 w-fit mx-auto text-[9px] px-1.5 py-[2px] rounded-[4px] border font-bold uppercase tracking-wide leading-tight shadow-sm"
                                 style={{
                                   color: getStatusColor(torrent().status),
-                                  'border-color': `color-mix(in srgb, ${getStatusColor(torrent().status)} 30%, transparent)`,
-                                  'background-color': `color-mix(in srgb, ${getStatusColor(torrent().status)} 15%, transparent)`
+                                  'border-color': hexToRgba(getStatusColor(torrent().status), 0.3),
+                                  'background-color': hexToRgba(getStatusColor(torrent().status), 0.15)
                                 }}
                               >
                                 <Show when={torrent().status === 0}><Pause size={10} /></Show>
