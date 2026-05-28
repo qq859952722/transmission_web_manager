@@ -1,0 +1,80 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (without leading v)'
+        required: true
+        default: '1.0.0'
+      prerelease:
+        description: 'Publish as prerelease?'
+        required: false
+        default: 'false'
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.upload-artifact.outputs.artifact-name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Package dist output
+        run: |
+          zip -r "trwm-${{ github.event.inputs.version }}.zip" dist
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        id: upload-artifact
+        with:
+          name: release-asset
+          path: "trwm-${{ github.event.inputs.version }}.zip"
+          retention-days: 7
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built package
+        uses: actions/download-artifact@v4
+        with:
+          name: release-asset
+          path: .
+
+      - name: Create GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: "v${{ github.event.inputs.version }}"
+          release_name: "v${{ github.event.inputs.version }}"
+          body: |
+            Release version v${{ github.event.inputs.version }}
+
+            Built from commit ${{ github.sha }}.
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: "trwm-${{ github.event.inputs.version }}.zip"
+          asset_name: "trwm-${{ github.event.inputs.version }}.zip"
+          asset_content_type: application/zip
