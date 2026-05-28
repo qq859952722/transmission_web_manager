@@ -3,6 +3,7 @@ import { createSignal, createMemo } from 'solid-js';
 import type { Torrent } from '../types/transmission';
 import { rpcCall, torrentGet } from '../api/rpc';
 import { db } from './db';
+import { t } from '../utils/i18n';
 
 /** Strip SolidJS reactive proxy so data can be stored in IndexedDB */
 function toPlain<T>(obj: T): T {
@@ -320,11 +321,28 @@ export async function fetchTorrents(forceFull = false) {
       // memos and effects to recompute even when nothing changed.
       const incomingIds = new Set<number>();
 
-      for (const t of data.torrents) {
-        const id = t.id as number;
+      for (const tInfo of data.torrents) {
+        const id = tInfo.id as number;
         incomingIds.add(id);
+
+        const oldT = torrentStore.items[id];
+        if (oldT && oldT.left_until_done > 0 && tInfo.left_until_done === 0) {
+          const enabled = localStorage.getItem('trwm-notifications-enabled') === 'true';
+          if (enabled && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification(t('status.download_complete'), {
+                body: t('status.download_complete_body', { name: tInfo.name }),
+                icon: '/favicon.ico',
+                tag: `complete-${id}`,
+              });
+            } catch (e) {
+              console.warn('Failed to send notification', e);
+            }
+          }
+        }
+
         // reconcile per-torrent: deep diff only this one item, not the entire store
-        setTorrentStore('items', id, reconcile(t as Torrent));
+        setTorrentStore('items', id, reconcile(tInfo as Torrent));
       }
 
       // Remove torrents that no longer exist in the backend response

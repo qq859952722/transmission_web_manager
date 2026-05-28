@@ -114,18 +114,42 @@ export const StatusBar: Component = () => {
       <div class="w-[1px] h-3.5 bg-border/60 mx-0.5" />
 
       {/* Torrent counts */}
-      <Tooltip text={`${t('sidebar.status_downloading')}: ${downloadingCount()} | ${t('sidebar.status_seeding')}: ${seedingCount()}`}>
-        <div class="flex items-center gap-1.5">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-[13px] h-[13px]">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          <span class="font-bold text-foreground font-mono">{totalTorrents()}</span>
-          <Show when={activeCount() > 0}>
-            <span class="text-primary font-bold text-[10px] ml-0.5">({activeCount()})</span>
-          </Show>
-        </div>
-      </Tooltip>
+      <div class="flex items-center gap-3">
+        {/* Downloading count */}
+        <Tooltip text={t('sidebar.status_downloading')}>
+          <div class="flex items-center gap-1.5 w-10">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 text-primary">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span class="font-bold text-foreground font-mono">{downloadingCount()}</span>
+          </div>
+        </Tooltip>
+
+        {/* Seeding count */}
+        <Tooltip text={t('sidebar.status_seeding')}>
+          <div class="flex items-center gap-1.5 w-10">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 text-success">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span class="font-bold text-foreground font-mono">{seedingCount()}</span>
+          </div>
+        </Tooltip>
+
+        {/* Total count */}
+        <Tooltip text={t('sidebar.status_all')}>
+          <div class="flex items-center gap-1.5 w-10">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-3.5 h-3.5 text-muted-foreground">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span class="font-bold text-foreground font-mono">{totalTorrents()}</span>
+          </div>
+        </Tooltip>
+      </div>
 
       {/* Peer count */}
       <Tooltip text={t('detail.peers.title')}>
@@ -168,17 +192,23 @@ export const StatusBar: Component = () => {
 
       {/* Download speed */}
       <Tooltip text={t('detail.speed.download')}>
-        <div class="flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_4px_var(--primary)]" />
-          <span class="font-mono font-bold text-primary transition-opacity">{formatSpeed(dlSpeed())}</span>
+        <div class="flex items-center gap-1.5 w-[90px]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 text-primary shrink-0">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <polyline points="19 12 12 19 5 12" />
+          </svg>
+          <span class="font-mono font-bold text-primary transition-opacity truncate">{formatSpeed(dlSpeed())}</span>
         </div>
       </Tooltip>
 
       {/* Upload speed */}
       <Tooltip text={t('detail.speed.upload')}>
-        <div class="flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_4px_var(--success)]" />
-          <span class="font-mono font-bold text-success transition-opacity">{formatSpeed(ulSpeed())}</span>
+        <div class="flex items-center gap-1.5 w-[90px]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 text-success shrink-0">
+            <line x1="12" y1="19" x2="12" y2="5" />
+            <polyline points="5 12 12 5 19 12" />
+          </svg>
+          <span class="font-mono font-bold text-success transition-opacity truncate">{formatSpeed(ulSpeed())}</span>
         </div>
       </Tooltip>
 
@@ -186,13 +216,13 @@ export const StatusBar: Component = () => {
 
       {/* Total downloaded / uploaded */}
       <Tooltip text={t('detail.speed.total_download')}>
-        <div class="flex items-center gap-1 text-[10px]">
-          <span class="font-bold text-primary">↓</span> <span class="font-mono">{formatBytes(totalDl())}</span>
+        <div class="flex items-center gap-1 text-[10px] w-[70px]">
+          <span class="font-bold text-primary">↓</span> <span class="font-mono truncate">{formatBytes(totalDl())}</span>
         </div>
       </Tooltip>
       <Tooltip text={t('detail.speed.total_upload')}>
-        <div class="flex items-center gap-1 text-[10px]">
-          <span class="font-bold text-success">↑</span> <span class="font-mono">{formatBytes(totalUl())}</span>
+        <div class="flex items-center gap-1 text-[10px] w-[70px]">
+          <span class="font-bold text-success">↑</span> <span class="font-mono truncate">{formatBytes(totalUl())}</span>
         </div>
       </Tooltip>
 

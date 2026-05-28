@@ -21,6 +21,7 @@ import { PromptModal } from './components/Modals/PromptModal';
 const StatsModal = lazy(() => import('./components/Modals/StatsModal').then(m => ({ default: m.StatsModal })));
 const HistoryModal = lazy(() => import('./components/Modals/HistoryModal').then(m => ({ default: m.HistoryModal })));
 const GlobalConfigModal = lazy(() => import('./components/Modals/GlobalConfigModal').then(m => ({ default: m.GlobalConfigModal })));
+const TrackerAggregatorModal = lazy(() => import('./components/Modals/TrackerAggregatorModal').then(m => ({ default: m.TrackerAggregatorModal })));
 
 // State & Actions
 import {
@@ -33,7 +34,9 @@ import {
 } from './store/torrentStore';
 import { 
   openDeleteModal, openAddModal, setDroppedFiles, openSettingsModal,
-  showSettingsModal, showDeleteModal, showHistoryModal, showStatsModal, showAddModal
+  showSettingsModal, showDeleteModal, showHistoryModal, showStatsModal, showAddModal,
+  showTrackerAggregatorModal,
+  setPrefilledUrls
 } from './store/modalStore';
 import { t } from './utils/i18n';
 import { showToast } from './utils/toast';
@@ -72,6 +75,15 @@ const App: Component = () => {
   onMount(() => {
     geoip.init((success) => { if (!success) console.warn('GeoIP initialization failed'); });
     startPolling(2000, () => detailOpen()); // Polling every 2s, full fields when detail open
+
+    // Magnet link handler
+    const urlParams = new URLSearchParams(window.location.search);
+    const magnetUri = urlParams.get('uri');
+    if (magnetUri && magnetUri.startsWith('magnet:')) {
+      setPrefilledUrls(magnetUri);
+      openAddModal();
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    }
 
     // Global keyboard shortcuts
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -129,7 +141,7 @@ const App: Component = () => {
       setDragOver(false);
 
       // Reject drop when any modal is open
-      if (showSettingsModal() || showDeleteModal() || showHistoryModal() || showStatsModal() || showAddModal() || showLabelDialog() || promptConfig().open) {
+      if (showSettingsModal() || showDeleteModal() || showHistoryModal() || showStatsModal() || showAddModal() || showTrackerAggregatorModal() || showLabelDialog() || promptConfig().open) {
         return;
       }
 
@@ -240,6 +252,7 @@ const App: Component = () => {
       <StatsModal />
       <HistoryModal />
       <GlobalConfigModal />
+      <TrackerAggregatorModal />
       <PromptModal
         open={promptConfig().open}
         title={promptConfig().title}

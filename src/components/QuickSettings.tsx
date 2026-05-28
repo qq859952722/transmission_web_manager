@@ -1,11 +1,12 @@
 import { Component, Show, For, createSignal } from 'solid-js';
 import { useSession } from '../api/queries';
 import { rpcCall } from '../api/rpc';
-import { openSettingsModal } from '../store/modalStore';
+import { openSettingsModal, openTrackerAggregatorModal } from '../store/modalStore';
 import { fetchTorrents } from '../store/torrentStore';
 import { t } from '../utils/i18n';
 import { showToast } from '../utils/toast';
-import { Settings, Zap, Globe, Users, Router, Shield, RefreshCw } from 'lucide-solid';
+import { createPersistedSignal } from '../utils/persist';
+import { Settings, Zap, Globe, Users, Router, Shield, RefreshCw, Bell, Link, ListPlus } from 'lucide-solid';
 import { Switch } from './ui/switch';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -18,6 +19,52 @@ interface QuickSettingsProps {
 export const QuickSettings: Component<QuickSettingsProps> = (props) => {
   const session = useSession();
   const [toggling, setToggling] = createSignal<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = createPersistedSignal('trwm-notifications-enabled', false);
+
+  const handleToggleNotifications = async (checked: boolean) => {
+    if (!checked) {
+      setNotificationsEnabled(false);
+      showToast(`${t('dialog.settings.notifications')}: ${t('common.disabled')}`, 'success');
+      return;
+    }
+    
+    if (!('Notification' in window)) {
+      showToast(t('common.error'), 'warning');
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      setNotificationsEnabled(true);
+      showToast(`${t('dialog.settings.notifications')}: ${t('common.enabled')}`, 'success');
+    } else if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        showToast(`${t('dialog.settings.notifications')}: ${t('common.enabled')}`, 'success');
+      } else {
+        setNotificationsEnabled(false);
+        showToast(t('common.error'), 'warning');
+      }
+    } else {
+      showToast(t('common.error'), 'warning');
+    }
+  };
+
+  const handleRegisterMagnet = () => {
+    if ('navigator' in window && 'registerProtocolHandler' in navigator) {
+      try {
+        navigator.registerProtocolHandler(
+          'magnet',
+          window.location.origin + '/?uri=%s'
+        );
+        showToast(t('dialog.settings.magnet_handler'), 'info');
+      } catch (e) {
+        showToast(t('common.error'), 'error');
+      }
+    } else {
+      showToast(t('common.error'), 'warning');
+    }
+  };
 
   const toggleSetting = async (key: string, currentValue: boolean, label: string) => {
     if (toggling()) return;
@@ -131,6 +178,50 @@ export const QuickSettings: Component<QuickSettingsProps> = (props) => {
               );
             }}
           </For>
+
+          {/* Local Settings separator */}
+          <div class="h-px bg-border/40 mx-4 my-1" />
+
+          {/* Notifications Toggle */}
+          <div
+            class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-muted/60 active:bg-muted"
+            onClick={() => handleToggleNotifications(!notificationsEnabled())}
+          >
+            <Bell size={16} class={cn("flex-shrink-0 transition-colors", notificationsEnabled() ? "text-primary" : "text-muted-foreground")} />
+            <span class="text-sm font-semibold text-foreground flex-1">
+              {t('dialog.settings.notifications')}
+            </span>
+            <Switch
+              checked={notificationsEnabled()}
+              onCheckedChange={() => {}}
+              class="pointer-events-none"
+            />
+          </div>
+
+          {/* Magnet Handler Action */}
+          <div
+            class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-muted/60 active:bg-muted"
+            onClick={handleRegisterMagnet}
+          >
+            <Link size={16} class="flex-shrink-0 text-muted-foreground" />
+            <span class="text-sm font-semibold text-foreground flex-1">
+              {t('dialog.settings.magnet_handler')}
+            </span>
+          </div>
+
+          {/* Tracker Aggregator */}
+          <div
+            class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-muted/60 active:bg-muted"
+            onClick={() => {
+              props.onClose();
+              openTrackerAggregatorModal();
+            }}
+          >
+            <ListPlus size={16} class="flex-shrink-0 text-primary" />
+            <span class="text-sm font-semibold text-foreground flex-1">
+              {t('tracker_agg.entry')}
+            </span>
+          </div>
         </div>
 
         {/* Action buttons */}

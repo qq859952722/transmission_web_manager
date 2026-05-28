@@ -1,6 +1,6 @@
 import { Component, createSignal, createEffect, Show, For } from 'solid-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
-import { closeAddModal, showAddModal, droppedFiles, setDroppedFiles } from '../../store/modalStore';
+import { closeAddModal, showAddModal, droppedFiles, setDroppedFiles, prefilledUrls, setPrefilledUrls } from '../../store/modalStore';
 import { rpcCall } from '../../api/rpc';
 import { fetchTorrents, torrentList } from '../../store/torrentStore';
 import { useGroups, useSession } from '../../api/queries';
@@ -66,6 +66,10 @@ export const AddTorrentModal: Component = () => {
   createEffect(() => {
     if (showAddModal() && session.data?.download_dir && !downloadDir()) {
       setDownloadDir(session.data.download_dir);
+    }
+    if (showAddModal() && prefilledUrls()) {
+      setUrls(prefilledUrls());
+      setPrefilledUrls(''); // Clear so it only happens once
     }
     const files = droppedFiles();
     if (files.length > 0) {
