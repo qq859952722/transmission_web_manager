@@ -498,7 +498,16 @@ export async function removeTorrents(ids?: number[], deleteData = false) {
     }
   }
 
-  await torrentOp('torrent_remove', targetIds, { delete_local_data: deleteData });
+  if (deleteData && targetIds.length > 1) {
+    // Workaround for Transmission daemon issue where deleting multiple torrents 
+    // with data concurrently might fail to delete files.
+    for (const id of targetIds) {
+      await rpcCall('torrent_remove', { ids: [id], delete_local_data: true });
+    }
+    fetchTorrents(true);
+  } else {
+    await torrentOp('torrent_remove', targetIds, { delete_local_data: deleteData });
+  }
   setSelectedIds(prev => prev.filter(id => !targetIds.includes(id)));
 }
 

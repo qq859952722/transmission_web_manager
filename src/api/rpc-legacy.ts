@@ -415,11 +415,10 @@ export const FIELD_MAP: Record<string, string> = {
 
 const SNAKE_TO_CAMEL_MAP: Record<string, string> = {};
 for (const [legacyKey, snakeKey] of Object.entries(FIELD_MAP)) {
-  if (legacyKey.includes('-') && SNAKE_TO_CAMEL_MAP[snakeKey] && !SNAKE_TO_CAMEL_MAP[snakeKey].includes('-')) continue;
-  if (!(snakeKey in SNAKE_TO_CAMEL_MAP) || !legacyKey.includes('-')) {
-    SNAKE_TO_CAMEL_MAP[snakeKey] = legacyKey.includes('-')
-      ? legacyKey.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-      : legacyKey;
+  if (legacyKey.includes('-')) {
+    SNAKE_TO_CAMEL_MAP[snakeKey] = legacyKey;
+  } else if (!(snakeKey in SNAKE_TO_CAMEL_MAP)) {
+    SNAKE_TO_CAMEL_MAP[snakeKey] = legacyKey;
   }
 }
 
