@@ -45,33 +45,29 @@ jobs:
           tag="v${{ github.event.inputs.version }}"
           asset="trwm-${{ github.event.inputs.version }}.zip"
           body=$(python3 - <<'PY'
-import json, os
-body = f"Release version {os.environ['TAG']}\n\nBuilt from commit {os.environ['GITHUB_SHA']}."
-print(body)
-PY
+            import os
+            print(f"Release version {os.environ['TAG']}\n\nBuilt from commit {os.environ['GITHUB_SHA']}.")
+            PY
           )
-          prerelease=${{ github.event.inputs.prerelease }}
+          prerelease="${{ github.event.inputs.prerelease }}"
           payload=$(python3 - <<'PY'
-import json, os
-print(json.dumps({
-  'tag_name': os.environ['TAG'],
-  'name': os.environ['TAG'],
-  'body': os.environ['BODY'],
-  'draft': False,
-  'prerelease': os.environ['PRERELEASE'].lower() == 'true'
-}))
-PY
+            import json, os
+            print(json.dumps({
+              "tag_name": os.environ["TAG"],
+              "name": os.environ["TAG"],
+              "body": os.environ["BODY"],
+              "draft": False,
+              "prerelease": os.environ["PRERELEASE"].lower() == "true"
+            }))
+            PY
           )
           response=$(curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
             -d "$payload" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
-          upload_url=$(python3 - <<'PY'
-import json, sys
-obj = json.load(sys.stdin)
-print(obj['upload_url'].split('{')[0])
-PY
-          <<'EOF'
-$response
-EOF
+          upload_url=$(printf '%s' "$response" | python3 - <<'PY'
+            import json, sys
+            obj = json.load(sys.stdin)
+            print(obj["upload_url"].split("{")[0])
+            PY
           )
           curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/zip" \
             --data-binary @"$asset" "${upload_url}?name=$asset"
