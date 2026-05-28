@@ -1,5 +1,8 @@
 name: Manual Release
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -16,8 +19,6 @@ jobs:
   build:
     name: Build package
     runs-on: ubuntu-latest
-    outputs:
-      artifact-name: ${{ steps.upload-artifact.outputs.artifact-name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,11 +26,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install  --legacy-peer-deps
 
       - name: Build project
         run: npm run build
