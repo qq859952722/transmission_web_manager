@@ -1,9 +1,10 @@
 import { t } from './i18n';
+import flagsData from '../data/flags';
 
 let _loaded = false;
 let _reader: InstanceType<typeof MMDBReader> | null = null;
 const _flagCache: Record<string, string> = {};
-let _flagsData: Record<string, string> | null = null;
+const _flagsData: Record<string, string> = flagsData;
 
 const _availableFlags: Record<string, number> = {
     ae:1,am:1,ar:1,at:1,au:1,az:1,bd:1,be:1,bg:1,bh:1,br:1,bw:1,by:1,
@@ -416,19 +417,6 @@ function init(callback: (success: boolean) => void): void {
             console.error('GeoIP: Failed to load MMDB database', e);
             if (callback) callback(false);
         });
-
-    // Load flags asynchronously via fetch
-    fetch('./flags/flags.json')
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            _flagsData = data as Record<string, string>;
-        })
-        .catch(e => {
-            console.warn('GeoIP: Failed to load flags data, will use fallback', e);
-        });
 }
 
 function lookup(ipStr: string): GeoIPResult | null {
@@ -491,15 +479,12 @@ function getCountryFlag(code: string): string {
     const lc = code.toLowerCase();
     if (_flagCache[lc] !== undefined) return _flagCache[lc];
 
-    // Use async-loaded flags data, or fallback to individual SVG fetch
-    if (_flagsData && _flagsData[lc]) {
+    if (_flagsData[lc]) {
         _flagCache[lc] = _flagsData[lc];
         return _flagCache[lc];
     }
-    // Fallback: construct URL to individual flag SVG
-    const flagUrl = `./flags/${lc}.svg`;
-    _flagCache[lc] = flagUrl;
-    return flagUrl;
+    _flagCache[lc] = '';
+    return '';
 }
 
 function hasFlag(code: string): boolean {
@@ -581,6 +566,7 @@ export {
     getCountryInfo,
     getCountryFlag,
     getCountryDisplayText,
+    countryCodeToFlag,
     hasFlag,
     isLoaded,
     is_privateIP

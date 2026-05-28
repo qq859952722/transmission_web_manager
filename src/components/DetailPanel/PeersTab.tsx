@@ -6,6 +6,26 @@ import * as geoip from '../../utils/geoip';
 import { cn } from '../../lib/utils';
 import { Info, ChevronDown, Activity, Globe2, ShieldCheck, Zap, Users } from 'lucide-solid';
 
+const FlagIcon: Component<{ address: string }> = (props) => {
+  const info = () => geoip.getCountryInfo(props.address);
+  const flag = () => info() ? geoip.getCountryFlag(info()!.code) : '';
+  const name = () => info()?.name || '';
+  return (
+    <div class="flex items-center gap-1">
+      <Show when={flag()} fallback={
+        <Show when={info()} fallback={<span class="text-muted-foreground/40 text-[10px]">—</span>}>
+          {geoip.countryCodeToFlag(info()!.code)}
+        </Show>
+      }>
+        {(f) => <img src={f()} class="w-5 h-[14px] inline-block object-contain shrink-0" alt={info()?.code || ''} />}
+      </Show>
+      <Show when={name()}>
+        {(n) => <span class="text-[10px] text-muted-foreground truncate">{n()}</span>}
+      </Show>
+    </div>
+  );
+};
+
 function getFlagDescriptions(): Record<string, string> {
   return {
     'D': t('detail.peers.flag_D'), 'd': t('detail.peers.flag_d'), 'U': t('detail.peers.flag_U'),
@@ -106,7 +126,7 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
   const [detailPeer, setDetailPeer] = createSignal<Peer | null>(null);
 
   const { widths: colWidths, handleMouseDown } = createResizableColumns('trwm-peers-widths', [
-    { id: 'flag', width: 40 },
+    { id: 'flag', width: 120 },
     { id: 'address', width: 180 },
     { id: 'client', width: 150 },
     { id: 'progress', width: 120 },
@@ -133,7 +153,8 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
         <table class="w-full min-w-max text-left border-collapse table-fixed text-[11px]">
           <thead class="sticky top-0 bg-secondary/90 backdrop-blur-md z-10 font-bold text-muted-foreground uppercase tracking-wider shadow-sm">
             <tr>
-              <th class="py-1 px-1.5 text-center relative group p-0" style={{ width: `${colWidths().flag}px` }}>
+              <th class="py-1 px-1.5 text-left relative group whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: `${colWidths().flag}px` }}>
+                {t('detail.peers.country')}
                 <div class="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-primary/50 group-hover:bg-border/50" onMouseDown={(e) => handleMouseDown(e, 'flag')} />
               </th>
               <th class="py-1 px-1.5 relative group whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: `${colWidths().address}px` }}>
@@ -186,7 +207,9 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
               <For each={props.torrent.peers}>
                 {(peer) => (
                   <tr class="transition-colors hover:bg-muted/50 group">
-                    <td class="py-0.5 px-1.5 text-center text-[14px] leading-none opacity-80">{geoip.getCountryDisplayText(peer.address)}</td>
+                    <td class="py-0.5 px-1.5 leading-none">
+                      <FlagIcon address={peer.address} />
+                    </td>
                     <td class="py-0.5 px-1.5 font-mono text-muted-foreground group-hover:text-foreground transition-colors select-text text-[10px]">
                       {peer.address}<span class="opacity-50 text-[9px] ml-0.5">:{peer.port}</span>
                     </td>
