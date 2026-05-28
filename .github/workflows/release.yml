@@ -44,17 +44,42 @@ jobs:
           set -euo pipefail
           tag="v${{ github.event.inputs.version }}"
           asset="trwm-${{ github.event.inputs.version }}.zip"
-          # Use single-line python calls to avoid heredoc parsing issues
-          prerelease="${{ github.event.inputs.prerelease }}"
-          payload=$(python3 -c "import json,os; print(json.dumps({'tag_name':os.environ['TAG'],'name':os.environ['TAG'],'body':os.environ['BODY'],'draft':False,'prerelease':os.environ['PRERELEASE'].lower()=='true'}))")
-          response=$(curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d "$payload" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
-          upload_url=$(printf '%s' "$response" | python3 -c 'import sys,json; obj=json.load(sys.stdin); print(obj["upload_url"].split("{")[0])')
-          curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/zip" \
-            --data-binary @"$asset" "${upload_url}?name=$asset"
-        env:
-          TAG: "v${{ github.event.inputs.version }}"
-          BODY: |
-            Release version v${{ github.event.inputs.version }}
+          export TAG="$tag"
+          export BODY="Release version ${tag}\n\nBuilt from commit ${GITHUB_SHA}."
+          export PRERELEASE="${{ github.event.inputs.prerelease }}"
 
-            Built from commit ${{ github.sha }}.
-          PRERELEASE: ${{ github.event.inputs.prerelease }}
+          payload=$(python3 -c "import json,os; print(json.dumps({'tag_name':os.environ['TAG'],'name':os.environ['TAG'],'body':os.environ['BODY'],'draft':False,'prerelease':os.environ['PRERELEASE'].lower()=='true'}))")
+
+          # create release
+          resp=$(curl -sSL -w "\n%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d "$payload" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
+          http_status=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+
+          if [ "$http_status" -eq 201 ]; then
+            upload_url=$(printf '%s' "$body" | python3 -c 'import sys,json; obj=json.load(sys.stdin); print(obj.get("upload_url","").split("{")[0])')
+          else
+            echo "Create release failed: HTTP $http_status"
+            echo "$body"
+            echo "Attempting to find existing release by tag..."
+            resp2=$(curl -sSL -w "\n%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${tag}")
+            http2=$(printf '%s' "$resp2" | tail -n1)
+            body2=$(printf '%s' "$resp2" | sed '$d')
+            if [ "$http2" -eq 200 ]; then
+              upload_url=$(printf '%s' "$body2" | python3 -c 'import sys,json; obj=json.load(sys.stdin); print(obj.get("upload_url","").split("{")[0])')
+            else
+              echo "Failed to get release by tag: HTTP $http2"
+              echo "$body2"
+              exit 1
+            fi
+          fi
+
+          echo "Uploading asset to: $upload_url"
+          upload_resp=$(curl -sSL -w "\n%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/zip" --data-binary @"$asset" "${upload_url}?name=$asset")
+          upload_code=$(printf '%s' "$upload_resp" | tail -n1)
+          upload_body=$(printf '%s' "$upload_resp" | sed '$d')
+          echo "Upload HTTP status: $upload_code"
+          if [ "$upload_code" -ge 300 ]; then
+            echo "Upload failed:"
+            echo "$upload_body"
+            exit 1
+          fi
