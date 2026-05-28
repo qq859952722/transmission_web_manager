@@ -41,7 +41,8 @@ jobs:
 
       - name: Package dist output
         run: |
-          zip -r "trwm-${{ github.event.inputs.version }}.zip" dist
+          cd dist
+          zip -r "../trwm-${{ github.event.inputs.version }}.zip" .
 
       - name: Create GitHub release and upload asset
         run: |
