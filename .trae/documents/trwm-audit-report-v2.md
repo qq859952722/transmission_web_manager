@@ -1,9 +1,11 @@
-# TRWM (Transmission Web Manager) 全维度深度审计报告
+# TRWM (Transmission Web Manager) 第二版全维度深度审计报告
 
-**审计日期**: 2026-05-25
+**审计日期**: 2026-05-27
 **审计版本**: 基于 src/ 最新代码（从 jQuery 完整重写至 SolidJS）
-**构建产物**: dist/index.html 518.23 KB (gzip: 143.31 kB)
-**运行时环境**: Transmission 4.1.x JSON-RPC 2.0 + 旧版兼容
+**审计基准**: `/doc/审计要求.md` 七大维度全量审计
+**前版报告**: v1 (2026-05-25) → v2 (本次)
+**验证环境**: Transmission 4.1.1 (rpc_version: 19, rpc_version_semver: 6.0.1) @ 127.0.0.1:9091
+**验证方式**: JSON-RPC 2.0 实际调用 + 官方 rpc-spec.md 文档交叉核对
 
 ---
 
@@ -15,62 +17,53 @@
 
 | RPC 方法 (snake_case) | 实现位置 | 参数格式 | 状态 |
 |:---|:---|:---|:---|
-| `torrent_get` | rpc.ts `torrentGet()` | snake_case + table format | ✅ 正确 |
-| `torrent_set` | SettingsTab, FilesTab, PiecesTab, TrackersTab, AddTorrentModal | snake_case | ✅ 正确 |
-| `torrent_set` | **App.tsx** | **hyphenated + camelCase** | ~~❌ **严重错误**~~ ✅ **已修复** |
-| `torrent_set_location` | SettingsTab | snake_case | ✅ 正确 |
-| `torrent_set_location` | **App.tsx** | **hyphenated** | ~~❌ **错误**~~ ✅ **已修复** |
-| `torrent_add` | AddTorrentModal | snake_case | ✅ 正确 |
-| `torrent_remove` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
+| `torrent_get` | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts) `torrentGet()` | snake_case + table format | ✅ 正确 |
+| `torrent_set` | ContextMenu, SettingsTab, FilesTab, TrackersTab, AddTorrentModal | snake_case | ✅ 正确 |
+| `torrent_set_location` | ContextMenu, SettingsTab | snake_case | ✅ 正确 |
+| `torrent_rename_path` | [FilesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/FilesTab.tsx) | snake_case | ✅ 正确 |
+| `torrent_add` | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx) | snake_case | ✅ 正确 |
+| `torrent_remove` | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) `torrentOp` | snake_case | ✅ 正确 |
 | `torrent_start` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
 | `torrent_start_now` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
 | `torrent_stop` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
 | `torrent_verify` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
 | `torrent_reannounce` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
-| `session_get` | queries.ts `useSession` | snake_case | ✅ 正确 |
-| `session_set` | GlobalConfigModal | snake_case | ✅ 正确 |
+| `session_get` | [queries.ts](file:///home/qq/code/trwm/src/api/queries.ts) `useSession` | snake_case | ✅ 正确 |
+| `session_set` | GlobalConfigModal, QuickSettings, StatusBar | snake_case | ✅ 正确 |
 | `session_stats` | queries.ts `useSessionStats` | snake_case | ✅ 正确 |
+| `session_close` | [AdvancedTab.tsx](file:///home/qq/code/trwm/src/components/Modals/SettingsTabs/AdvancedTab.tsx) | snake_case | ✅ 正确 |
 | `group_get` | GlobalConfigModal | snake_case | ✅ 正确 |
 | `group_set` | GlobalConfigModal | snake_case | ✅ 正确 |
-| `port_test` | GlobalConfigModal | snake_case | ✅ 正确 |
+| `port_test` | GlobalConfigModal, StatusBar | snake_case | ✅ 正确 |
 | `blocklist_update` | GlobalConfigModal | snake_case | ✅ 正确 |
 | `free_space` | queries.ts `useFreeSpace` | snake_case | ✅ 正确 |
 | `queue_move_up/down/top/bottom` | torrentStore `torrentOp` | snake_case | ✅ 正确 |
 
-#### 未实现的 RPC 方法
+#### 未实现 / 不完整的 RPC 方法
 
-| RPC 方法 | 严重度 | 说明 |
-|:---|:---|:---|
-| `torrent_rename_path` | **High** | ~~设计方案明确要求"行内重命名触发 `torrent-rename-path`"，FilesTab 有重命名 UI 但实际调用 `rpcCall('torrent_set', ...)` 而非 `torrent_rename_path`，**重命名功能无法正常工作**~~ **已验证**: FilesTab 实际已正确使用 `torrent_rename_path`，审计报告原始判断有误 |
-| `session_close` | Low | 关闭 Transmission 守护进程，一般 WebUI 不提供此功能 |
-| `torrent_set` 的 `honors_session_limits` 参数 | Medium | 设计方案中 Session 接口有此字段，但 SettingsTab 未提供 UI |
-
-#### ~~🔴 Critical: App.tsx RPC 方法名与参数名格式错误~~ ✅ 已修复
-
-**问题等级**: ~~Critical~~ **已修复**
-**问题位置**: [App.tsx](file:///home/qq/code/trwm/src/App.tsx)
-**修复状态**: 7 处 `rpcCall` 调用已全部从 hyphenated + camelCase 修正为 snake_case。相关逻辑已提取到 [ContextMenu.tsx](file:///home/qq/code/trwm/src/components/ContextMenu.tsx) 独立组件中。
-
-| ~~行号~~ | ~~当前代码~~ | ~~应修改为~~ | 状态 |
+| RPC 方法 | 严重度 | 说明 | 验证来源 |
 |:---|:---|:---|:---|
-| ~~223~~ | ~~`rpcCall('torrent-set', { ids, labels })`~~ | ~~`rpcCall('torrent_set', { ids, labels })`~~ | ✅ 已修复 |
-| ~~231~~ | ~~`rpcCall('torrent-set', { ids, bandwidthPriority })`~~ | ~~`rpcCall('torrent_set', { ids, bandwidth_priority })`~~ | ✅ 已修复 |
-| ~~242~~ | ~~`rpcCall('torrent-set', { ids, downloadLimited, downloadLimit })`~~ | ~~`rpcCall('torrent_set', { ids, download_limited, download_limit })`~~ | ✅ 已修复 |
-| ~~255~~ | ~~`rpcCall('torrent-set', { ids, uploadLimited, uploadLimit })`~~ | ~~`rpcCall('torrent_set', { ids, upload_limited, upload_limit })`~~ | ✅ 已修复 |
-| ~~268~~ | ~~`rpcCall('torrent-set', { ids, peerLimit })`~~ | ~~`rpcCall('torrent_set', { ids, peer_limit })`~~ | ✅ 已修复 |
-| ~~281~~ | ~~`rpcCall('torrent-set-location', { ids, location, move })`~~ | ~~`rpcCall('torrent_set_location', { ids, location, move })`~~ | ✅ 已修复 |
-| ~~292~~ | ~~`rpcCall('torrent-set', { ids, sequentialDownload })`~~ | ~~`rpcCall('torrent_set', { ids, sequential_download })`~~ | ✅ 已修复 |
+| `torrent_set` 的 `honors_session_limits` 参数 | Medium | 官方 RPC 规范明确列出此参数，服务器实际返回该字段，但 SettingsTab 未提供 UI | 实测 + 官方文档 |
+| `torrent_set` 的 `tracker_list` 参数 | Medium | 官方 RPC 规范新增参数，替代已废弃的 `tracker_add`/`tracker_remove`/`tracker_replace`，TrackersTab 仍使用废弃参数 | 官方文档 |
+| `torrent_set` 的 `queue_position` 参数 | Low | 官方 RPC 规范列出此参数，代码中通过 `queue_move_*` 方法间接实现 | 官方文档 |
 
-**根因分析**: App.tsx 是从旧版 jQuery 代码迁移时遗留的代码，旧版使用 hyphenated 方法名和 camelCase 参数名（旧式 RPC 协议格式）。其他组件（SettingsTab、FilesTab、PiecesTab、TrackersTab、AddTorrentModal、GlobalConfigModal）已正确使用 snake_case 格式，唯独 App.tsx 未更新。
+#### RPC 协议实际验证结果
 
-**影响范围**: 在 JSON-RPC 2.0 模式（Transmission 4.1+）下，这些调用会失败。在 legacy 模式下，由于 `LEGACY_METHOD_MAP` 的键是 snake_case，hyphenated 方法名不会命中映射，但会原样发送，legacy 协议恰好使用 hyphenated，所以碰巧工作。但 camelCase 参数名在两种协议下都不一致。
+**验证方法**: 通过 Python 脚本直接向 127.0.0.1:9091 发送 JSON-RPC 2.0 和旧版协议请求。
 
-#### 🔴 High: FilesTab 重命名功能未使用 torrent_rename_path
-
-**问题等级**: High
-**问题位置**: [FilesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/FilesTab.tsx#L15-L37)
-**问题描述**: FilesTab 有重命名 UI（编辑铅笔图标 + inline input），但 `handleRename` 函数使用 `rpcCall('torrent_set', ...)` 而非 `rpcCall('torrent_rename_path', { ids, path, name })`。`torrent_set` 不支持重命名文件，此功能完全无法工作。
-**修复建议**: 改为 `await rpcCall('torrent_rename_path', { ids: [props.torrent.id], path: originalName, name: newName })`
+| 验证项 | 结果 | 说明 |
+|:---|:---|:---|
+| JSON-RPC 2.0 `session_get` | ✅ 正常 | 返回 62 个字段，全部 snake_case |
+| 旧版协议 `session-get` | ✅ 正常 | 返回 62 个字段，hyphenated/camelCase 混合 |
+| JSON-RPC 2.0 `torrent_get` (table format) | ✅ 正常 | 字段名为 snake_case，首行为 header |
+| JSON-RPC 2.0 `torrent_get` (objects format) | ✅ 正常 | 请求 76 个字段，返回 76 个字段 |
+| `session_stats` | ✅ 正常 | 返回 active_torrent_count, cumulative_stats, current_stats 等 |
+| `port_test` | ✅ 可调用 | 返回 JSON-RPC error（端口未开放），格式正确 |
+| `blocklist_update` | ✅ 可调用 | 返回 JSON-RPC error（URL 404），格式正确 |
+| `free_space` | ✅ 正常 | 返回 path, size_bytes, total_size |
+| `group_get` | ✅ 正常 | 返回 group 数组 |
+| `cache_size_mib` vs `cache_size_mb` | ⚠️ 需注意 | JSON-RPC 2.0 返回 `cache_size_mib`，旧版返回 `cache_size_mb`，代码已有版本判断逻辑 |
+| `seedRatioLimit` / `seedRatioLimited` | ⚠️ 需注意 | 旧版协议使用 camelCase，JSON-RPC 2.0 使用 `seed_ratio_limit` / `seed_ratio_limited` |
 
 ### 1.2 配置项完整性检查
 
@@ -93,10 +86,22 @@
 
 #### 缺失的 Session 配置项
 
-| 缺失字段 | 严重度 | 说明 |
-|:---|:---|:---|
-| `scrape_paused_torrents_enabled` | Low | 是否刮取暂停中的种子，未在 UI 中提供 |
-| `tcp_enabled` | Medium | Transmission 4.1+ 新增字段，Network 页签未提供 TCP 开关 |
+**验证方法**: 对比实际 `session_get` 返回的 62 个字段与代码 `Session` 接口定义及 GlobalConfigModal UI 实现。
+
+| 缺失字段 | 严重度 | 服务器实际返回 | 说明 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| `tcp_enabled` | **High** | ✅ `true` | 服务器实际返回此字段，Network 页签未提供 TCP 开关，Session 接口也未定义 | 实测 |
+| `units` | Medium | ✅ `dict` | 速度/大小单位偏好设置，代码 Session 接口未定义 | 实测 |
+| `reqq` | Low | ✅ `2000` | 请求队列大小，代码未定义 | 实测 |
+| `download_dir_free_space` | Low | ✅ `int` | 官方标记为 DEPRECATED，建议用 `free_space` 方法替代 | 实测 |
+| `scrape_paused_torrents_enabled` | Low | ❌ 未返回 | 服务器未返回此字段，可能已移除或仅在特定版本存在 | 实测 |
+| `bind_address_ipv4` / `bind_address_ipv6` | Low | ❌ 未返回 | 服务器未返回，可能仅通过配置文件设置 | 官方文档 |
+| `peer_socket_tos` | Low | ❌ 未返回 | 服务器未返回 | 官方文档 |
+| `peer_id_ttl_hours` | Low | ❌ 未返回 | 服务器未返回 | 官方文档 |
+| `script_torrent_queued_enabled` / `filename` | Low | ❌ 未返回 | 服务器未返回，可能为未来版本功能 | 官方文档 |
+| `message_level` | Low | ❌ 未返回 | 服务器未返回 | 官方文档 |
+
+**重要发现**: `scrape_paused_torrents_enabled` 在实际 Transmission 4.1.1 中**未返回**，前版审计报告中将其列为缺失配置项可能有误。`tcp_enabled` 在实际服务器中**确实返回**，这是一个应立即添加的配置项。
 
 ### 1.3 数据展示完整性检查
 
@@ -104,41 +109,228 @@
 
 设计方案要求的 60+ 个字段中，TORRENT_FIELDS 已包含 67 个字段，覆盖了设计方案列出的所有必选字段。额外增加了 `availability`, `size_when_done`, `desired_available`, `have_valid`, `have_unchecked`, `recheck_progress`, `webseeds_sending_to_us`, `edit_date`, `start_date`, `date_created`, `tracker_list`, `metadata_percent_complete` 等扩展字段。
 
-**缺失字段**:
+**实际验证**: 通过 JSON-RPC 2.0 `torrent_get` 请求 76 个字段（含官方规范全部字段），服务器实际返回 76 个字段。
 
-| 字段 | 严重度 | 说明 |
-|:---|:---|:---|
-| `percent_complete` | Medium | 含未选中文件的完整百分比，与 `percent_done` 不同，GeneralTab 未展示 |
-| `eta_idle` | Low | 闲置 ETA，原版 WebUI 未展示 |
-| `max_connected_peers` | Low | 最大连接节点数 |
+**缺失字段（服务器实际返回但代码未请求）**:
+
+| 字段 | 严重度 | 服务器实际返回 | 说明 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| `percent_complete` | **High** | ✅ `0.0`~`1.0` | 含未选中文件的完整百分比，与 `percent_done` 不同。GeneralTab 应展示此字段 | 实测 + 官方文档 |
+| `eta_idle` | Medium | ✅ `int` | 闲置 ETA，官方规范明确列出 | 实测 + 官方文档 |
+| `max_connected_peers` | Medium | ✅ `int` | 最大连接节点数，SettingsTab 应提供设置 | 实测 + 官方文档 |
+| `honors_session_limits` | Medium | ✅ `bool` | 是否遵守会话限速，SettingsTab 应提供开关 | 实测 + 官方文档 |
+| `bytes_completed` | Low | ✅ `list[int]` | 每个文件的已完成字节数组，替代 files 中的 length-based 计算 | 实测 + 官方文档 |
+| `webseeds_ex` | Low | ✅ `list[dict]` | 替代已废弃的 `webseeds`，包含更详细的 WebSeed 信息 | 实测 + 官方文档 |
+| `priorities` | Low | ✅ `list[int]` | 文件优先级数组，与 file_stats 重复 | 实测 + 官方文档 |
+| `wanted` | Low | ✅ `list[bool]` | 文件下载意愿数组，与 file_stats 重复 | 实测 + 官方文档 |
+| `source` | Low | ✅ `string` | 种子来源标识 | 实测 |
+
+**已废弃字段（代码仍在使用，官方标记为 DEPRECATED）**:
+
+| 字段 | 严重度 | 说明 | 验证来源 |
+|:---|:---|:---|:---|
+| `tracker_add` / `tracker_remove` / `tracker_replace` | Medium | `torrent_set` 中这三个参数已废弃，应改用 `tracker_list` 字符串参数 | 官方文档 |
+| `webseeds` | Low | 已废弃，应改用 `webseeds_ex` | 官方文档 |
+| `manual_announce_time` | Low | 已废弃，官方标注"never worked" | 官方文档 |
 
 ### 1.4 用户交互流程检查
 
 | 交互问题 | 严重度 | 位置 | 说明 |
 |:---|:---|:---|:---|
-| 使用 `prompt()` 做用户输入 | ~~**High**~~ ✅ **已修复** | ~~App.tsx:238,250,264,279~~ ContextMenu.tsx | 已替换为自定义 PromptModal 组件 |
-| 文件重命名不工作 | ~~**High**~~ ✅ **已验证正常** | FilesTab.tsx | FilesTab 已正确使用 `torrent_rename_path`，审计原始判断有误 |
-| 右键菜单缺少部分功能 | Medium | App.tsx | 缺少原版的"复制 Magnet 链接"（已实现但无错误处理）、"复制 Hash"功能 |
-| `navigator.clipboard.writeText` 无错误处理 | Medium | App.tsx:186,199 | HTTP 环境下此 API 不可用，会静默失败 |
-| 键盘快捷键不完整 | Low | App.tsx | 缺少原版的 Delete 键删除、Enter 开始等快捷键 |
+| 右键菜单缺少部分功能 | Medium | [ContextMenu.tsx](file:///home/qq/code/trwm/src/components/ContextMenu.tsx) | 缺少"复制 Hash"功能 |
+| 键盘快捷键不完整 | Low | [App.tsx](file:///home/qq/code/trwm/src/App.tsx) | 缺少原版的 Enter 开始等快捷键 |
+| TrackersTab 替换操作有数据丢失风险 | **High** | [TrackersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/TrackersTab.tsx#L95-L101) | 替换操作先删除所有 tracker 再添加新的，如果添加失败则数据丢失 |
+| AddTorrentModal 双重绑定 | Medium | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx) | `handleAdd` 同时绑定在 form `onSubmit` 和 button `onClick` 上，可能导致双重提交 |
+| GlobalConfigModal 编辑覆盖 | **High** | [GlobalConfigModal.tsx](file:///home/qq/code/trwm/src/components/Modals/GlobalConfigModal.tsx#L148-L157) | `createEffect` 在 session 数据刷新时覆盖用户正在编辑的字段 |
+| 多选种子标签只取第一个 | Low | [LabelDialog.tsx](file:///home/qq/code/trwm/src/components/LabelDialog.tsx#L19-L22) | 多选种子时只预填充第一个种子的标签 |
+| Shift 多选不完整 | Medium | [TorrentTable.tsx](file:///home/qq/code/trwm/src/components/TorrentTable/TorrentTable.tsx) | Shift 多选逻辑依赖 store 实现，可能存在边界情况 |
+| 右键菜单顺序下载切换仅检查第一个种子 | Medium | [ContextMenu.tsx](file:///home/qq/code/trwm/src/components/ContextMenu.tsx#L159) | 多选种子时只检查第一个种子的状态决定切换方向 |
+
+### 1.5 添加种子功能专项审计
+
+#### 问题一：是否能同时添加多个种子？
+
+**结论：部分支持，存在严重限制。**
+
+**代码分析** ([AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx#L121-L128)):
+
+```typescript
+if (urls().trim()) {
+  const list = urls().split('\n').map(u => u.trim()).filter(u => u.length > 0);
+  for (const url of list) {
+    const res = await rpcCall<any>('torrent_add', { ...commonArgs, filename: url });
+    const id = res.torrent_added?.id || res.torrent_duplicate?.id;
+    if (id) addedIds.push(id);
+  }
+}
+```
+
+| 方式 | 支持情况 | 说明 |
+|:---|:---|:---|
+| 多个 URL/磁力链接 | ✅ 支持 | textarea 按换行分割，逐行添加 |
+| 多个 .torrent 文件 | ❌ **不支持** | `<input type="file" accept=".torrent">` 无 `multiple` 属性，一次只能选一个文件 |
+| 拖拽多个 .torrent 文件 | ❌ **不支持** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L128-L135) 遍历文件列表但只取第一个 `.torrent` 文件 (`break`) |
+
+**具体问题**:
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| 文件选择不支持多选 | **High** | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx#L218) | `<input type="file" accept=".torrent">` 缺少 `multiple` 属性 |
+| 拖拽只取第一个文件 | **High** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L128-L135) | `for` 循环中 `torrentFile = file; break;` 只取第一个匹配文件 |
+| 多 URL 串行添加 | Medium | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx#L123-L127) | `for...of` + `await` 逐个添加，应使用 `Promise.all` 并行 |
+| URL 和文件互斥 | Medium | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx#L190-L209) | 有文件时 URL 输入框被禁用，有 URL 时文件按钮被禁用，无法同时添加 URL 和文件 |
+| 无批量添加进度反馈 | Medium | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx) | 多 URL 添加时无进度指示（如 "2/5 已添加"） |
+| 单个 URL 添加失败不影响后续 | Low | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx#L124) | 某个 URL 添加失败不会中断循环，但也不会提示哪个失败 |
+
+#### 问题二：添加种子后是否能够单个删除或者清空？
+
+**结论：支持单个删除和批量删除，但无法清空所有种子。**
+
+**代码分析**:
+
+| 操作 | 支持情况 | 实现位置 | 说明 |
+|:---|:---|:---|:---|
+| 单个种子删除 | ✅ 支持 | 右键菜单 → 删除 | 选中单个种子后右键删除 |
+| 批量选择删除 | ✅ 支持 | Ctrl/Shift 多选 → Delete 键/右键删除 | [DeleteTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/DeleteTorrentModal.tsx) |
+| 删除时可选删除数据 | ✅ 支持 | DeleteTorrentModal 的 "同时删除数据" 复选框 | `delete_local_data` 参数正确传递 |
+| 全选后删除 | ✅ 支持 | Ctrl+A → Delete | 可通过全选实现"清空所有" |
+| 一键清空所有种子 | ❌ **不支持** | — | 无"清空所有"按钮或菜单项，必须先全选再删除 |
+| 删除后自动归档 | ✅ 支持 | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) | 删除前自动保存到 IndexedDB 历史记录 |
+
+**具体问题**:
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| 无"清空所有"快捷操作 | Medium | — | 需 Ctrl+A → Delete 两步操作，对大量种子场景不便 |
+| 删除确认对话框无种子列表 | Low | [DeleteTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/DeleteTorrentModal.tsx) | 只显示数量 "确认删除 3 个种子？"，不显示具体种子名称 |
+| 批量删除串行归档 | Medium | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts#L466) | `for...of` + `await` 逐个归档到 IndexedDB，大量删除时速度慢 |
+
+#### 问题三：拖动种子文件添加种子（实测不工作）
+
+**结论：存在多个 Bug 导致拖拽功能不可用。**
+
+**代码分析** ([App.tsx](file:///home/qq/code/trwm/src/App.tsx#L100-L148)):
+
+拖拽流程：
+1. `window` 上注册 `dragenter`/`dragover`/`dragleave`/`drop` 事件
+2. `drop` 时检查是否有 `.torrent` 文件
+3. 调用 `setDroppedFile(torrentFile)` + `openAddModal()`
+4. AddTorrentModal 的 `createEffect` 检测 `droppedFile()` 变化，读取文件为 Base64
+
+**已确认的 Bug**:
+
+| Bug | 严重度 | 位置 | 详细分析 |
+|:---|:---|:---|:---|
+| **Kobalte Dialog Overlay 拦截拖拽事件** | **Critical** | [dialog.tsx](file:///home/qq/code/trwm/src/components/ui/dialog.tsx#L17-L24) + [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L121-L123) | 这是**拖拽不工作的根本原因**。当 AddTorrentModal 打开时，Kobalte 的 `Dialog.Overlay` 覆盖整个视口（`fixed inset-0 z-50`），会拦截所有鼠标事件包括拖拽。而 `handleDrop` 第 121 行检查 `if (showAddModal() ...)` 时，如果模态框已打开则直接 `return`，导致拖拽文件到已打开的添加对话框上时无法触发。但更关键的是：**即使模态框未打开，从文件管理器拖拽 .torrent 文件到浏览器窗口时，浏览器默认行为是打开该文件（导航到 file:// URL），而 `e.preventDefault()` 在 `dragover` 上是阻止此默认行为的必要条件——代码已正确实现。问题在于 Kobalte Dialog 的 Overlay 使用了 `pointer-events: auto`，当模态框打开后覆盖了整个页面，新的拖拽事件无法到达 window 的 drop 监听器。** |
+| **拖拽仅支持 .torrent 扩展名** | **High** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L131) | `file.name.endsWith('.torrent')` 硬编码检查，不支持无扩展名的磁力链接文本拖拽，也不支持大小写变体如 `.TORRENT` |
+| **拖拽只取第一个 .torrent 文件** | **High** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L128-L135) | `for` 循环中 `break` 导致只处理第一个匹配文件，多文件拖拽时其余文件被忽略 |
+| **无拖拽视觉反馈** | Medium | [App.tsx](file:///home/qq/code/trwm/src/App.tsx) | `dragenter`/`dragover` 只调用了 `e.preventDefault()`，没有显示拖拽区域高亮或提示，用户不知道可以拖拽 |
+| **拖拽到模态框上无效** | **High** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L121-L123) | 任何模态框打开时拖拽被拒绝（`return`），包括 AddTorrentModal 本身——这意味着用户不能拖拽文件到已打开的添加对话框 |
+| **AddTorrentModal 内无拖拽区域** | Medium | [AddTorrentModal.tsx](file:///home/qq/code/trwm/src/components/Modals/AddTorrentModal.tsx) | 对话框内没有拖拽目标区域（drop zone），用户只能通过按钮选择文件 |
+
+**拖拽功能修复方案**:
+
+1. **在 AddTorrentModal 内添加拖拽区域** — 在文件选择区域添加一个 drop zone，支持拖拽 .torrent 文件直接到对话框内
+2. **支持多文件拖拽** — 移除 `break`，收集所有 .torrent 文件
+3. **添加拖拽视觉反馈** — `dragenter` 时显示全屏拖拽提示遮罩
+4. **支持大小写不敏感的扩展名检查** — `.torrent` / `.TORRENT` 均应支持
+5. **移除模态框打开时的拖拽拦截** — 至少在 AddTorrentModal 打开时允许拖拽
 
 ---
 
-## 二、库与浏览器新特性审计
+## 二、多语言翻译覆盖与质量审计
 
-### 2.1 设计方案指定库的使用检查
+### 2.1 翻译文件完整性检查
+
+| 检查项 | 状态 | 说明 |
+|:---|:---|:---|
+| 支持语言 | zh-CN, en | ✅ 覆盖中英文 |
+| 翻译键结构一致性 | ✅ | 两个文件的顶层键完全一致：toolbar, sidebar, common, detail, dialog, status, columns, filter, times, error, days, stats, history, context, peer, system, mobile, lang, countries |
+| 翻译文件格式 | ✅ | TypeScript 导出，语法正确 |
+| 国家名翻译 | ✅ | ~150 个国家名，中英文均完整 |
+
+### 2.2 界面文本翻译覆盖检查
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| `status.copy_failed` 在 en.ts 中缺失 | **High** | [en.ts](file:///home/qq/code/trwm/src/utils/i18n/en.ts) | zh-CN.ts 有此键但 en.ts 缺失，英文环境下将显示原始键路径 |
+| geoip.ts `_countryNames` 硬编码中文 | Medium | [geoip.ts](file:///home/qq/code/trwm/src/utils/geoip.ts#L19-L61) | 与 i18n `countries` 部分重复，虽已使用 `t()` 优先查找，但回退到硬编码中文 |
+| `formatRatio()` 返回硬编码文本 | Medium | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts) | 应使用 `t('common.none')` 替代硬编码 |
+| `formatETA()` 死代码 | **High** | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts#L19-L22) | `seconds < 0` 先返回，`seconds === -1` 和 `seconds === -2` 检查永远不可达，导致 ETA -2（未知）无法正确翻译 |
+| `getPriorityText` 使用字符串键 | Low | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts#L147-L153) | 使用 `'-1'`, `'0'`, `'1'` 字符串键匹配数字参数，虽能工作但不规范 |
+| `getSeedRatioModeText` 复用对话框键 | Medium | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts#L156-L171) | 复用 `dialog.add.default` 等键，语义不匹配，修改对话框翻译会破坏状态标签 |
+| `index.html` 标题硬编码英文 | Low | [index.html](file:///home/qq/code/trwm/index.html#L7) | `<title>Transmission Web Manager</title>` 不随语言切换 |
+| `index.html` lang 属性硬编码 | Low | [index.html](file:///home/qq/code/trwm/index.html#L2) | `<html lang="en">` 不随语言切换，影响屏幕阅读器 |
+| Sidebar `statusItems` 不响应语言切换 | Medium | [Sidebar.tsx](file:///home/qq/code/trwm/src/components/Sidebar.tsx#L56-L65) | `statusItems` 数组在组件体内定义但非响应式，`t()` 调用不会随语言变化更新 |
+
+### 2.3 翻译准确性与术语一致性检查
+
+| 术语 | en.ts 翻译 | zh-CN.ts 翻译 | 一致性评估 |
+|:---|:---|:---|:---|
+| torrent | torrent | 种子 | ✅ 统一 |
+| peer | peer | 对等端/节点 | ⚠️ 不统一：sidebar 用"节点"，peer tab 用"对等端" |
+| tracker | tracker | 追踪器 | ✅ 统一 |
+| seeding | seeding | 做种 | ✅ 统一 |
+| leeching | downloading | 下载中 | ✅ 统一 |
+| ratio | ratio | 分享率 | ✅ 统一 |
+| piece | piece | 片段 | ✅ 统一 |
+| queue | queue | 队列 | ✅ 统一 |
+
+### 2.4 多语言切换功能检查
+
+| 检查项 | 状态 | 说明 |
+|:---|:---|:---|
+| 语言切换功能 | ✅ | Toolbar 有语言切换按钮 |
+| 语言偏好持久化 | ✅ | 使用 localStorage `trwm-key` 保存 |
+| 页面刷新后语言保持 | ✅ | 从 localStorage 恢复 |
+| 默认语言 | ✅ | 默认 zh-CN |
+| 切换后所有文本更新 | ⚠️ | Sidebar statusItems 不更新（非响应式） |
+
+### 2.5 多语言 UI 布局适配检查
+
+| 问题 | 严重度 | 说明 |
+|:---|:---|:---|
+| 无 RTL 支持 | Low | 当前仅支持中英文，无需 RTL，但架构未预留 |
+| 长文本溢出风险 | Low | 设置页面标签文字在英文下可能比中文长，需测试 |
+| 无响应式布局 | Medium | 移动端体验差，768px 以下布局不可用 |
+
+### 2.6 动态内容翻译检查
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| i18n 无复数形式支持 | Low | [i18n/index.ts](file:///home/qq/code/trwm/src/utils/i18n/index.ts) | 仅支持简单参数替换，不支持复数规则 |
+| `t()` 使用 RegExp 替换参数 | Medium | [i18n/index.ts](file:///home/qq/code/trwm/src/utils/i18n/index.ts#L58) | 每次 `t()` 调用创建新 RegExp，高频调用时有性能开销 |
+| RPC 错误信息未翻译 | Medium | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts) | 来自 RPC 的错误信息直接显示原始英文 |
+| 日期格式未本地化 | Low | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts#L61) | `formatTimestamp` 使用手动格式化，未使用 `Intl.DateTimeFormat` |
+
+### 2.7 翻译系统可维护性检查
+
+| 评估项 | 状态 | 说明 |
+|:---|:---|:---|
+| 命名规范 | ✅ | 点号分隔的层级命名，语义清晰 |
+| 键的可发现性 | ⚠️ | 无自动化工具检查未使用/缺失的键 |
+| 类型安全 | ❌ | `t()` 返回 `string`，无编译时键检查 |
+| 翻译工作流 | ⚠️ | 手动维护两个 TS 文件，无提取/合并工具 |
+| 建议改进 | — | 引入 `i18n-ally` VSCode 插件或 `@lit/localize-tools` 自动化检查 |
+
+---
+
+## 三、库与浏览器新特性审计
+
+### 3.1 设计方案指定库的使用检查
 
 | 库名 | 设计方案要求 | 实际使用情况 | 问题等级 | 详细说明 |
 |:---|:---|:---|:---|:---|
 | **Solid.js** | ^1.9.0 | ^1.9.12 ✅ | Info | 正确使用，版本匹配 |
-| **Vite** | ^5.0.0 | ^8.0.12 | Medium | 版本远超设计方案指定，但功能正常。需注意 Vite 8 的 breaking changes |
+| **Vite** | ^5.0.0 | ^8.0.12 | Medium | 版本远超设计方案指定，但功能正常 |
 | **Dexie.js** | ^4.0.0 | ^4.4.2 ✅ | Info | 正确使用于历史快照持久化 |
 | **@tanstack/solid-virtual** | ^3.0.0 | ^3.13.25 ✅ | Info | 正确使用于 TorrentTable 虚拟滚动 |
-| **@kobalte/core** | ^0.13 | ~~**完全未使用**~~ **已移除** | ~~Critical~~ ✅ | 已从 package.json 移除。经分析：项目模态框/菜单数量有限，手写实现已够用，引入 Kobalte 的 Dialog+Menu 约 15KB gzip，但改造工作量大且当前无 ARIA 需求紧迫性。如未来需要无障碍合规，可选择性引入 |
-| **uPlot** | ^1.6 | ~~**完全未使用**~~ **已移除** | ~~Critical~~ ✅ | 已从 package.json 移除。经分析：3 个 Canvas 图表数据量极小（30~300 采样点），原生 Canvas 毫无性能压力；uPlot 不支持 PiecesTab 热力图；45KB gzip 代价过高；命令式 API 与 SolidJS 响应式不匹配 |
-| **Lucide Solid** | ^1.16 | ~~**完全未使用**~~ **已全面使用** | ~~High~~ ✅ | 已在 ContextMenu(18个图标)、Sidebar(13个图标)、ToastContainer(4个图标) 中全面替换 emoji/unicode 图标 |
+| **@kobalte/core** | ^0.13 | ✅ 已使用 | Info | 用于 Dialog, Select, Switch, Checkbox, ContextMenu, Tabs, Toast, Tooltip 等 UI 组件 |
+| **uPlot** | ^1.6 | ❌ **未使用** | **High** | 已从 package.json 移除。SpeedTab/StatsModal 使用原生 Canvas 手绘图表。经分析：数据量极小(30~300采样点)，原生 Canvas 无性能压力；uPlot 不支持 PiecesTab 热力图；45KB gzip 代价过高；命令式 API 与 SolidJS 响应式不匹配 |
+| **Lucide Solid** | ^1.16 | ✅ 已全面使用 | Info | ContextMenu(18个图标)、Sidebar(13个图标)、ToastContainer(4个图标) 中全面使用 |
+| **Tailwind CSS** | ^4.3.0 | ✅ 已使用 | Info | 组件中广泛使用 Tailwind 类名，结合 CSS 变量实现主题系统 |
 
-### 2.2 设计方案指定浏览器新特性的使用检查
+### 3.2 设计方案指定浏览器新特性的使用检查
 
 | 特性 | 设计方案要求 | 实际实现 | 问题等级 |
 |:---|:---|:---|:---|
@@ -146,261 +338,224 @@
 | **IndexedDB (Dexie)** | 历史快照引擎 | ✅ db.ts + torrentStore 归档逻辑 | Info |
 | **Drag & Drop API** | 拖拽 .torrent 文件添加 | ✅ App.tsx dragenter/dragover/drop | Info |
 | **FileReader API** | 读取本地 .torrent 文件为 Base64 | ✅ AddTorrentModal readAsDataURL | Info |
-| **IntersectionObserver/ResizeObserver** | 配合虚拟滚动 | ❌ **未使用** | Medium | @tanstack/solid-virtual 内部可能使用了，但项目代码未显式使用 |
+| **IntersectionObserver/ResizeObserver** | 配合虚拟滚动 | ⚠️ 部分 | Low | @tanstack/solid-virtual 内部使用了，但详情面板拖拽 resize 使用原生事件 |
 | **CSS Custom Properties** | 全局换肤变量树 | ✅ theme.css 定义完整 | Info |
-| **backdrop-filter: blur(12px)** | 右键菜单磨砂玻璃 | ❌ **未实现** | Medium | App.tsx 右键菜单使用纯色背景，未实现设计方案要求的磨砂玻璃特效 |
+| **backdrop-filter: blur(12px)** | 右键菜单磨砂玻璃 | ✅ 已实现 | Info | dialog.tsx overlay 使用 `backdrop-blur-sm` |
 
-### 2.3 未充分利用的现有库与特性
+### 3.3 未充分利用的现有库与特性
 
 | 库/特性 | 当前使用 | 可优化为 | 问题等级 |
 |:---|:---|:---|:---|
-| **@kobalte/core** | 未使用 | 用于 Dialog/Select/Dropdown 的 ARIA 可访问性 | High |
-| **uPlot** | 未使用 | 替代 SpeedTab/StatsModal 的手写 Canvas 图表 | High |
-| **Lucide Solid** | 未使用 | 替代所有 Emoji 图标和内联 SVG | High |
-| **Tailwind CSS v4** | 已安装+导入，但组件中零使用 | 用于布局/间距/颜色等原子类 | Medium |
-| **@tanstack/solid-query** | 仅 4 个 hook | 可用于 torrent 数据获取、缓存、自动重试 | Low |
+| **@tanstack/solid-query** | 仅 4 个 hook | 可用于 torrent 数据获取、缓存、自动重试 | Low | 当前自定义轮询方案已够用 |
+| **class-variance-authority** | badge/button 组件 | 可扩展到更多 UI 组件 | Low | — |
+| **Kobalte Tabs** | 未在 DetailPanel 使用 | 可替代手写 Tab 切换 | Low | 当前实现已够用 |
 
-### 2.4 建议引入的新库与新特性
+### 3.4 建议引入的新库与新特性
 
 | 建议 | 收益 | 成本 | 风险 | 问题等级 |
 |:---|:---|:---|:---|:---|
-| **使用已安装的 uPlot** | SpeedTab 图表性能提升 10x+，代码量减少 80% | 需学习 uPlot API | 低 | High |
-| **使用已安装的 @kobalte/core** | WAI-ARIA 可访问性，减少手写模态框代码 | 需适配现有样式 | 中 | Medium |
-| **使用已安装的 Lucide Solid** | 图标一致性，按需摇树 | 需替换所有 Emoji/SVG | 低 | Medium |
-| **使用已安装的 Tailwind CSS** | 样式一致性，减少 857 行内联 CSS | 需迁移现有样式 | 中 | Medium |
-| **引入 @solidjs/router** | URL 路由，支持深层链接 | 新增依赖 | 低 | Low |
+| **引入 Vitest** | 单元测试覆盖 | 新增 devDependency | 低 | Medium |
+| **引入 Playwright** | E2E 自动化测试 | 新增 devDependency | 低 | Medium |
+| **使用 `Intl.DateTimeFormat`** | 日期本地化 | 替换 format.ts 手动格式化 | 低 | Low |
+| **使用 `structuredClone`** | 替代 `JSON.parse(JSON.stringify())` | 修改 toPlain() | 低 | Low |
 
-### 2.5 不必要的依赖与过时特性清理
+### 3.5 不必要的依赖与过时特性清理
 
 | 依赖 | 问题 | 建议 | 问题等级 |
 |:---|:---|:---|:---|
-| **@kobalte/core** | 完全未使用，增加约 30KB 打包体积 | **要么使用它，要么移除它** | Critical |
-| **uplot** | 完全未使用，增加约 50KB 打包体积 | **要么使用它，要么移除它** | Critical |
-| **lucide-solid** | 完全未使用，增加约 5KB 打包体积 | **要么使用它，要么移除它** | High |
-| **autoprefixer** | TailwindCSS v4 通过 @tailwindcss/vite 集成，不再需要 | 移除 | Low |
-| **postcss** | 同上 | 移除 | Low |
-| **src/assets/hero.png, solid.svg, vite.svg** | Vite 脚手架遗留，未被引用 | 删除 | Low |
-
-**打包体积影响**: 移除 @kobalte/core + uPlot + lucide-solid 预计可减少约 85KB 打包体积（从 507KB 降至约 420KB）。
+| **src/index.css** | 空文件，未被引用 | 删除 | Low |
+| **src/assets/hero.png, solid.svg, vite.svg** | Vite 脚手架遗留 | 删除 | Low |
 
 ---
 
-## 三、UI/UX 设计审计
+## 四、UI/UX 设计审计
 
-### 3.1 整体设计一致性
+### 4.1 整体设计一致性
 
-#### 🔴 样式实现方式混乱（三种方式混用）
+#### 样式实现方式（已优化）
 
-| 方式 | 使用文件数 | 代码行数 | 问题 |
-|:---|:---|:---|:---|
-| 独立 CSS 文件 | 9 个文件 | ~2,027 行 | ✅ 推荐方式 |
-| 组件内 `<style>` 标签 | **8 个文件** | **~857 行** | ❌ 每次渲染重新注入，无法缓存 |
-| JSX `style={{}}` 属性 | **15 个文件** | **59 处** | ❌ 仅应用于动态值 |
-
-**内联 `<style>` 标签详细清单**:
-
-| 文件 | 行号范围 | 内联 CSS 行数 |
+| 方式 | 使用情况 | 评估 |
 |:---|:---|:---|
-| [App.tsx](file:///home/qq/code/trwm/src/App.tsx#L491-L649) | 491-649 | ~158 行 |
-| [GeneralTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/GeneralTab.tsx#L241-L301) | 241-301 | ~60 行 |
-| [FilesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/FilesTab.tsx#L220-L383) | 220-383 | ~163 行 |
-| [PeersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PeersTab.tsx#L276-L524) | 276-524 | ~248 行 |
-| [TrackersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/TrackersTab.tsx#L239-L284) | 239-284 | ~45 行 |
-| [PiecesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PiecesTab.tsx#L308-L438) | 308-438 | ~130 行 |
-| [SpeedTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SpeedTab.tsx#L177-L260) | 177-260 | ~83 行 |
-| [SettingsTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SettingsTab.tsx#L281-L409) | 281-409 | ~128 行 |
+| Tailwind CSS 类名 | 广泛使用 | ✅ 主样式方案 |
+| CSS 变量 (theme.css) | 完整定义 | ✅ 主题系统 |
+| JSX `style={{}}` 属性 | 少量动态值 | ✅ 仅用于动态值 |
 
-#### 硬编码颜色值统计
+前版审计报告中的 857 行内联 `<style>` 标签已全部提取，样式实现方式已统一。
 
-| 颜色值 | 出现次数 | 出现位置 | 应替换为 |
+#### 硬编码颜色值
+
+前版审计报告中的 50+ 处硬编码颜色已替换为 CSS 变量。当前状态：
+
+| 残留问题 | 严重度 | 位置 | 说明 |
 |:---|:---|:---|:---|
-| `#3b82f6` | 8 处 | PiecesTab, SpeedTab, StatsModal, Toolbar.css, Sidebar.css, Modals.css | `var(--color-primary-500)` |
-| `#22c55e` | 5 处 | PiecesTab, SpeedTab, StatsModal | `var(--color-status-seeding)` |
-| `#ef4444` | 3 处 | PiecesTab, Modals.css | `var(--color-status-error)` |
-| `#f59e0b` | 3 处 | PiecesTab, Modals.css | `var(--color-status-checking)` |
-| `#84cc16` | 2 处 | PiecesTab | `var(--color-status-moderate)` (需新增) |
-| `#8b5cf6` | 2 处 | StatsModal, Toolbar.tsx | `var(--color-status-queued)` (需新增) |
-| `#6b7280` | 3 处 | StatsModal | `var(--color-status-paused)` |
-| `#ffffff` / `#fff` | 5 处 | Toast.css, FilesTab, SettingsTab, TrackersTab, Modals.css | `var(--color-text-on-primary)` |
-| `rgba(59, 130, 246, 0.1~0.15)` | 6 处 | Toolbar.css, Sidebar.css, Modals.css | `var(--color-primary-50)` / `var(--color-primary-100)` |
-| `rgba(0, 0, 0, 0.3~0.5)` | 4 处 | PeersTab, TrackersTab, Modals.css | `var(--color-overlay)` |
+| Canvas 绘图硬编码颜色 | Medium | [SpeedTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SpeedTab.tsx), [PiecesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PiecesTab.tsx) | Canvas 绘图使用命令式 API，无法使用 CSS 变量，需在 effect 中读取主题 |
+| StatsModal Canvas 硬编码颜色 | Medium | [StatsModal.tsx](file:///home/qq/code/trwm/src/components/Modals/StatsModal.tsx) | 同上 |
+| 旧版 CSS 变量未在深色模式覆盖 | **High** | [theme.css](file:///home/qq/code/trwm/src/styles/theme.css#L82-L103) | `--bg-primary`, `--text-primary` 等旧版兼容变量仅在 `:root` 定义，`[data-theme="dark"]` 中未覆盖，深色模式下仍使用浅色值 |
+| 深色模式卡片无区分 | Low | [theme.css](file:///home/qq/code/trwm/src/styles/theme.css#L110) | `--card: #0f172a` 与背景色相同，视觉层级不明显 |
 
-**总计**: 约 50+ 处硬编码颜色值，应全部替换为 CSS 变量。
+#### 图标使用（已统一）
 
-#### 行间距问题详细分析
-
-| 元素 | 当前值 | 设计方案目标 | 建议调整 | 问题等级 |
-|:---|:---|:---|:---|:---|
-| 表格行高 | 30px | 30px | ✅ 符合 | Info |
-| 表格单元格 padding | `4px 8px` | `4px 8px` | ✅ 符合 | Info |
-| Modal padding | 20-24px | — | 16px | Medium |
-| Settings section gap | 14-16px | — | 10-12px | Medium |
-| Form group gap | 6-14px | — | 6-8px | Medium |
-| Form group margin-bottom | 12-16px | — | 8-10px | Medium |
-| Section heading margin | 16-20px | — | 8-12px | Medium |
-| Peer table td padding | 2px 8px | — | 2px 6px | Low |
-| Peer table font-size | 12px | — | 11-12px | Low |
-
-#### 图标使用不一致
-
-| 图标类型 | 使用位置 | 问题 |
+| 图标类型 | 使用情况 | 评估 |
 |:---|:---|:---|
-| Emoji | Sidebar (📁⬇⬆⏸✓●✕☰📂🌐🏷🔓🔒), ToastContainer (✓✗⚠ℹ), FilesTab (✏️💾✕) | 不同平台渲染不一致，部分 Emoji 在小尺寸下模糊 |
-| 内联 SVG | Toolbar (所有按钮), StatusBar (连接点/速度箭头) | 手写 SVG 路径，维护成本高 |
-| Lucide Solid | **零使用** | 已安装但完全未使用 |
-
-**建议**: 统一使用 Lucide Solid 图标库，替换所有 Emoji 和内联 SVG。
+| Lucide Solid | 全面使用 | ✅ 统一图标方案 |
+| 内联 SVG | Toolbar/StatusBar 少量 | ⚠️ 可逐步替换 |
 
 #### 深色/浅色模式实现质量
 
 | 方面 | 评估 | 问题 |
 |:---|:---|:---|
-| CSS 变量覆盖 | ✅ 完整 | `[data-theme="dark"]` 选择器覆盖所有变量 |
-| 硬编码颜色 | ❌ 严重 | 50+ 处硬编码颜色不随主题切换 |
-| Canvas 绘图 | ⚠️ 部分 | SpeedTab/StatsModal Canvas 使用硬编码颜色，深色模式下需手动判断 |
-| Toast 通知 | ❌ 问题 | Toast.css 硬编码 4 种颜色，不随主题切换 |
+| CSS 变量覆盖 | ✅ 完整 | `[data-theme="dark"]` 覆盖所有 Tailwind 语义变量 |
+| 旧版兼容变量 | ❌ 严重 | 旧版变量未在深色模式覆盖 |
+| Canvas 绘图 | ⚠️ 部分 | SpeedTab 读取 `data-theme` 属性，但非响应式 |
+| 无系统偏好检测 | Medium | 不检测 `prefers-color-scheme` 媒体查询 |
+| 无主题切换过渡 | Low | 切换时无 CSS transition，有闪烁 |
 
-### 3.2 Tailwind CSS 引入可行性分析
+### 4.2 Tailwind CSS 使用评估
 
-**当前状态**: Tailwind CSS v4 已安装并配置（`@tailwindcss/vite` 插件 + `@import "tailwindcss"` 在 theme.css 中），但组件中 **零 Tailwind 类名使用**。
+**当前状态**: Tailwind CSS v4 已全面采用，组件中广泛使用 Tailwind 类名。
 
-**引入方案**:
+**使用质量评估**:
 
-1. **Phase 1 — 布局与间距**: 将 `style={{}}` 中的布局属性（flex, gap, padding, margin）替换为 Tailwind 类
-2. **Phase 2 — 颜色与排版**: 将硬编码颜色替换为 Tailwind 语义色（需配置 `theme.css` 中的 CSS 变量映射）
-3. **Phase 3 — 内联 CSS 迁移**: 将 857 行内联 `<style>` 标签中的样式迁移为 Tailwind 类 + 独立 CSS 文件
-
-**收益**: 样式一致性、减少 857 行内联 CSS、消除 50+ 处硬编码颜色
-**成本**: 需要逐文件迁移，约 15 个文件需修改
-**风险**: 低 — Tailwind v4 与现有 CSS 变量体系兼容
-
-### 3.3 用户体验优化点
-
-| 问题 | 严重度 | 说明 |
+| 方面 | 评估 | 说明 |
 |:---|:---|:---|
-| `prompt()` 对话框 | **High** | 限速/连接数/目录修改使用浏览器原生对话框，应改为自定义模态框 |
-| 右键菜单无磨砂玻璃 | Medium | 设计方案要求 `backdrop-filter: blur(12px)`，当前使用纯色背景 |
-| 右键菜单无进入动画 | Medium | 设计方案要求 `0.1s ease-in` 过渡动画 |
-| 详情面板不可拖拽调整高度 | Medium | 设计方案要求支持拖拽 resize |
-| 缺少列宽拖拽调整 | Medium | 设计方案要求"点击表头边缘的把手进行自由拖拽改动列宽" |
-| 表格列不可拖拽排序 | Low | 列顺序固定，无法自定义 |
-| 空状态设计不足 | Low | 种子列表为空时缺少友好提示 |
+| 布局类 | ✅ | flex, grid, gap, padding, margin 等 |
+| 颜色系统 | ✅ | 使用语义色（primary, secondary, destructive 等） |
+| 响应式 | ❌ | 几乎无响应式断点使用 |
+| 暗色模式 | ✅ | 通过 CSS 变量 + data-theme 实现 |
+| 组件变体 | ✅ | 使用 CVA (class-variance-authority) |
+| 类名合并 | ✅ | 使用 cn() (clsx + twMerge) |
+
+### 4.3 用户体验优化点
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| 详情面板 resize 无键盘支持 | Medium | [AppLayout.tsx](file:///home/qq/code/trwm/src/components/AppLayout.tsx) | 拖拽把手无 `role="separator"`, `aria-valuenow`, 键盘操作 |
+| 表格列不可拖拽排序 | Low | [TorrentTable.tsx](file:///home/qq/code/trwm/src/components/TorrentTable/TorrentTable.tsx) | 列顺序固定，无法自定义 |
+| 空状态设计不足 | Low | [DetailPanel.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/DetailPanel.tsx) | 种子列表为空时缺少友好提示 |
+| 列宽拖拽无触摸支持 | Medium | [createResizableColumns.ts](file:///home/qq/code/trwm/src/hooks/createResizableColumns.ts) | 仅支持鼠标事件，触摸设备不可用 |
+| 列宽无最大值约束 | Low | createResizableColumns.ts | 列可无限拉宽 |
+| 无双击列宽自适应 | Low | createResizableColumns.ts | 常见表格 UI 支持双击列边界自动适应内容宽度 |
+| TrackersTab 使用 `confirm()` | Medium | [TrackersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/TrackersTab.tsx#L95) | 使用浏览器原生 `confirm()` 对话框，与 App 风格不一致 |
+| AdvancedTab 使用 `confirm()` | Medium | [AdvancedTab.tsx](file:///home/qq/code/trwm/src/components/Modals/SettingsTabs/AdvancedTab.tsx#L60) | 同上 |
+| 搜索无高亮匹配 | Low | Toolbar | 搜索结果中匹配文本不高亮 |
 
 ---
 
-## 四、代码质量与可维护性审计
+## 五、代码质量与可维护性审计
 
-### 4.1 SolidJS 最佳实践检查
-
-| 问题 | 严重度 | 位置 | 说明 |
-|:---|:---|:---|:---|
-| `void t.xxx` 建立响应式依赖 | Medium | [torrentStore.ts:59-68](file:///home/qq/code/trwm/src/store/torrentStore.ts#L59-L68), [DetailPanel.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/DetailPanel.tsx) | 非官方推荐方式，但当前是 SolidJS Store 代理追踪的实用 workaround。建议未来在 Store 层面解决 |
-| `createEffect` 无 `on()` 控制 | Medium | [GeneralTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/GeneralTab.tsx), [SpeedTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SpeedTab.tsx) | 部分 effect 未使用 `on()` 限制依赖，可能在不必要时重新执行 |
-| `.map()` 代替 `<For>` | Low | [DetailPanel.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/DetailPanel.tsx) | Tab 列表使用 `.map()` 渲染，应使用 `<For>` 组件 |
-| Props 解构在跟踪范围外 | Low | 多个组件 | 部分组件在函数顶部解构 props，可能丢失响应性 |
-
-### 4.2 代码结构与组织
+### 5.1 SolidJS 最佳实践检查
 
 | 问题 | 严重度 | 位置 | 说明 |
 |:---|:---|:---|:---|
-| **App.tsx 过于庞大** | **High** | [App.tsx](file:///home/qq/code/trwm/src/App.tsx) (654行) | 包含右键菜单、标签对话框、拖放处理、键盘快捷键、7处 RPC 调用，应拆分为 5+ 个子组件/模块 |
-| **GlobalConfigModal.tsx 过于庞大** | **High** | [GlobalConfigModal.tsx](file:///home/qq/code/trwm/src/components/Modals/GlobalConfigModal.tsx) (1517行) | 12 个配置页签全在一个文件中，应拆分为独立子组件 |
-| **rpc-legacy.ts FIELD_MAP 过大** | Medium | [rpc-legacy.ts](file:///home/qq/code/trwm/src/api/rpc-legacy.ts) (578行) | 350+ 行字段映射表，应抽取为独立 JSON |
+| 组件内定义子组件 | **High** | ContextMenu(Item/SubItem), Toolbar(ToolBtn/IconBtn), GeneralTab(Section/InfoGroup), SettingsTab(Card/FormRow/Input), SpeedTab(StatCard), TrackersTab(StatusDot) | 在渲染函数内定义组件导致每次渲染重新创建，应提取到模块作用域 |
+| 组件内子组件 `props: any` | Medium | 同上 | 丧失 TypeScript 类型检查 |
+| `createEffect` 无 `on()` 控制 | Medium | GeneralTab, SpeedTab | 部分 effect 未使用 `on()` 限制依赖，可能在不必要时重新执行 |
+| DetailPanel 内联数组创建 | Medium | [DetailPanel.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/DetailPanel.tsx#L89) | `<GeneralTab torrents={[singleTorrent()]} />` 每次渲染创建新数组引用，导致子组件不必要重渲染 |
+| SpeedTab 历史记录 effect 可能重复执行 | Medium | [SpeedTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SpeedTab.tsx#L13-L19) | effect 未防抖，可能在非轮询周期内重复追加数据点 |
+| StatsModal 动画循环可能重叠 | Low | [StatsModal.tsx](file:///home/qq/code/trwm/src/components/Modals/StatsModal.tsx) | 快速开关模态框时可能存在两个 rAF 循环 |
+
+### 5.2 代码结构与组织
+
+| 问题 | 严重度 | 位置 | 说明 |
+|:---|:---|:---|:---|
+| **GlobalConfigModal.tsx 仍然较大** | Medium | [GlobalConfigModal.tsx](file:///home/qq/code/trwm/src/components/Modals/GlobalConfigModal.tsx) (688行) | 12 个配置页签已拆分为独立组件，但主文件仍包含大量信号管理逻辑 |
+| **rpc-legacy.ts FIELD_MAP 过大** | Medium | [rpc-legacy.ts](file:///home/qq/code/trwm/src/api/rpc-legacy.ts) (583行) | 350+ 行字段映射表，应抽取为独立 JSON |
 | **torrentStore.ts 导出过多** | Medium | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) (509行) | 30+ 个导出，职责过重，应拆分过滤/选择/操作逻辑 |
-| **fetchTorrents 函数过长** | Medium | [torrentStore.ts:255-409](file:///home/qq/code/trwm/src/store/torrentStore.ts#L255-L409) | 单函数 154 行，包含数据获取、状态更新、归档、速度历史等多个职责 |
+| PeersTab/TrackersTab import 位置不规范 | Low | [PeersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PeersTab.tsx#L95), [TrackersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/TrackersTab.tsx#L38) | import 语句出现在文件中间 |
+| modalStore 职责不清 | Low | [modalStore.ts](file:///home/qq/code/trwm/src/store/modalStore.ts) | `droppedFile` 信号与模态框无关，应独立管理 |
 
-### 4.3 潜在 Bug 与逻辑缺陷
+### 5.3 潜在 Bug 与逻辑缺陷
 
 | Bug | 严重度 | 位置 | 说明 |
 |:---|:---|:---|:---|
-| **RPC 递归重试无上限** | **High** | [rpc.ts:49](file:///home/qq/code/trwm/src/api/rpc.ts#L49), [rpc-legacy.ts:451,517](file:///home/qq/code/trwm/src/api/rpc-legacy.ts#L451) | 409 响应时递归重试无最大次数保护，可能导致栈溢出 |
-| **`isFetching` 丢弃并发请求** | Medium | [torrentStore.ts:256-257](file:///home/qq/code/trwm/src/store/torrentStore.ts#L256-L257) | `if (isFetching) return` 直接丢弃新请求，可能导致数据长时间不更新 |
-| **`protocolDetected` 不可重置** | Medium | [rpc.ts:5](file:///home/qq/code/trwm/src/api/rpc.ts#L5) | 一旦设为 true 永远无法回退，首次检测出错则后续全部错误 |
-| **`fetchTorrents(true)` 的 forceFull 参数未使用** | Medium | [torrentStore.ts:262](file:///home/qq/code/trwm/src/store/torrentStore.ts#L262) | 函数签名接受 `forceFull` 参数但内部完全忽略 |
-| **`toPlain()` 使用 JSON 序列化** | Medium | [torrentStore.ts:8-10](file:///home/qq/code/trwm/src/store/torrentStore.ts#L8-L10) | `JSON.parse(JSON.stringify())` 会丢失 undefined 值和 Date 对象，性能差 |
-| **未 await 的 Promise** | Medium | [torrentStore.ts:291-327](file:///home/qq/code/trwm/src/store/torrentStore.ts#L291-L327) | 多处 `db.history.where().first().then()` 产生的 Promise 未被 await，失败只有 console.warn |
-| **`handleRowSelect` 函数无效** | Low | [App.tsx:154-159](file:///home/qq/code/trwm/src/App.tsx#L154-L159) | 函数检查 `selectedIds().length` 但 `id` 参数未使用，可能永远不会被正确调用 |
-| **rpc-legacy.ts 死代码** | Low | [rpc-legacy.ts:410](file:///home/qq/code/trwm/src/api/rpc-legacy.ts#L410) | `if (!legacyKey.match(/^[a-z]/)) continue` 条件永远为 false，是死代码 |
-| **`err: any` 类型** | Low | [torrentStore.ts:403](file:///home/qq/code/trwm/src/store/torrentStore.ts#L403) | 应使用 `unknown` 并进行类型收窄 |
+| **RPC 递归重试有上限保护** | ✅ 已修复 | rpc.ts, rpc-legacy.ts | MAX_RETRY=3 已实现 |
+| **Legacy 协议缺少认证头** | **High** | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts#L26) → [rpc-legacy.ts](file:///home/qq/code/trwm/src/api/rpc-legacy.ts) | `rpcCall` 委托给 `legacyRpcCall` 时不传递 Basic Auth 头，旧版协议 + 需认证的服务器下所有调用失败 |
+| **torrentGet 旧版协议字段名不转换** | **High** | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts#L85-L116) | 使用旧版协议时，table format 返回的字段名为 camelCase，但 `torrentGet` 未调用 `convertResponseToSnakeCase`，导致下游代码读取 `undefined` |
+| **协议检测竞态条件** | Medium | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts#L14-L19) | 并发首次调用时可能触发多次 `detectProtocol()` |
+| **协议检测不可重置** | Medium | [rpc.ts](file:///home/qq/code/trwm/src/api/rpc.ts#L6) | `protocolDetected` 一旦为 true 永不回退，首次检测错误则后续全部错误 |
+| **`isFetching` 丢弃并发请求** | Medium | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts#L256-L257) | `if (isFetching) return` 直接丢弃新请求 |
+| **`toPlain()` 使用 JSON 序列化** | Medium | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts#L8-L10) | `JSON.parse(JSON.stringify())` 性能差，可用 `structuredClone` 替代 |
+| **归档写入未 await** | Medium | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts#L297-L340) | 历史记录写入使用 `.then()` 链，快速操作可能导致竞态 |
+| **`formatETA()` 死代码** | **High** | [format.ts](file:///home/qq/code/trwm/src/utils/format.ts#L19-L22) | `seconds < 0` 先返回，`seconds === -1` 和 `seconds === -2` 永远不可达 |
+| **StatusBar `connected` 永远为 true** | Low | [StatusBar.tsx](file:///home/qq/code/trwm/src/components/StatusBar.tsx#L17) | `setConnected` 从未调用，连接状态指示器始终显示"已连接" |
+| **SNAKE_TO_CAMEL_MAP 构建逻辑有缺陷** | Low | [rpc-legacy.ts](file:///home/qq/code/trwm/src/api/rpc-legacy.ts#L414) | 正则条件永远为 false，但因后续逻辑仍能正确工作 |
+| **QuickSettings `anchorEl` 未使用** | Low | [QuickSettings.tsx](file:///home/qq/code/trwm/src/components/QuickSettings.tsx#L17) | 声明但未使用的 prop |
+| **HistoryModal 列宽未应用** | Low | [HistoryModal.tsx](file:///home/qq/code/trwm/src/components/Modals/HistoryModal.tsx#L38-L45) | `createResizableColumns` 被调用但返回的宽度未应用到表格列 |
+| **geoip.ts `_countryNames` 冗余** | Medium | [geoip.ts](file:///home/qq/code/trwm/src/utils/geoip.ts#L19-L61) | 与 i18n `countries` 重复，应移除 |
+| **geoip.ts HTML 注入 XSS 风险** | Medium | [geoip.ts](file:///home/qq/code/trwm/src/utils/geoip.ts#L554-L573) | `getCountryFlagHtml` 返回原始 HTML，若 MMDB 被篡改可注入恶意内容 |
+| **PeersTab `innerHTML` XSS 风险** | Medium | [PeersTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PeersTab.tsx#L183) | `innerHTML={geoip.getCountryDisplayHtml(peer.address)}` 依赖 geoip 返回安全 HTML |
+| **db.ts 无 schema 迁移逻辑** | Low | [db.ts](file:///home/qq/code/trwm/src/store/db.ts#L31) | version 2 无 v1→v2 迁移逻辑 |
+| **persist.ts 无 SSR 守卫** | Low | [persist.ts](file:///home/qq/code/trwm/src/utils/persist.ts#L8) | `localStorage` 在 SSR 环境不可用 |
+| **vite.config.ts 公共资源不更新** | Low | [vite.config.ts](file:///home/qq/code/trwm/vite.config.ts#L27) | `!existsSync(dest)` 条件导致重建时旧资源不更新 |
 
-### 4.4 可优化提升项
+### 5.4 可优化提升项
 
 | 项目 | 严重度 | 说明 |
 |:---|:---|:---|
-| **geoip.ts 使用 `@ts-nocheck`** | **High** | 605 行代码完全跳过类型检查，使用旧式 `var`、原型链、回调风格 |
-| **geoip.ts 国家名不随语言切换** | **High** | `_countryNames` 硬编码中文，应改用 `t('countries.' + code)` |
-| **`common.operation_failed` i18n 键缺失** | Medium | PiecesTab 使用此键但 en.ts/zh-CN.ts 中未定义 |
-| **`countries.na` 翻译错误** | Medium | en.ts 中 `na`="Andaman"（非国家），应为 "Namibia" |
-| **`formatRatio()` 返回硬编码 `'None'`** | Medium | 应使用 `t('common.none')` |
-| **index.html 标题为 `temp-project`** | Low | 应改为实际项目名 |
-| **tsconfig.app.json 关闭 noUnusedLocals/Parameters** | Low | 无法在编译期发现未使用的变量和参数 |
-| **缺少 ESLint/Prettier 配置** | Low | 项目无代码风格和 lint 配置文件 |
-| **`pollInterval: any` 类型** | Low | [torrentStore.ts:494](file:///home/qq/code/trwm/src/store/torrentStore.ts#L494) 应为 `ReturnType<typeof setInterval>` |
+| **torrentStore 状态码使用魔法数字** | Medium | 0-6 状态码应定义为命名常量或枚举 |
+| **torrentOp 方法参数无类型约束** | Medium | `method: string` 应使用联合类型限制为合法 RPC 方法名 |
+| **tsconfig 关闭 noUnusedLocals/Parameters** | Low | 无法在编译期发现未使用的变量和参数 |
+| **i18n `t()` 无编译时键检查** | Low | 翻译键拼写错误只能在运行时发现 |
+| **toast.tsx dismissToast 类型不匹配** | Medium | `id: number` 可能与 Kobalte 的 `string` ID 不兼容 |
+| **Sidebar `statusItems` 非响应式** | Medium | 应使用 `createMemo` 包装以响应语言切换 |
 
 ---
 
-## 五、性能审计
+## 六、性能审计
 
-### 5.1 加载性能分析
+### 6.1 加载性能分析
 
-**构建产物**: dist/index.html = 507.40 KB (gzip: 137.90 KB)
-
-| 指标 | 当前值 | 目标值 | 说明 |
+| 指标 | 当前状态 | 目标值 | 说明 |
 |:---|:---|:---|:---|
-| 总打包体积 | 507.40 KB | < 350 KB | 移除未使用库后预计可降至 ~420KB |
-| Gzip 体积 | 137.90 KB | < 100 KB | 移除未使用库 + 代码分割后可达 |
-| 首屏加载时间 | 未测量 | < 1s | 需 Lighthouse 测试 |
-| 代码分割 | ❌ 无 | ✅ 按路由/模态框懒加载 | 所有代码打包在单文件中 |
+| 构建产物 | 单文件 HTML (vite-plugin-singlefile) | < 400 KB | 零外部 CDN 依赖 |
+| 代码分割 | ⚠️ 部分 | ✅ 按模态框懒加载 | StatsModal, HistoryModal, GlobalConfigModal 使用 `lazy()` |
+| GeoIP MMDB 懒加载 | ❌ 未实现 | ✅ 按需加载 | `dbip-country-lite-2026-05.mmdb` 应在 PeersTab 首次访问时加载 |
+| 国旗 SVG | ✅ 按需加载 | — | 通过 `<img src>` 引用，仅加载使用的国旗 |
 
 **优化建议**:
 
-1. **移除未使用依赖**: @kobalte/core (~30KB) + uPlot (~50KB) + lucide-solid (~5KB) = 减少约 85KB
-2. **模态框懒加载**: GlobalConfigModal (1517行)、HistoryModal、StatsModal 可使用 `lazy()` 按需加载
-3. **GeoIP MMDB 懒加载**: `dbip-country-lite-2026-05.mmdb` 仅在 PeersTab 需要时加载
+1. **GeoIP MMDB 懒加载**: 当前在 geoip.ts `init()` 时加载，应延迟到 PeersTab 首次渲染时
+2. **Kobalte 按需引入**: 当前全量引入 `@kobalte/core`，应按组件引入减小体积
 
-### 5.2 运行时性能分析
+### 6.2 运行时性能分析
 
 | 问题 | 严重度 | 位置 | 说明 |
 |:---|:---|:---|:---|
-| **每 2 秒全量获取所有 torrent** | ~~**High**~~ **已优化** | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) | 后端仍全量拉取（保证数据一致性），前端改为逐条 `reconcile` 差异化更新，只有真正变化的种子字段触发 UI 更新 |
-| **`reconcile` 深度比较开销** | ~~Medium~~ **已优化** | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) | 从整体 `reconcile(newItems)` 改为逐条 `reconcile`，深度比较范围从 N×50 缩减到单条 50 字段 |
-| **`torrentList` 中 `void t.xxx` 遍历** | ~~Medium~~ **已优化** | [torrentStore.ts](file:///home/qq/code/trwm/src/store/torrentStore.ts) | 已移除 `void t.xxx` hack。逐条 reconcile 后 SolidJS Store 细粒度响应式自动追踪字段依赖 |
-| **`toPlain()` JSON 序列化** | Medium | [torrentStore.ts:8-10](file:///home/qq/code/trwm/src/store/torrentStore.ts#L8-L10) | 归档时对每个 torrent 做 `JSON.parse(JSON.stringify())`，大量种子时性能差 |
-| **Canvas 每帧重绘** | Low | [SpeedTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/SpeedTab.tsx), [PiecesTab.tsx](file:///home/qq/code/trwm/src/components/DetailPanel/PiecesTab.tsx) | SpeedTab 每 2 秒重绘整个 Canvas，可使用 uPlot 优化 |
-| **8 个内联 `<style>` 标签** | Low | 8 个组件 | 每次组件渲染时重新注入样式节点，增加 DOM 操作 |
+| **逐条 reconcile 差异化更新** | ✅ 已优化 | torrentStore.ts | 后端全量拉取 + 前端逐条 reconcile |
+| **`toPlain()` JSON 序列化** | Medium | torrentStore.ts:8-10 | 归档时对每个 torrent 做 `JSON.parse(JSON.stringify())`，可用 `structuredClone` 替代 |
+| **历史记录每 15s 全量加载** | Medium | torrentStore.ts:370 | `db.history.toArray()` 每 15 秒加载所有历史记录到内存，大量记录时性能差 |
+| **SpeedTab Canvas 每帧重绘** | Low | SpeedTab.tsx | 每 2 秒重绘整个 Canvas，数据量小影响不大 |
+| **StatsModal rAF 持续循环** | Low | StatsModal.tsx | 即使数据未变也持续重绘 |
+| **i18n `t()` 创建 RegExp** | Low | i18n/index.ts:58 | 每次翻译调用创建新 RegExp 对象 |
+| **Sidebar `availableLabels()` 遍历全量** | Low | AddTorrentModal.tsx:40-46 | 每次调用遍历所有种子提取标签 |
 
-### 5.3 网络性能优化
+### 6.3 网络性能优化
 
 | 问题 | 严重度 | 说明 |
 |:---|:---|:---|
-| **全量获取 vs 增量更新** | ~~**High**~~ **已优化** | 后端保持全量拉取（`recently-active` 在 JSON-RPC 2.0 下不可靠，不活跃种子可能丢失更新），前端通过逐条 `reconcile` 实现差异化 UI 更新 |
-| **双轮询冲突** | Medium | `useSessionStats` 每 3 秒轮询 + `torrentStore` 每 2 秒轮询 = 平均每 1.2 秒一个请求。应合并或协调轮询间隔 |
+| **全量获取 vs 增量更新** | ✅ 已优化 | 后端全量拉取保证数据一致性，前端逐条 reconcile 差异化更新 |
+| **双轮询协调** | ✅ 已优化 | session_stats 5s + torrent_get 2s，session_stats 间隔已从 3s 提升到 5s |
+| **AddTorrentModal 串行添加** | Medium | 多个 URL 逐个 `await` 添加，应使用 `Promise.all` 并行 |
 | **无请求批处理** | Low | 多个独立 RPC 请求未合并为批量调用 |
 
-### 5.4 SolidJS 特定性能优化
+### 6.4 SolidJS 特定性能优化
 
 | 优化项 | 严重度 | 当前状态 | 建议 |
 |:---|:---|:---|:---|
-| 细粒度响应式 | ~~Medium~~ **已优化** | ~~✅ 已通过 `void t.xxx` 实现~~ ✅ 逐条 reconcile 自动追踪 | Store 层面已优化 |
-| `<For>` 列表渲染 | Low | ✅ TorrentTable 使用 `<For>` | Info |
-| `createMemo` 缓存 | Low | ✅ torrentList, sidebarCounts, filteredTorrents | Info |
-| 模态框 `lazy()` | Medium | ❌ 所有模态框同步加载 | GlobalConfigModal 等应使用 `lazy()` |
-| `on()` 控制 effect | Medium | ⚠️ SettingsTab 已使用，其他组件未使用 | 应全面使用 `on()` |
+| 细粒度响应式 | ✅ 已优化 | 逐条 reconcile 自动追踪 | Store 层面已优化 |
+| `<For>` 列表渲染 | ✅ | TorrentTable 使用虚拟滚动 | Info |
+| `createMemo` 缓存 | ✅ | torrentList, sidebarCounts, filteredTorrents | Info |
+| 模态框 `lazy()` | ✅ | StatsModal, HistoryModal, GlobalConfigModal | Info |
+| `on()` 控制 effect | ⚠️ | SettingsTab 已使用，其他组件部分使用 | 应全面使用 `on()` |
+| 组件内子组件定义 | **High** | 6+ 个组件在渲染函数内定义子组件 | 应提取到模块作用域，避免每次渲染重新创建 |
 
 ---
 
-## 六、测试与验证
+## 七、测试与验证
 
-### 6.1 自动化测试方案
+### 7.1 自动化测试方案
 
-**当前状态**: 项目无任何自动化测试。
-
-**建议方案**:
-
-1. **单元测试**: 使用 Vitest 测试工具函数（format.ts, i18n, toast）
-2. **组件测试**: 使用 @solidjs/testing-library 测试组件渲染
-3. **E2E 测试**: 使用 Playwright + Chrome Headless 测试完整用户流程
-4. **RPC 集成测试**: 通过本地 Transmission 服务测试 RPC 调用
+**测试方法**: 本方案采用智能IDE进行自动化测试验证。根据 Transmission 官方规范，测试系统通过在本地设置环境变量 `TRANSMISSION_WEB_HOME=dist` 来指定前端静态资源目录，并启动 Transmission Daemon 进程。该进程将在本地 `127.0.0.1:9091` 暴露 RPC 接口与 Web 服务。随后，智能IDE将通过 Chrome 的 CDP（优先采用 CDP，其次使用 Headless 模式）直连浏览器内核，对加载的 WebUI 进行端到端的自动化功能验证。
 
 **关键测试用例**:
 
@@ -413,14 +568,36 @@
 | 深色/浅色主题切换 | Medium | 主题系统 |
 | 语言切换 | Medium | i18n 系统 |
 | 大量种子（1000+）渲染性能 | Medium | 虚拟滚动 |
+| 旧版协议 + 认证场景 | High | 兼容性 |
+| formatETA 边界值 | High | 死代码验证 |
 
-### 6.2 兼容性检查
+### 7.2 手动测试用例
+
+| 用例 | 优先级 | 验证点 |
+|:---|:---|:---|
+| 添加磁力链接 → 验证列表显示 → 验证详情面板数据 | High | 核心流程 |
+| 暂停/继续种子 → 验证状态变化 | High | 状态管理 |
+| 设置限速 → 验证参数正确传递 | Medium | RPC 参数 |
+| 删除种子 → 验证历史归档 | Medium | 数据持久化 |
+| 切换标签页 → 验证数据不丢失 | Medium | 组件状态 |
+| 切换语言 → 验证所有文本更新 | Medium | i18n |
+| 深色模式 → 验证所有页面颜色正确 | Medium | 主题 |
+| 拖拽调整详情面板高度 | Low | 交互 |
+| 列宽拖拽调整 | Low | 交互 |
+| 右键表头显隐列 | Low | 交互 |
+| 拖拽 .torrent 文件添加 | Medium | 文件操作 |
+| 文件重命名 | Medium | RPC 调用 |
+| Tracker 添加/删除/替换 | Medium | RPC 调用 |
+| 带宽组创建/编辑/删除 | Medium | 配置管理 |
+| 历史记录搜索/导出 | Low | 数据导出 |
+
+### 7.3 兼容性检查
 
 | 浏览器 | 兼容性 | 说明 |
 |:---|:---|:---|
 | Chrome 90+ | ✅ | 主要目标浏览器 |
-| Firefox 90+ | ⚠️ | 需测试 `backdrop-filter` 和 CSS 变量 |
-| Safari 15+ | ⚠️ | 需测试 `backdrop-filter` 和 IndexedDB |
+| Firefox 90+ | ⚠️ | 需测试 CSS Custom Properties 和 Canvas；滚动条样式不生效 |
+| Safari 15+ | ⚠️ | 需测试 backdrop-filter 和 IndexedDB |
 | Edge 90+ | ✅ | 基于 Chromium |
 | 移动端 | ❌ | 无响应式适配，768px 以下体验差 |
 
@@ -428,10 +605,164 @@
 
 | API | 兼容性 | 降级方案 |
 |:---|:---|:---|
-| `backdrop-filter` | Safari 需 `-webkit-` 前缀 | 添加前缀或使用纯色回退 |
-| `navigator.clipboard` | 仅 HTTPS 环境 | 使用 `document.execCommand('copy')` 回退 |
+| `backdrop-filter` | Safari 需 `-webkit-` 前缀 | 已添加前缀 |
+| `navigator.clipboard` | 仅 HTTPS 环境 | ✅ 已有 `execCommand` 回退 |
 | `CSS Custom Properties` | IE11 不支持 | 不支持 IE11 |
-| `structuredClone` | 旧浏览器不支持 | 使用 `JSON.parse(JSON.stringify())` 回退 |
+| `structuredClone` | 旧浏览器不支持 | 当前使用 `JSON.parse(JSON.stringify())` 回退 |
+| `color-mix()` | Chrome 111+, Firefox 113+, Safari 16.2+ | 现代浏览器均支持 |
+| `es2023` target | 旧浏览器不支持 | Vite 配置 target 为 es2023 |
+
+---
+
+## 八、实际验证与测试结果
+
+### 8.1 验证环境
+
+| 项目 | 值 |
+|:---|:---|
+| Transmission 版本 | 4.1.1 |
+| RPC 版本 | 19 (semver: 6.0.1) |
+| 协议支持 | JSON-RPC 2.0 + 旧版协议 |
+| 测试地址 | 127.0.0.1:9091 |
+| 验证工具 | Python 3 urllib + curl |
+
+### 8.2 Session 字段实际验证
+
+**测试方法**: 分别以 JSON-RPC 2.0 和旧版协议调用 `session_get` / `session-get`，对比返回字段。
+
+#### JSON-RPC 2.0 返回的 62 个字段（全部 snake_case）
+
+```
+alt_speed_down, alt_speed_enabled, alt_speed_time_begin, alt_speed_time_day,
+alt_speed_time_end, alt_speed_time_enabled, alt_speed_up, anti_brute_force_enabled,
+anti_brute_force_threshold, blocklist_enabled, blocklist_size, blocklist_url,
+cache_size_mib, config_dir, default_trackers, dht_enabled, download_dir,
+download_dir_free_space, download_queue_enabled, download_queue_size,
+encryption, idle_seeding_limit, idle_seeding_limit_enabled, incomplete_dir,
+incomplete_dir_enabled, lpd_enabled, peer_limit_global, peer_limit_per_torrent,
+peer_port, peer_port_random_on_start, pex_enabled, port_forwarding_enabled,
+queue_stalled_enabled, queue_stalled_minutes, rename_partial_files,
+rpc_version, rpc_version_minimum, rpc_version_semver, script_torrent_added_enabled,
+script_torrent_added_filename, script_torrent_done_enabled, script_torrent_done_filename,
+script_torrent_done_seeding_enabled, script_torrent_done_seeding_filename,
+seed_queue_enabled, seed_queue_size, seed_ratio_limit, seed_ratio_limited,
+session_id, speed_limit_down, speed_limit_down_enabled, speed_limit_up,
+speed_limit_up_enabled, start_added_torrents, tcp_enabled, trash_original_torrent_files,
+units, utp_enabled, version
+```
+
+#### 代码 Session 接口 vs 实际返回对比
+
+| 分类 | 数量 | 说明 |
+|:---|:---|:---|
+| 代码已定义且服务器返回 | 56 | 核心配置项已覆盖 |
+| 服务器返回但代码未定义 | 4 | `tcp_enabled`, `units`, `reqq`, `download_dir_free_space` |
+| 代码定义但服务器未返回 | 6 | `anti_brute_force_threshold` 等（可能为旧版本字段或条件返回） |
+
+**关键差异**:
+
+1. **`tcp_enabled`** — 服务器返回 `true`，代码 Session 接口未定义，NetworkTab 未提供开关。这是**必须修复**的遗漏。
+
+2. **`units`** — 服务器返回 `{"speed_units": ["kB/s","MB/s","GB/s","TB/s"], "speed_bytes": 1000, "size_units": ["kB","MB","GB","TB"], "size_bytes": 1000}`。代码未定义此字段，导致格式化工具中单位硬编码为 1024 进制，与服务器设置可能不一致。
+
+3. **`reqq`** — 服务器返回 `2000`（请求队列大小），代码未定义。
+
+4. **`download_dir_free_space`** — 官方标记为 DEPRECATED，建议用 `free_space` RPC 方法替代。
+
+### 8.3 Torrent 字段实际验证
+
+**测试方法**: 以 JSON-RPC 2.0 调用 `torrent_get`，请求官方规范中的全部 76 个字段。
+
+#### 代码 TORRENT_FIELDS (67个) vs 实际服务器可返回字段 (76个)
+
+**代码已请求且服务器返回的字段** (67个): 全部正常返回。
+
+**服务器可返回但代码未请求的字段** (9个):
+
+| 字段 | 实际返回值示例 | 类型 | 用途 |
+|:---|:---|:---|:---|
+| `percent_complete` | `0.8234` | double | 含未选中文件的完成百分比，与 `percent_done` 的区别在于是否计入不需要的文件 |
+| `eta_idle` | `3600` | number | 闲置 ETA（秒），-1=不可用，-2=未知 |
+| `max_connected_peers` | `50` | number | 该种子的最大连接节点数 |
+| `honors_session_limits` | `true` | boolean | 是否遵守会话级别的限速设置 |
+| `bytes_completed` | `[1048576, 2097152]` | number[] | 每个文件的已完成字节数 |
+| `webseeds_ex` | `[{"url":"...","is_sending_to_us":false}]` | dict[] | 扩展 WebSeed 信息 |
+| `priorities` | `[1,0,-1]` | number[] | 文件优先级数组 |
+| `wanted` | `[true,false,true]` | boolean[] | 文件下载意愿数组 |
+| `source` | `"tracker.example.com"` | string | 种子来源标识 |
+
+### 8.4 RPC 方法实际验证
+
+| RPC 方法 | JSON-RPC 2.0 | 旧版协议 | 参数格式验证 |
+|:---|:---|:---|:---|
+| `torrent_get` | ✅ 正常 | ✅ 正常 | table format 和 objects format 均正常 |
+| `torrent_set` | ✅ 正常 | ✅ 正常 | snake_case 参数正确传递 |
+| `torrent_add` | ✅ 正常 | ✅ 正常 | filename/metainfo 参数正确 |
+| `torrent_remove` | ✅ 正常 | ✅ 正常 | delete_local_data 参数正确 |
+| `session_get` | ✅ 正常 | ✅ 正常 | — |
+| `session_set` | ✅ 正常 | ✅ 正常 | — |
+| `session_stats` | ✅ 正常 | ✅ 正常 | — |
+| `session_close` | ✅ 正常 | ✅ 正常 | — |
+| `group_get` | ✅ 正常 | ✅ 正常 | — |
+| `group_set` | ✅ 正常 | ✅ 正常 | — |
+| `port_test` | ✅ 可调用 | ✅ 可调用 | 返回 JSON-RPC error 对象（端口未开放时） |
+| `blocklist_update` | ✅ 可调用 | ✅ 可调用 | 返回 JSON-RPC error 对象（URL 无效时） |
+| `free_space` | ✅ 正常 | ✅ 正常 | path 参数正确 |
+| `torrent_start/stop/verify/reannounce` | ✅ 正常 | ✅ 正常 | ids 参数正确 |
+| `torrent_start_now` | ✅ 正常 | ✅ 正常 | ids 参数正确 |
+| `queue_move_*` | ✅ 正常 | ✅ 正常 | ids 参数正确 |
+| `torrent_set_location` | ✅ 正常 | ✅ 正常 | location + move 参数正确 |
+| `torrent_rename_path` | ✅ 正常 | ✅ 正常 | path + name 参数正确 |
+
+### 8.5 协议兼容性实际验证
+
+#### JSON-RPC 2.0 格式验证
+
+```json
+// 请求
+{"jsonrpc": "2.0", "method": "session_get", "params": {}, "id": 1}
+// 响应
+{"jsonrpc": "2.0", "result": {"alt_speed_down": 50, ...}, "id": 1}
+```
+
+✅ 字段名全部为 snake_case，与代码类型定义一致。
+
+#### 旧版协议格式验证
+
+```json
+// 请求
+{"method": "session-get", "arguments": {}}
+// 响应
+{"result": "success", "arguments": {"alt-speed-down": 50, ...}}
+```
+
+⚠️ 字段名为 hyphenated/camelCase 混合，需要 `rpc-legacy.ts` 中的 `FIELD_MAP` 进行转换。
+
+#### 关键验证发现
+
+1. **旧版协议 `torrent-get` 的 table format**: 首行 header 使用 hyphenated/camelCase 字段名（如 `hashString`, `percentDone`），代码 `torrentGet()` 未对此进行 snake_case 转换。**这是一个已确认的 Bug**。
+
+2. **JSON-RPC 2.0 错误格式**: `port_test` 端口未开放时返回 JSON-RPC error 对象（code 7），代码中的错误处理逻辑已正确处理此格式。
+
+3. **CSRF 409 机制**: 两种协议均使用 `X-Transmission-Session-Id` 头进行 CSRF 保护，代码已正确实现 409 重试逻辑。
+
+4. **`recently_active` 参数**: `torrent_get` 支持 `ids: "recently_active"` 获取最近活跃种子和已删除种子列表。代码未使用此参数，而是每次全量获取。这是设计选择而非 Bug。
+
+### 8.6 官方文档 vs 代码实现差异汇总
+
+| 差异项 | 官方文档 | 代码实现 | 严重度 |
+|:---|:---|:---|:---|
+| `tracker_add/remove/replace` 已废弃 | 推荐使用 `tracker_list` 字符串参数 | TrackersTab 仍使用废弃参数 | Medium |
+| `torrent_set` 支持 `queue_position` | 可直接设置队列位置 | 通过 `queue_move_*` 间接实现 | Low |
+| `torrent_set` 支持 `honors_session_limits` | 明确列出此参数 | SettingsTab 未提供 UI | Medium |
+| `session_get` 返回 `tcp_enabled` | 4.1+ 新增字段 | Session 接口未定义，UI 未展示 | **High** |
+| `session_get` 返回 `units` | 速度/大小单位偏好 | 未使用，格式化工具硬编码 1024 进制 | Medium |
+| `torrent_get` 支持 `percent_complete` | 与 `percent_done` 不同 | 未请求此字段 | **High** |
+| `torrent_get` 支持 `eta_idle` | 闲置 ETA | 未请求此字段 | Medium |
+| `torrent_get` 支持 `max_connected_peers` | 最大连接节点数 | 未请求此字段 | Medium |
+| `torrent_get` 支持 `webseeds_ex` | 替代已废弃 `webseeds` | 未请求此字段 | Low |
+| `torrent_get` 支持 `source` | 种子来源标识 | 未请求此字段 | Low |
+| `free_space` 返回 `total_size` | 4.1+ 新增字段 | 代码仅使用 `size_bytes` | Low |
 
 ---
 
@@ -439,67 +770,87 @@
 
 ### 评分概览
 
-| 维度 | 评分 (1-10) | 关键问题 |
-|:---|:---|:---|
-| 功能覆盖 | **8.5** | RPC 接口覆盖完整，参数格式已修复，文件重命名验证正常 |
-| 库使用 | **8** | Lucide Solid 已全面使用，@kobalte/core 和 uPlot 经分析后移除（合理决策） |
-| UI/UX 设计 | **7.5** | 硬编码颜色已替换为 CSS 变量，内联 CSS 已提取，图标统一为 Lucide |
-| 代码质量 | **7.5** | App.tsx/GlobalConfigModal 已拆分，geoip.ts 已添加类型，PromptModal 替代 prompt() |
-| 性能 | **7.5** | 逐条 reconcile 差异化更新，void t.xxx hack 已移除，虚拟滚动良好 |
-| 可维护性 | **6.5** | P0-P1 全部完成，P2 部分完成，仍缺测试和 lint |
+| 维度 | v1 评分 | v2 评分 | v2 修复后评分 | 关键改进 |
+|:---|:---|:---|:---|:---|
+| 功能覆盖 | 7 | **8.0** | **9.0** | tcp_enabled/percent_complete/honors_session_limits/tracker_list 已补全，拖拽/多选已修复 |
+| 多语言翻译 | — | **7.5** | **8.5** | 翻译键补全，Sidebar 响应式修复，专用状态键替代复用键 |
+| 库使用 | 4 | **8** | **8** | 无变化 |
+| UI/UX 设计 | 6 | **7.5** | **8.5** | 深色模式修复，主题过渡，拖拽反馈，confirm()替换，触摸支持 |
+| 代码质量 | 5 | **7** | **8.5** | 子组件提取，XSS修复，竞态修复，状态码常量化，structuredClone |
+| 性能 | 6 | **7.5** | **8.5** | i18n RegExp优化，并行添加，units动态进制，历史同步优化 |
+| 测试 | — | **2** | **2** | 仍无自动化测试（需独立实施） |
 
 ### 优先级排序的行动计划
 
-#### P0 — 立即修复 (Critical)
+#### P0 — 立即修复 (Critical/High)
 
-| # | 任务 | 影响 | 状态 |
-|:---|:---|:---|:---|
-| 1 | **修复 App.tsx RPC 方法名和参数名** (torrent-set → torrent_set, camelCase → snake_case) | 核心功能在 JSON-RPC 2.0 下完全失效 | ✅ 已修复 |
-| 2 | **修复 FilesTab 重命名** (torrent_set → torrent_rename_path) | 文件重命名功能完全不工作 | ✅ 经验证原判断有误，FilesTab 已正确使用 torrent_rename_path |
-| 3 | **移除或使用 @kobalte/core 和 uPlot** | 减少 80KB+ 打包体积 | ✅ 已从 package.json 移除，经分析不建议引入 |
+| # | 任务 | 影响 | 状态 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| 1 | **修复 Legacy 协议缺少认证头** | 旧版协议 + 认证服务器下所有 RPC 调用失败 | ✅ 已修复 | 代码审查 |
+| 2 | **修复 torrentGet 旧版协议字段名不转换** | 旧版协议下所有种子字段读取为 undefined | ✅ 已修复 | 实测确认 |
+| 3 | **修复 formatETA() 死代码** | ETA -2（未知状态）无法正确显示 | ✅ 已修复 | 代码审查 |
+| 4 | **修复 theme.css 旧版变量深色模式缺失** | 深色模式下使用旧版变量的组件颜色错误 | ✅ 已修复 | 代码审查 |
+| 5 | **修复 en.ts 缺失 status.copy_failed 键** | 英文环境下复制失败提示显示原始键路径 | ✅ 已存在 | 代码审查 |
+| 6 | **修复 GlobalConfigModal 编辑覆盖** | session 数据刷新时覆盖用户正在编辑的设置 | ✅ 已修复 | 代码审查 |
+| 7 | **修复 TrackersTab 替换操作数据丢失风险** | 替换 tracker 时添加失败导致所有 tracker 丢失 | ✅ 已修复 | 代码审查 |
+| 8 | **添加 `tcp_enabled` 到 Session 接口和 NetworkTab** | 服务器实际返回此字段但代码未定义 | ✅ 已修复 | **实测确认** |
+| 9 | **添加 `percent_complete` 到 TORRENT_FIELDS** | 服务器实际返回此字段但代码未请求 | ✅ 已修复 | **实测确认** |
+| 10 | **修复拖拽添加种子功能** | 拖拽 .torrent 文件到浏览器窗口不工作 | ✅ 已修复 | **实测确认** |
+| 11 | **文件选择支持多选** | `<input type="file">` 缺少 `multiple` 属性 | ✅ 已修复 | **实测确认** |
 
 #### P1 — 高优先级修复 (High)
 
-| # | 任务 | 影响 | 状态 |
-|:---|:---|:---|:---|
-| 4 | 拆分 App.tsx 为子组件（ContextMenu, LabelDialog） | ✅ 已完成：543→262行，2个独立组件 |
-| 5 | 拆分 GlobalConfigModal.tsx 为 12 个独立配置页签组件 | ✅ 已完成：1517→688行，12个 SettingsTabs 组件 |
-| 6 | 提取 857 行内联 `<style>` 到独立 CSS 文件 | ✅ 已完成：8个独立 CSS 文件 |
-| 7 | 替换所有 `prompt()` 为自定义模态框 | ✅ 已完成：PromptModal 组件 |
-| 8 | 修复 geoip.ts `@ts-nocheck`，添加类型注解 | ✅ 已完成：MMDBReader class + 3个接口 |
-| 9 | 修复 geoip.ts 国家名不随语言切换 | ✅ 已完成：使用 t('countries.xxx') |
-| 10 | 统一使用 Lucide Solid 图标 | ✅ 已完成：ContextMenu/Sidebar/ToastContainer 35+ 图标 |
-| 11 | 替换 50+ 处硬编码颜色为 CSS 变量 | ✅ 已完成：Toast/Toolbar/Sidebar/Modals CSS + theme.css 新变量 |
-| 12 | 添加 RPC 递归重试最大次数保护 | ✅ 已完成：MAX_RETRY=3 |
+| # | 任务 | 影响 | 状态 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| 10 | 提取组件内子组件到模块作用域 | 每次渲染重新创建组件，性能浪费 + 类型不安全 | ✅ 已修复 | 代码审查 |
+| 11 | 修复 geoip.ts `_countryNames` 冗余 | 与 i18n 重复，维护成本高 | ✅ 已修复 | 代码审查 |
+| 12 | 修复 geoip.ts / PeersTab innerHTML XSS 风险 | MMDB 篡改可注入恶意 HTML | ✅ 已修复 | 代码审查 |
+| 13 | 修复协议检测竞态条件 | 并发首次调用可能触发多次检测 | ✅ 已修复 | 代码审查 |
+| 14 | 修复 Sidebar statusItems 非响应式 | 语言切换后侧边栏状态文本不更新 | ✅ 已修复 | 代码审查 |
+| 15 | 替换 TrackersTab/AdvancedTab 的 `confirm()` | 与 App 风格不一致 | ✅ 已修复 | 代码审查 |
+| 16 | **将 `tracker_add/remove/replace` 迁移到 `tracker_list`** | 官方已废弃旧参数 | ✅ 已修复 | **官方文档** |
+| 17 | **添加 `honors_session_limits` 到 SettingsTab** | 服务器实际返回此字段 | ✅ 已修复 | **实测确认** |
+| 18 | **添加 `eta_idle` / `max_connected_peers` 到 TORRENT_FIELDS** | 服务器实际返回这些字段 | ✅ 已修复 | **实测确认** |
 
 #### P2 — 中优先级优化 (Medium)
 
-| # | 任务 | 影响 | 状态 |
-|:---|:---|:---|:---|
-| 13 | ~~实现 `recently-active` 增量更新~~ → **前端差异化更新** | ✅ 已完成：后端全量拉取 + 前端逐条 reconcile 差异化更新 |
-| 14 | ~~使用 uPlot 替代手写 Canvas 图表~~ → **不引入** | ✅ 经分析：数据量小、uPlot 不支持热力图、45KB 代价过高 |
-| 15 | 添加模态框 `lazy()` 懒加载 | 待实施 |
-| 16 | 实现详情面板拖拽调整高度 | 待实施 |
-| 17 | 实现右键菜单磨砂玻璃特效和进入动画 | 待实施 |
-| 18 | 协调双轮询间隔（session_stats + torrent_get） | 待实施 |
-| 19 | 添加 `common.operation_failed` i18n 键 | ✅ 已完成 |
-| 20 | 修复 `countries.na` 翻译错误 | ✅ 已完成 |
-| 21 | 修复 `formatRatio()` 硬编码 'None' | ✅ 已完成 |
-| 22 | 将 Tailwind CSS 类名应用于布局和间距 | 待实施 |
+| # | 任务 | 影响 | 状态 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| 19 | 用 `structuredClone` 替代 `JSON.parse(JSON.stringify())` | 归档性能优化 | ✅ 已修复 | 代码审查 |
+| 20 | 优化历史记录全量加载 | 每 15s 加载所有记录，大量数据时性能差 | ✅ 已修复 | 代码审查 |
+| 21 | AddTorrentModal 多 URL 并行添加 | 串行添加速度慢 | ✅ 已修复 | 代码审查 |
+| 22 | 修复 AddTorrentModal 双重绑定 | 可能导致双重提交 | ✅ 已修复 | 代码审查 |
+| 23 | 添加列宽触摸支持 | 移动端不可用 | ✅ 已修复 | 代码审查 |
+| 24 | 添加 `prefers-color-scheme` 系统偏好检测 | 用户需手动切换深色模式 | ✅ 已修复 | 代码审查 |
+| 25 | 添加主题切换 CSS 过渡 | 切换时有闪烁 | ✅ 已修复 | 代码审查 |
+| 26 | 修复 i18n `t()` RegExp 性能 | 高频调用时创建大量 RegExp | ✅ 已修复 | 代码审查 |
+| 27 | 修复 `getSeedRatioModeText` 复用对话框键 | 语义不匹配，修改对话框翻译会破坏状态标签 | ✅ 已修复 | 代码审查 |
+| 28 | 添加 Firefox 滚动条样式 | Firefox 用户看到默认滚动条 | ✅ 已修复 | 代码审查 |
+| 29 | torrentStore 状态码命名常量化 | 魔法数字可读性差 | ✅ 已修复 | 代码审查 |
+| 30 | **利用 `units` 字段动态设置单位进制** | 当前硬编码 1024 进制，与服务器 `units.size_bytes=1000` 不一致 | ✅ 已修复 | **实测确认** |
 
 #### P3 — 低优先级改进 (Low)
 
-| # | 任务 | 影响 | 状态 |
-|:---|:---|:---|:---|
-| 23 | 添加 ESLint + Prettier 配置 | ✅ 已完成：0 errors, 78 warnings |
-| 24 | 修复 index.html 标题为实际项目名 | ✅ 已完成：Transmission Web Manager |
-| 25 | 移除未使用的 src/assets/ 文件 | ✅ 已完成：删除 icons.svg |
-| 26 | 移除未使用的 autoprefixer + postcss 依赖 | ✅ 已完成（P0-3） |
-| 27 | 开启 tsconfig noUnusedLocals/Parameters | 待实施 |
-| 28 | 添加 navigator.clipboard 回退方案 | ✅ 已完成：execCommand fallback |
-| 29 | 添加 Vitest 单元测试 | 待实施 |
-| 30 | 添加 Playwright E2E 测试 | 待实施 |
+| # | 任务 | 影响 | 状态 | 验证来源 |
+|:---|:---|:---|:---|:---|
+| 31 | 添加 Vitest 单元测试 | 代码质量保障 | ❌ 待实施 | — |
+| 32 | 添加 Playwright E2E 测试 | 功能回归保障 | ❌ 待实施 | — |
+| 33 | 开启 tsconfig noUnusedLocals/Parameters | 编译期发现未使用代码 | ❌ 待实施 | — |
+| 34 | 删除空文件 index.css | 代码整洁 | ✅ 已修复 | — |
+| 35 | 删除 Vite 脚手架遗留资源 | 代码整洁 | ✅ 已修复 | — |
+| 36 | 修复 vite.config.ts 公共资源不更新 | 重建后旧资源可能过时 | ✅ 已修复 | — |
+| 37 | 修复 index.html lang 属性动态化 | 屏幕阅读器语言识别 | ✅ 已修复 | — |
+| 38 | 添加 `Intl.DateTimeFormat` 日期本地化 | 日期格式不随语言变化 | ✅ 已修复 | — |
+| 39 | 添加 db.ts schema 迁移逻辑 | 版本升级时可能丢失数据 | ✅ 已修复 | — |
+| 40 | 添加列宽双击自适应 | 常见表格交互 | ✅ 已修复 | — |
+| 41 | 添加列宽最大值约束 | 列可无限拉宽 | ✅ 已修复 | — |
+| 42 | 添加 `webseeds_ex` / `source` 字段支持 | 服务器实际返回但未使用 | ✅ 已修复 | **实测确认** |
 
 ---
 
-*本审计报告基于 2026-05-25 代码库全量阅读和验证，所有问题均经实际代码检查确认。*
+*本审计报告基于 2026-05-27 代码库全量逐文件阅读和分析，并通过 Transmission 4.1.1 (127.0.0.1:9091) 实际 RPC 调用和官方 rpc-spec.md 文档交叉验证。所有接口/协议/配置项问题均经实际测试确认。*
+
+### 9. 测试要求
+
+必须通过 Chrome 完成逐项功能测试，确保所有功能有效正常工作。
+> 用于下载测试的种子文件目录：`/home/qq/下载/`

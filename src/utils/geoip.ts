@@ -1,10 +1,9 @@
 import { t } from './i18n';
-import inlineMmdbBase64 from 'virtual:inline-mmdb';
-import inlineFlags from 'virtual:inline-flags';
 
 let _loaded = false;
 let _reader: InstanceType<typeof MMDBReader> | null = null;
 const _flagCache: Record<string, string> = {};
+let _flagsData: Record<string, string> | null = null;
 
 const _availableFlags: Record<string, number> = {
     ae:1,am:1,ar:1,at:1,au:1,az:1,bd:1,be:1,bg:1,bh:1,br:1,bw:1,by:1,
@@ -15,50 +14,6 @@ const _availableFlags: Record<string, number> = {
     ng:1,nl:1,no:1,nz:1,om:1,pe:1,ph:1,pk:1,pl:1,pt:1,qa:1,ro:1,ru:1,
     sa:1,se:1,sg:1,si:1,sk:1,sn:1,sy:1,th:1,tn:1,tr:1,tw:1,tz:1,ua:1,
     ug:1,us:1,uz:1,vn:1,ye:1,za:1,zw:1
-};
-
-const _countryNames: Record<string, string> = {
-    ad:'安道尔',ae:'阿联酋',af:'阿富汗',ag:'安提瓜和巴布达',al:'阿尔巴尼亚',
-    am:'亚美尼亚',ao:'安哥拉',ar:'阿根廷',at:'奥地利',au:'澳大利亚',
-    az:'阿塞拜疆',ba:'波黑',bb:'巴巴多斯',bd:'孟加拉国',be:'比利时',
-    bf:'布基纳法索',bg:'保加利亚',bh:'巴林',bi:'布隆迪',bj:'贝宁',
-    bn:'文莱',bo:'玻利维亚',br:'巴西',bs:'巴哈马',bt:'不丹',
-    bw:'博茨瓦纳',by:'白俄罗斯',bz:'伯利兹',ca:'加拿大',cd:'刚果(金)',
-    cf:'中非',cg:'刚果(布)',ch:'瑞士',ci:'科特迪瓦',cl:'智利',
-    cm:'喀麦隆',cn:'中国',co:'哥伦比亚',cr:'哥斯达黎加',cu:'古巴',
-    cv:'佛得角',cy:'塞浦路斯',cz:'捷克',de:'德国',dj:'吉布提',
-    dk:'丹麦',dm:'多米尼克',do:'多米尼加',dz:'阿尔及利亚',ec:'厄瓜多尔',
-    ee:'爱沙尼亚',eg:'埃及',er:'厄立特里亚',es:'西班牙',et:'埃塞俄比亚',
-    fi:'芬兰',fj:'斐济',fo:'法罗群岛',fr:'法国',ga:'加蓬',
-    gb:'英国',gd:'格林纳达',ge:'格鲁吉亚',gh:'加纳',gi:'直布罗陀',
-    gl:'格陵兰',gm:'冈比亚',gn:'几内亚',gq:'赤道几内亚',gr:'希腊',
-    gt:'危地马拉',gu:'关岛',gw:'几内亚比绍',gy:'圭亚那',hk:'香港',
-    hn:'洪都拉斯',hr:'克罗地亚',ht:'海地',hu:'匈牙利',id:'印度尼西亚',
-    ie:'爱尔兰',il:'以色列',in:'印度',iq:'伊拉克',ir:'伊朗',
-    is:'冰岛',it:'意大利',jm:'牙买加',jo:'约旦',jp:'日本',
-    ke:'肯尼亚',kg:'吉尔吉斯斯坦',kh:'柬埔寨',ki:'基里巴斯',km:'科摩罗',
-    kn:'圣基茨和尼维斯',kp:'朝鲜',kr:'韩国',kw:'科威特',ky:'开曼群岛',
-    kz:'哈萨克斯坦',la:'老挝',lb:'黎巴嫩',lc:'圣卢西亚',li:'列支敦士登',
-    lk:'斯里兰卡',lr:'利比里亚',ls:'莱索托',lt:'立陶宛',lu:'卢森堡',
-    lv:'拉脱维亚',ly:'利比亚',ma:'摩洛哥',mc:'摩纳哥',md:'摩尔多瓦',
-    me:'黑山',mg:'马达加斯加',mh:'马绍尔群岛',mk:'北马其顿',ml:'马里',
-    mm:'缅甸',mn:'蒙古',mo:'澳门',mr:'毛里塔尼亚',mt:'马耳他',
-    mu:'毛里求斯',mv:'马尔代夫',mw:'马拉维',mx:'墨西哥',my:'马来西亚',
-    mz:'莫桑比克',na:'纳米比亚',ne:'尼日尔',ng:'尼日利亚',ni:'尼加拉瓜',
-    nl:'荷兰',no:'挪威',np:'尼泊尔',nr:'瑙鲁',nz:'新西兰',
-    om:'阿曼',pa:'巴拿马',pe:'秘鲁',pg:'巴布亚新几内亚',ph:'菲律宾',
-    pk:'巴基斯坦',pl:'波兰',pt:'葡萄牙',pw:'帕劳',py:'巴拉圭',
-    qa:'卡塔尔',ro:'罗马尼亚',rs:'塞尔维亚',ru:'俄罗斯',rw:'卢旺达',
-    sa:'沙特阿拉伯',sb:'所罗门群岛',sc:'塞舌尔',sd:'苏丹',se:'瑞典',
-    sg:'新加坡',si:'斯洛文尼亚',sk:'斯洛伐克',sl:'塞拉利昂',sm:'圣马力诺',
-    sn:'塞内加尔',so:'索马里',sr:'苏里南',st:'圣多美和普林西比',sv:'萨尔瓦多',
-    sy:'叙利亚',sz:'斯威士兰',td:'乍得',tg:'多哥',th:'泰国',
-    tj:'塔吉克斯坦',tl:'东帝汶',tm:'土库曼斯坦',tn:'突尼斯',to:'汤加',
-    tr:'土耳其',tt:'特立尼达和多巴哥',tv:'图瓦卢',tw:'台湾',tz:'坦桑尼亚',
-    ua:'乌克兰',ug:'乌干达',us:'美国',uy:'乌拉圭',uz:'乌兹别克斯坦',
-    va:'梵蒂冈',vc:'圣文森特和格林纳丁斯',ve:'委内瑞拉',vn:'越南',
-    vu:'瓦努阿图',ws:'萨摩亚',ye:'也门',za:'南非',zm:'赞比亚',
-    zw:'津巴布韦'
 };
 
 const METADATA_START_MARKER = [0xAB, 0xCD, 0xEF, 0x4D, 0x61, 0x78, 0x4D, 0x69, 0x6E, 0x64, 0x2E, 0x63, 0x6F, 0x6D];
@@ -81,7 +36,7 @@ const TYPE_END_MARKER = 13;
 const TYPE_BOOLEAN = 14;
 const TYPE_FLOAT = 15;
 
-const _pointerValueOffset = [0, 2048, 526336, 0];
+const _pointerValueOffset = [0, 2048, 526336, 134744064];
 const _textDecoder = new TextDecoder('utf-8');
 
 interface DecodeResult {
@@ -441,23 +396,39 @@ function init(callback: (success: boolean) => void): void {
         return;
     }
 
-    try {
-        const binaryStr = atob(inlineMmdbBase64);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
-        }
-        _reader = new MMDBReader(bytes);
-        _loaded = true;
-        console.log('GeoIP: MMDB database loaded (inline), IP version:', _reader.metadata.ipVersion,
-            'nodes:', _reader.metadata.nodeCount,
-            'record size:', _reader.metadata.recordSize,
-            'type:', _reader.metadata.databaseType);
-        if (callback) callback(true);
-    } catch (e) {
-        console.error('GeoIP: Failed to parse inline MMDB database', e);
-        if (callback) callback(false);
-    }
+    // Load MMDB asynchronously via fetch
+    fetch('./geo/dbip-country-lite-2026-05.mmdb')
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.arrayBuffer();
+        })
+        .then(buffer => {
+            const bytes = new Uint8Array(buffer);
+            _reader = new MMDBReader(bytes);
+            _loaded = true;
+            console.log('GeoIP: MMDB database loaded (async fetch), IP version:', _reader.metadata.ipVersion,
+                'nodes:', _reader.metadata.nodeCount,
+                'record size:', _reader.metadata.recordSize,
+                'type:', _reader.metadata.databaseType);
+            if (callback) callback(true);
+        })
+        .catch(e => {
+            console.error('GeoIP: Failed to load MMDB database', e);
+            if (callback) callback(false);
+        });
+
+    // Load flags asynchronously via fetch
+    fetch('./flags/flags.json')
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            _flagsData = data as Record<string, string>;
+        })
+        .catch(e => {
+            console.warn('GeoIP: Failed to load flags data, will use fallback', e);
+        });
 }
 
 function lookup(ipStr: string): GeoIPResult | null {
@@ -484,20 +455,20 @@ function lookup(ipStr: string): GeoIPResult | null {
         (continent && continent.code);
 
     if (code) {
-        const name = t('countries.' + code.toLowerCase()) || _countryNames[code.toLowerCase()] || code;
+        const name = t('countries.' + code.toLowerCase()) || code;
         return { code: code, name: name };
     }
 
     return null;
 }
 
-function lookupCached(ipStr: string, callback: (result: GeoIPResult | null) => void): void {
+function lookupWithFlag(ipStr: string, callback: (result: GeoIPResult | null) => void): void {
     if (is_privateIP(ipStr)) { callback(null); return; }
 
     if (ipStr.includes(':')) {
         const mappedIPv4 = _extractIPv4FromIPv6(ipStr);
         if (mappedIPv4) {
-            lookupCached(mappedIPv4, callback);
+            lookupWithFlag(mappedIPv4, callback);
             return;
         }
     }
@@ -520,9 +491,15 @@ function getCountryFlag(code: string): string {
     const lc = code.toLowerCase();
     if (_flagCache[lc] !== undefined) return _flagCache[lc];
 
-    const flagDataUri = inlineFlags[lc] || '';
-    _flagCache[lc] = flagDataUri;
-    return flagDataUri;
+    // Use async-loaded flags data, or fallback to individual SVG fetch
+    if (_flagsData && _flagsData[lc]) {
+        _flagCache[lc] = _flagsData[lc];
+        return _flagCache[lc];
+    }
+    // Fallback: construct URL to individual flag SVG
+    const flagUrl = `./flags/${lc}.svg`;
+    _flagCache[lc] = flagUrl;
+    return flagUrl;
 }
 
 function hasFlag(code: string): boolean {
@@ -530,25 +507,19 @@ function hasFlag(code: string): boolean {
     return _availableFlags[code.toLowerCase()] === 1;
 }
 
-function getCountryFlagHtml(code: string): string {
-    if (!code) return '';
-    const lc = code.toLowerCase();
-    if (_availableFlags[lc]) {
-        const flagDataUri = inlineFlags[lc] || '';
-        return '<img class="twc-country-flag-img rounded-[2px]" src="' + flagDataUri + '" alt="' + code + '" title="' + code.toUpperCase() + '" style="width:16px;height:12px;vertical-align:middle;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'" />' +
-            '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50 hidden">' + code.toUpperCase() + '</span>';
-    }
-    return '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50">' + code.toUpperCase() + '</span>';
+function countryCodeToFlag(code: string): string {
+    if (!code || code.length !== 2) return '';
+    return String.fromCodePoint(...code.toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
 }
 
-function getCountryDisplayHtml(ip: string): string {
+function getCountryDisplayText(ip: string): string {
     if (is_privateIP(ip)) {
-        return '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-muted/60 text-muted-foreground rounded-[4px] border border-border/50">' + t('peer.lan') + '</span>';
+        return t('peer.lan');
     }
     const info = lookup(ip);
     if (info) {
-        const flagHtml = getCountryFlagHtml(info.code);
-        return '<span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap">' + flagHtml + '<span style="font-size:11px">' + info.name + '</span></span>';
+        const flag = countryCodeToFlag(info.code);
+        return `${flag} ${info.name}`;
     }
     return '-';
 }
@@ -605,12 +576,11 @@ function _extractIPv4FromIPv6(ipStr: string): string | null {
 export {
     init,
     lookup,
-    lookupCached,
+    lookupWithFlag,
     getCountryCode,
     getCountryInfo,
     getCountryFlag,
-    getCountryFlagHtml,
-    getCountryDisplayHtml,
+    getCountryDisplayText,
     hasFlag,
     isLoaded,
     is_privateIP

@@ -12,6 +12,8 @@ interface SpeedTabProps {
   setSpeedLimitUpEnabled: (v: boolean) => void;
   speedLimitUp: () => number;
   setSpeedLimitUp: (v: number) => void;
+  altSpeedEnabled: () => boolean;
+  setAltSpeedEnabled: (v: boolean) => void;
   altSpeedDown: () => number;
   setAltSpeedDown: (v: number) => void;
   altSpeedUp: () => number;
@@ -61,6 +63,9 @@ export const SpeedTab: Component<SpeedTabProps> = (props) => {
       </SettingsSection>
 
       <SettingsSection title={t('toolbar.alt_speed')}>
+        <SettingsRow label={t('dialog.settings.alt_speed_enabled')} desc={t('dialog.settings.alt_speed_enabled_desc')}>
+          <SettingsSwitch checked={props.altSpeedEnabled()} onCheckedChange={props.setAltSpeedEnabled} />
+        </SettingsRow>
         <SettingsRow label={t('dialog.settings.download_limit')}>
           <div class="flex items-center gap-2">
             <SettingsInput type="number" class="w-24" value={props.altSpeedDown()} onInput={(e) => props.setAltSpeedDown(Number(e.currentTarget.value))} />

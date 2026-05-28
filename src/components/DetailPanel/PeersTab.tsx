@@ -6,19 +6,22 @@ import * as geoip from '../../utils/geoip';
 import { cn } from '../../lib/utils';
 import { Info, ChevronDown, Activity, Globe2, ShieldCheck, Zap, Users } from 'lucide-solid';
 
-const FLAG_DESCRIPTIONS: Record<string, string> = {
-  'D': t('detail.peers.flag_D'), 'd': t('detail.peers.flag_d'), 'U': t('detail.peers.flag_U'),
-  'u': t('detail.peers.flag_u'), 'K': t('detail.peers.flag_K'), '?': t('detail.peers.flag_?'),
-  'E': t('detail.peers.flag_E'), 'H': t('detail.peers.flag_H'), 'X': t('detail.peers.flag_X'),
-  'I': t('detail.peers.flag_I'), 'T': t('detail.peers.flag_T'), 'L': t('detail.peers.flag_L'),
-  'S': t('detail.peers.flag_S'),
-};
+function getFlagDescriptions(): Record<string, string> {
+  return {
+    'D': t('detail.peers.flag_D'), 'd': t('detail.peers.flag_d'), 'U': t('detail.peers.flag_U'),
+    'u': t('detail.peers.flag_u'), 'K': t('detail.peers.flag_K'), '?': t('detail.peers.flag_?'),
+    'E': t('detail.peers.flag_E'), 'H': t('detail.peers.flag_H'), 'X': t('detail.peers.flag_X'),
+    'I': t('detail.peers.flag_I'), 'T': t('detail.peers.flag_T'), 'L': t('detail.peers.flag_L'),
+    'S': t('detail.peers.flag_S'),
+  };
+}
 
 function buildFlagTooltip(flagStr: string): string {
   if (!flagStr) return '';
+  const descs = getFlagDescriptions();
   const lines: string[] = [];
   for (const ch of flagStr) {
-    if (FLAG_DESCRIPTIONS[ch]) lines.push(`${ch}: ${FLAG_DESCRIPTIONS[ch]}`);
+    if (descs[ch]) lines.push(`${ch}: ${descs[ch]}`);
   }
   return lines.join('\n');
 }
@@ -81,7 +84,10 @@ const PeerDetailModal: Component<{ peer: Peer; onClose: () => void }> = (props) 
               <span class="text-muted-foreground">{t('detail.peers.flags')}</span>
               <div class="flex flex-wrap justify-end gap-1">
                 <For each={props.peer.flag_str?.split('')}>
-                  {(f) => <span class="bg-primary/20 text-primary border border-primary/30 rounded px-1.5 font-mono text-[10px]" title={FLAG_DESCRIPTIONS[f]}>{f}</span>}
+                  {(f) => {
+                    const descs = getFlagDescriptions();
+                    return <span class="bg-primary/20 text-primary border border-primary/30 rounded px-1.5 font-mono text-[10px]" title={descs[f]}>{f}</span>;
+                  }}
                 </For>
               </div>
             </div>
@@ -114,7 +120,7 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
   const legends = [
     { key: 'D', desc: t('detail.peers.flag_D') }, { key: 'd', desc: t('detail.peers.flag_d') },
     { key: 'U', desc: t('detail.peers.flag_U') }, { key: 'u', desc: t('detail.peers.flag_u') },
-    { key: 'K', desc: t('detail.peers.flag_K') }, { key: '? ', desc: t('detail.peers.flag_?') },
+    { key: 'K', desc: t('detail.peers.flag_K') }, { key: '?', desc: t('detail.peers.flag_?') },
     { key: 'E', desc: t('detail.peers.flag_E') }, { key: 'H', desc: t('detail.peers.flag_H') },
     { key: 'X', desc: t('detail.peers.flag_X') }, { key: 'I', desc: t('detail.peers.flag_I') },
     { key: 'T', desc: t('detail.peers.flag_T') }, { key: 'L', desc: t('detail.peers.flag_L') },
@@ -180,7 +186,7 @@ export const PeersTab: Component<{ torrent: Torrent }> = (props) => {
               <For each={props.torrent.peers}>
                 {(peer) => (
                   <tr class="transition-colors hover:bg-muted/50 group">
-                    <td class="py-0.5 px-1.5 text-center text-[14px] leading-none opacity-80" innerHTML={geoip.getCountryDisplayHtml(peer.address)} />
+                    <td class="py-0.5 px-1.5 text-center text-[14px] leading-none opacity-80">{geoip.getCountryDisplayText(peer.address)}</td>
                     <td class="py-0.5 px-1.5 font-mono text-muted-foreground group-hover:text-foreground transition-colors select-text text-[10px]">
                       {peer.address}<span class="opacity-50 text-[9px] ml-0.5">:{peer.port}</span>
                     </td>

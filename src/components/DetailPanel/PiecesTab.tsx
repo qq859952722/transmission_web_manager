@@ -84,6 +84,10 @@ export const PiecesTab: Component<{ torrent: Torrent }> = (props) => {
     canvas.height = canvasHeight * dpr;
     ctx.scale(dpr, dpr);
 
+    // NOTE: Canvas colors are determined by reading CSS variables at draw time. This is not
+    // reactively tracked, so a theme change won't immediately redraw the pieces map. However,
+    // since the data updates every 2s (polling), the canvas will reflect the new theme
+    // within one polling cycle. This is an acceptable trade-off for Canvas-based rendering.
     const styles = getComputedStyle(document.documentElement);
     const pendingColor = styles.getPropertyValue('--muted').trim() || '#27272a';
 

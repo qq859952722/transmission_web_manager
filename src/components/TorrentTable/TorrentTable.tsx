@@ -26,17 +26,12 @@ import {
 } from '../../utils/format';
 import { t } from '../../utils/i18n';
 import { cn } from '../../lib/utils';
+import { hexToRgba } from '../../utils/canvas';
 import { openDeleteModal } from '../../store/modalStore';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { ChevronUp, ChevronDown, Play, Pause, Clock, CheckCircle2, RotateCw, AlertTriangle } from 'lucide-solid';
 
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 // Column IDs type
 type ColumnId =

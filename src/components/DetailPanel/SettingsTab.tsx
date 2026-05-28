@@ -1,4 +1,4 @@
-import { Component, Show, createSignal, createEffect, on } from 'solid-js';
+import { Component, Show, createSignal, createEffect, on, JSX } from 'solid-js';
 import { Torrent } from '../../types/transmission';
 import { rpcCall } from '../../api/rpc';
 import { fetchTorrents, selectedIds } from '../../store/torrentStore';
@@ -8,6 +8,50 @@ import { cn } from '../../lib/utils';
 import { Switch } from '../ui/switch';
 import { Select as UISelect } from '../ui/select';
 import { Save, FolderInput, Activity, Zap, Users, Download, Upload, Clock } from 'lucide-solid';
+
+interface SettingCardProps {
+  title: string;
+  icon: JSX.Element;
+  children?: JSX.Element;
+  class?: string;
+}
+
+const Card: Component<SettingCardProps> = (props) => (
+  <div class={cn("flex flex-col bg-secondary/30 backdrop-blur-md border border-border/60 rounded-md p-2 shadow-sm hover:shadow-md transition-all duration-300", props.class)}>
+    <div class="flex items-center gap-1.5 mb-1.5 border-b border-border/40 pb-1.5">
+      <div class="p-0.5 bg-primary/10 rounded-md text-primary">
+        {props.icon}
+      </div>
+      <h3 class="text-[11px] font-bold text-foreground m-0 tracking-wide">
+        {props.title}
+      </h3>
+    </div>
+    <div class="flex flex-col gap-1.5">{props.children}</div>
+  </div>
+);
+
+interface FormRowProps {
+  children?: JSX.Element;
+  class?: string;
+}
+
+const FormRow: Component<FormRowProps> = (props) => (
+  <div class={cn("flex items-center justify-between gap-1.5 text-[10px] text-muted-foreground", props.class)}>
+    {props.children}
+  </div>
+);
+
+type SettingInputProps = JSX.InputHTMLAttributes<HTMLInputElement>;
+
+const Input: Component<SettingInputProps> = (props) => (
+  <input
+    {...props}
+    class={cn(
+      "bg-background/80 border border-border rounded-md px-1 py-0 h-5 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed",
+      props.class
+    )}
+  />
+);
 
 export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }> = (props) => {
   const isMulti = () => props.torrents.length > 1;
@@ -23,6 +67,7 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
   const [seedIdleMode, setSeedIdleMode] = createSignal(0);
   const [seedIdleLimit, setSeedIdleLimit] = createSignal(30);
   const [peerLimit, setPeerLimit] = createSignal(50);
+  const [honorsSessionLimits, setHonorsSessionLimits] = createSignal(true);
   const [sequentialDownload, setSequentialDownload] = createSignal(false);
   const [sequentialFromPiece, setSequentialFromPiece] = createSignal(0);
   const [saving, setSaving] = createSignal(false);
@@ -42,6 +87,7 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
     setSeedIdleMode(torrent.seed_idle_mode || 0);
     setSeedIdleLimit(torrent.seed_idle_limit || 30);
     setPeerLimit(torrent.peer_limit || 50);
+    setHonorsSessionLimits(torrent.honors_session_limits !== false);
     setSequentialDownload(torrent.sequential_download || false);
     setSequentialFromPiece(torrent.sequential_download_from_piece || 0);
     setMovePath(torrent.download_dir || '');
@@ -62,6 +108,7 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
       bandwidth_priority: Number(bandwidthPriority()), seed_ratio_mode: Number(seedRatioMode()),
       seed_ratio_limit: Number(seedRatioLimit()), seed_idle_mode: Number(seedIdleMode()),
       seed_idle_limit: Number(seedIdleLimit()), peer_limit: Number(peerLimit()),
+      honors_session_limits: honorsSessionLimits(),
       sequential_download: sequentialDownload(), sequential_download_from_piece: Number(sequentialFromPiece()),
     };
     try {
@@ -90,36 +137,6 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
       setMoving(false);
     }
   };
-
-  const Card = (props: { title: string; icon: any; children: any; class?: string }) => (
-    <div class={cn("flex flex-col bg-secondary/30 backdrop-blur-md border border-border/60 rounded-md p-2 shadow-sm hover:shadow-md transition-all duration-300", props.class)}>
-      <div class="flex items-center gap-1.5 mb-1.5 border-b border-border/40 pb-1.5">
-        <div class="p-0.5 bg-primary/10 rounded-md text-primary">
-          {props.icon}
-        </div>
-        <h3 class="text-[11px] font-bold text-foreground m-0 tracking-wide">
-          {props.title}
-        </h3>
-      </div>
-      <div class="flex flex-col gap-1.5">{props.children}</div>
-    </div>
-  );
-
-  const FormRow = (props: { children: any; class?: string }) => (
-    <div class={cn("flex items-center justify-between gap-1.5 text-[10px] text-muted-foreground", props.class)}>
-      {props.children}
-    </div>
-  );
-
-  const Input = (props: any) => (
-    <input
-      {...props}
-      class={cn(
-        "bg-background/80 border border-border rounded-md px-1 py-0 h-5 text-[10px] font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed",
-        props.class
-      )}
-    />
-  );
 
   return (
     <div class="h-full pb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -184,6 +201,13 @@ export const SettingsTab: Component<{ torrents: Torrent[]; activeTab?: string }>
               <div class="flex flex-col gap-1">
                 <span class="font-medium text-foreground text-[10px]">{t('dialog.add.peer_limit')}:</span>
                 <Input type="number" class="w-full" value={peerLimit()} min="1" onInput={(e: any) => setPeerLimit(Number(e.currentTarget.value))} />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-1.5">
+                  <div class="scale-[0.8] origin-left -my-1"><Switch checked={honorsSessionLimits()} onCheckedChange={setHonorsSessionLimits} /></div>
+                  <span class="font-semibold text-foreground text-[10px]">{t('dialog.settings.group_honors_session')}</span>
+                </div>
               </div>
               
               <div class="flex flex-col gap-1">

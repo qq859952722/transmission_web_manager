@@ -1,8 +1,10 @@
-import { legacyRpcCall, isLegacyProtocol, detectProtocol } from './rpc-legacy';
+import { legacyRpcCall, isLegacyProtocol, detectProtocol, FIELD_MAP } from './rpc-legacy';
 import { getSessionId, setSessionId, setRpcVersion } from './rpc-session';
+import { t } from '../utils/i18n';
 
 const RPC_PATH = '/transmission/rpc';
 let protocolDetected = false;
+let detectionPromise: Promise<void> | null = null;
 let requestId = 0;
 const MAX_RETRY = 3;
 
@@ -12,8 +14,10 @@ export { getRpcVersion } from './rpc-session';
 /** Detect protocol on first call, then use appropriate RPC call */
 async function ensureProtocolDetected() {
   if (!protocolDetected) {
-    await detectProtocol();
-    protocolDetected = true;
+    if (!detectionPromise) {
+      detectionPromise = detectProtocol().then(() => { protocolDetected = true; });
+    }
+    await detectionPromise;
   }
 }
 
@@ -34,20 +38,28 @@ export async function rpcCall<T = any>(method: string, params?: Record<string, a
     id,
   };
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Transmission-Session-Id': getSessionId(),
+  };
+
+  // Support RPC authentication via environment variable or config
+  const rpcAuth = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_RPC_AUTH;
+  if (rpcAuth) {
+    headers['Authorization'] = `Basic ${btoa(rpcAuth)}`;
+  }
+
   const response = await fetch(RPC_PATH, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Transmission-Session-Id': getSessionId(),
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
   if (response.status === 409) {
     const newId = response.headers.get('X-Transmission-Session-Id') || '';
     setSessionId(newId);
-    if (!newId) throw new Error('Failed to get session ID');
-    if (retryCount >= MAX_RETRY) throw new Error('Max retry reached for session ID acquisition');
+    if (!newId) throw new Error(t('error.failed_session_id'));
+    if (retryCount >= MAX_RETRY) throw new Error(t('error.max_retry'));
     return rpcCall<T>(method, params, retryCount + 1);
   }
 
@@ -59,7 +71,7 @@ export async function rpcCall<T = any>(method: string, params?: Record<string, a
 
   // Handle JSON-RPC 2.0 error
   if (json.error) {
-    const errMsg = json.error.message || 'Unknown RPC error';
+    const errMsg = json.error.message || t('error.unknown_rpc');
     const errData = json.error.data?.error_string;
     throw new Error(errData ? `${errMsg}: ${errData}` : errMsg);
   }
@@ -90,7 +102,8 @@ export async function torrentGet(fields: string[], ids?: string | number[]): Pro
 
   // Check if table format (first row is array of strings = header)
   if (Array.isArray(tableData[0]) && typeof tableData[0][0] === 'string') {
-    const headers = tableData[0] as string[];
+    const rawHeaders = tableData[0] as string[];
+    const headers = rawHeaders.map(h => FIELD_MAP[h] ?? h);
     const torrents: Record<string, any>[] = [];
     for (let i = 1; i < tableData.length; i++) {
       const row = tableData[i];

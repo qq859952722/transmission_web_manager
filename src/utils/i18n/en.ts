@@ -68,6 +68,7 @@ export const en = {
       "trackers": "Trackers",
       "peers": "Peers",
       "pieces": "Pieces",
+      "webseeds": "Webseeds",
       "speed": "Speed",
       "settings": "Settings"
     },
@@ -131,6 +132,12 @@ export const en = {
       "moderate": "Moderate (2-3)",
       "rare": "Rare (1)",
       "no_copies": "No copies (0)"
+    },
+    "webseeds": {
+      "title": "Webseeds",
+      "active": "Active",
+      "empty": "No webseeds found",
+      "status": "Status"
     },
     "speed": {
       "download": "Download Speed",
@@ -369,7 +376,10 @@ export const en = {
       "optional": "Optional",
       "or": "OR",
       "mutual_exclusive_hint": "URL and file are mutually exclusive, URL selected",
-      "empty_source_hint": "Enter a magnet/torrent URL, or select a local .torrent file"
+      "empty_source_hint": "Enter a magnet/torrent URL, or select a local .torrent file",
+      "cookies": "Cookie",
+      "cookies_hint": "For torrent links requiring authentication (optional)",
+      "clear_all": "Clear All"
     },
     "delete": {
       "title": "Confirm Delete",
@@ -424,7 +434,10 @@ export const en = {
       "remove_success": "Tracker removed",
       "remove_failed": "Failed to remove tracker",
       "replace_success": "Tracker replaced successfully",
-      "replace_failed": "Failed to replace tracker"
+      "replace_failed": "Failed to replace tracker",
+      "replace_all": "Replace All",
+      "replace_label": "Enter new tracker list (one per line), will replace all existing trackers",
+      "replace_confirm": "This will replace all existing trackers. Continue?"
     },
     "trackers": {
       "enter_both": "Please enter both old and new URL",
@@ -510,6 +523,8 @@ export const en = {
       "lpd_hint": "Local Peer Discovery",
       "utp": "uTP",
       "utp_hint": "Micro Transport Protocol",
+      "tcp_enabled": "TCP",
+      "tcp_desc": "Enable TCP peer connections",
       "enc_required": "Required",
       "enc_preferred": "Preferred",
       "enc_tolerated": "Tolerated",
@@ -599,11 +614,16 @@ export const en = {
       "dl_limit_enabled_desc": "Enable global download limit",
       "ul_limit_enabled_desc": "Enable global upload limit",
       "alt_speed_time_desc": "Schedule when alternative limits are active",
+      "alt_speed_enabled": "Enable Alt Speed",
+      "alt_speed_enabled_desc": "Immediately enable alternative speed limits, overriding regular limits",
       "download_dir_desc": "Default directory for all downloaded files",
       "incomplete_enabled_desc": "Keep incomplete torrents in a separate directory",
       "start_added_desc": "Automatically start downloading new torrents",
       "rename_partial_desc": "Append '.part' to incomplete files",
-      "trash_torrent_desc": "Delete .torrent file after adding"
+      "trash_torrent_desc": "Delete .torrent file after adding",
+      "shutdown_daemon": "Shutdown Transmission Daemon",
+      "shutdown_confirm": "Are you sure you want to shutdown the Transmission daemon? This cannot be undone.",
+      "shutdown_success": "Shutdown command sent"
     },
     "about": {
       "title": "About",
@@ -645,6 +665,12 @@ export const en = {
     "downloading": "Downloading",
     "seed_wait": "Wait Seed",
     "seeding": "Seeding",
+    "ratio_default": "Default",
+    "ratio_unlimited": "Unlimited",
+    "ratio_custom": "Custom",
+    "idle_default": "Default",
+    "idle_unlimited": "Unlimited",
+    "idle_custom": "Custom",
     "torrents": "Torrents: {n}",
     "downloading_count": "DL: {n}",
     "seeding_count": "Seed: {n}",
@@ -703,6 +729,11 @@ export const en = {
     "sec": "s",
     "unknown": "Unknown",
     "line": "Line"
+  },
+  "error": {
+    "failed_session_id": "Failed to get session ID",
+    "max_retry": "Max retry reached for session ID acquisition",
+    "unknown_rpc": "Unknown RPC error"
   },
   "days": {
     "sun": "Sun",

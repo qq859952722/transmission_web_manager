@@ -1,4 +1,4 @@
-import { Component, Show, createSignal } from 'solid-js';
+import { Component, Show, createSignal, createEffect } from 'solid-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { closeDeleteModal, showDeleteModal } from '../../store/modalStore';
 import { removeTorrents, selectedIds } from '../../store/torrentStore';
@@ -9,6 +9,12 @@ import { Checkbox } from '../ui/checkbox';
 export const DeleteTorrentModal: Component = () => {
   const [deleteData, setDeleteData] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
+
+  createEffect(() => {
+    if (showDeleteModal()) {
+      setDeleteData(false);
+    }
+  });
 
   const count = () => selectedIds().length;
 

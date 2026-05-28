@@ -28,9 +28,16 @@ export class TrwmDatabase extends Dexie {
 
   constructor() {
     super('TrwmDatabase');
+    this.version(1).stores({
+      history: '++id, &hash_string, name, added_date, deleted_date',
+    });
     this.version(2).stores({
-      // Primary key is auto-increment id, we index hash_string and name for search
-      history: '++id, hash_string, name, added_date, deleted_date',
+      history: '++id, &hash_string, name, added_date, deleted_date',
+    }).upgrade(tx => {
+      return tx.table('history').toCollection().modify(record => {
+        if (record.avg_rate_download === undefined) record.avg_rate_download = 0;
+        if (record.avg_rate_upload === undefined) record.avg_rate_upload = 0;
+      });
     });
   }
 }

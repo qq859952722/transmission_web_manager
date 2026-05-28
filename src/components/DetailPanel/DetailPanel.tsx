@@ -9,6 +9,7 @@ import { PeersTab } from './PeersTab';
 import { PiecesTab } from './PiecesTab';
 import { SpeedTab } from './SpeedTab';
 import { SettingsTab } from './SettingsTab';
+import { WebseedsTab } from './WebseedsTab';
 import { cn } from '../../lib/utils';
 import { X, Search } from 'lucide-solid';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
@@ -39,6 +40,7 @@ export const DetailPanel: Component<{
     { id: 'trackers', label: t('detail.tabs.trackers'), singleOnly: true },
     { id: 'peers', label: t('detail.tabs.peers'), singleOnly: true },
     { id: 'pieces', label: t('detail.tabs.pieces'), singleOnly: true },
+    { id: 'webseeds', label: t('detail.tabs.webseeds'), singleOnly: true },
     { id: 'speed', label: t('detail.tabs.speed'), singleOnly: true },
     { id: 'settings', label: t('detail.tabs.settings') },
   ];
@@ -107,6 +109,11 @@ export const DetailPanel: Component<{
             <TabsContent value="pieces" class="m-0 h-full outline-none">
               <Show when={torrentCount() === 1}>
                 <PiecesTab torrent={singleTorrent()} />
+              </Show>
+            </TabsContent>
+            <TabsContent value="webseeds" class="m-0 h-full outline-none">
+              <Show when={torrentCount() === 1}>
+                <WebseedsTab torrent={singleTorrent()} />
               </Show>
             </TabsContent>
             <TabsContent value="speed" class="m-0 h-full outline-none">

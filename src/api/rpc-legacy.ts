@@ -11,6 +11,7 @@
  */
 
 import { getSessionId, setSessionId, setLegacyProtocol, isLegacyProtocol as isLegacy } from './rpc-session';
+import { t } from '../utils/i18n';
 
 const RPC_PATH = '/transmission/rpc';
 
@@ -34,6 +35,7 @@ export const LEGACY_METHOD_MAP: Record<string, string> = {
   torrent_add: 'torrent-add',
   session_stats: 'session-stats',
   session_close: 'session-close',
+  'session-close': 'session_close',
   port_test: 'port-test',
   blocklist_update: 'blocklist-update',
   free_space: 'free-space',
@@ -49,7 +51,7 @@ export const LEGACY_METHOD_MAP: Record<string, string> = {
 // Field name mapping (kebab-case / camelCase → snake_case)
 // ---------------------------------------------------------------------------
 
-const FIELD_MAP: Record<string, string> = {
+export const FIELD_MAP: Record<string, string> = {
   // Torrent fields
   hashString: 'hash_string',
   'hash-string': 'hash_string',
@@ -241,6 +243,8 @@ const FIELD_MAP: Record<string, string> = {
   'lpd-enabled': 'lpd_enabled',
   utpEnabled: 'utp_enabled',
   'utp-enabled': 'utp_enabled',
+  tcpEnabled: 'tcp_enabled',
+  'tcp-enabled': 'tcp_enabled',
   blocklistEnabled: 'blocklist_enabled',
   'blocklist-enabled': 'blocklist_enabled',
   blocklistUrl: 'blocklist_url',
@@ -379,6 +383,8 @@ const FIELD_MAP: Record<string, string> = {
   'max-connected-peers': 'max_connected_peers',
   metadataPercentComplete: 'metadata_percent_complete',
   'metadata-percent-complete': 'metadata_percent_complete',
+  percentComplete: 'percent_complete',
+  'percent-complete': 'percent_complete',
   desiredAvailable: 'desired_available',
   'desired-available': 'desired_available',
   haveValid: 'have_valid',
@@ -409,8 +415,7 @@ const FIELD_MAP: Record<string, string> = {
 
 const SNAKE_TO_CAMEL_MAP: Record<string, string> = {};
 for (const [legacyKey, snakeKey] of Object.entries(FIELD_MAP)) {
-  // Prefer the camelCase variant over the kebab-case variant
-  if (legacyKey.includes('-') && !legacyKey.match(/^[a-z]/)) continue; // skip kebab if camel exists
+  if (legacyKey.includes('-') && SNAKE_TO_CAMEL_MAP[snakeKey] && !SNAKE_TO_CAMEL_MAP[snakeKey].includes('-')) continue;
   if (!(snakeKey in SNAKE_TO_CAMEL_MAP) || !legacyKey.includes('-')) {
     SNAKE_TO_CAMEL_MAP[snakeKey] = legacyKey.includes('-')
       ? legacyKey.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
@@ -503,12 +508,20 @@ export async function legacyRpcCall<T = any>(
     arguments: legacyParams,
   };
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Transmission-Session-Id': getSessionId(),
+  };
+
+  // Support RPC authentication via environment variable or config
+  const rpcAuth = typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_RPC_AUTH;
+  if (rpcAuth) {
+    headers['Authorization'] = `Basic ${btoa(rpcAuth)}`;
+  }
+
   const response = await fetch(RPC_PATH, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Transmission-Session-Id': getSessionId(),
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
@@ -516,8 +529,8 @@ export async function legacyRpcCall<T = any>(
   if (response.status === 409) {
     const newId = response.headers.get('X-Transmission-Session-Id') || '';
     setSessionId(newId);
-    if (!newId) throw new Error('Failed to get session ID');
-    if (retryCount >= 3) throw new Error('Max retry reached for session ID acquisition');
+    if (!newId) throw new Error(t('error.failed_session_id'));
+    if (retryCount >= 3) throw new Error(t('error.max_retry'));
     return legacyRpcCall<T>(method, params, retryCount + 1);
   }
 

@@ -43,6 +43,7 @@
 
 @layer base {
   :root {
+    transition: background-color 0.3s ease, color 0.3s ease;
     --background: #f8fafc; /* slate-50 */
     --foreground: #0f172a; /* slate-900 */
 
@@ -104,10 +105,10 @@
   }
 
   [data-theme="dark"] {
-    --background: #020817;
+    --background: #0f172a;
     --foreground: #f8fafc;
 
-    --card: #0f172a; /* slate-900 */
+    --card: #1e293b; /* slate-800 */
     --card-foreground: #f8fafc;
 
     --popover: #0f172a;
@@ -125,7 +126,7 @@
     --accent: #1e293b;
     --accent-foreground: #f8fafc;
 
-    --destructive: #7f1d1d;
+    --destructive: #ef4444;
     --destructive-foreground: #f8fafc;
     
     --success: #10b981;
@@ -139,6 +140,26 @@
     --ring: #1d4ed8;
     
     /* Legacy Compatibility Mapping (Dark) */
+    --bg-primary: var(--background);
+    --bg-secondary: var(--secondary);
+    --bg-tertiary: var(--muted);
+    --bg-hover: var(--muted);
+    --text-primary: var(--foreground);
+    --text-secondary: var(--muted-foreground);
+    --text-tertiary: var(--muted-foreground);
+    --text-muted: var(--muted-foreground);
+    --text-on-primary: var(--primary-foreground);
+    --border-color: var(--border);
+    --color-primary-300: #60a5fa;
+    --color-primary-400: #3b82f6;
+    --color-primary-500: var(--primary);
+    --color-primary-600: #2563eb;
+    --color-primary-700: #1d4ed8;
+    --color-primary-800: #1e40af;
+    --color-success-500: var(--success);
+    --color-warning-500: var(--warning);
+    --color-danger-500: var(--destructive);
+    --color-danger-600: #dc2626;
     --color-overlay: rgba(0,0,0,0.7);
   }
 }
@@ -155,6 +176,10 @@
 }
 
 /* Scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;

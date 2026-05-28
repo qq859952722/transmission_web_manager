@@ -1,8 +1,21 @@
-import { Component, createSignal, createEffect } from 'solid-js';
+import { Component, createSignal, createEffect, JSX } from 'solid-js';
 import { Torrent } from '../../types/transmission';
 import { formatBytes, formatSpeed, formatRatio, getRatioClass } from '../../utils/format';
 import { t } from '../../utils/i18n';
 import { cn } from '../../lib/utils';
+
+interface StatCardProps {
+  label: string;
+  value: string;
+  valueClass?: string;
+}
+
+const StatCard: Component<StatCardProps> = (props) => (
+  <div class="flex flex-col gap-0.5 p-3 bg-secondary/50 border border-border rounded-xl shadow-sm text-center">
+    <span class="text-[10px] font-bold text-muted-foreground uppercase">{props.label}</span>
+    <span class={cn("font-mono font-bold text-foreground", props.valueClass)}>{props.value}</span>
+  </div>
+);
 
 export const SpeedTab: Component<{ torrent: Torrent }> = (props) => {
   let canvasRef: HTMLCanvasElement | undefined;
@@ -45,6 +58,10 @@ export const SpeedTab: Component<{ torrent: Torrent }> = (props) => {
 
     ctx.clearRect(0, 0, w, h);
 
+    // NOTE: Canvas colors are determined by reading data-theme at draw time. This is not
+    // reactively tracked, so a theme change won't immediately redraw the chart. However,
+    // since the data updates every 2s (polling), the chart will reflect the new theme
+    // within one polling cycle. This is an acceptable trade-off for Canvas-based rendering.
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const textColor = isDark ? '#a1a1aa' : '#52525b';
     const gridColor = isDark ? '#3f3f46' : '#e4e4e7';
@@ -108,13 +125,6 @@ export const SpeedTab: Component<{ torrent: Torrent }> = (props) => {
     drawLine(dl, downloadColor, 'rgba(59, 130, 246, 0.15)');
     drawLine(ul, uploadColor, 'rgba(34, 197, 94, 0.15)');
   });
-
-  const StatCard = (props: { label: string; value: string; valueClass?: string }) => (
-    <div class="flex flex-col gap-0.5 p-3 bg-secondary/50 border border-border rounded-xl shadow-sm text-center">
-      <span class="text-[10px] font-bold text-muted-foreground uppercase">{props.label}</span>
-      <span class={cn("font-mono font-bold text-foreground", props.valueClass)}>{props.value}</span>
-    </div>
-  );
 
   return (
     <div class="flex flex-col gap-4 h-full">

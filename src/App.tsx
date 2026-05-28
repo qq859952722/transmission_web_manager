@@ -1,5 +1,6 @@
 import { Component, createSignal, Show, onMount, onCleanup, lazy, ErrorBoundary } from 'solid-js';
 import { createPersistedSignal } from './utils/persist';
+import { UploadCloud } from 'lucide-solid';
 import { AppLayout } from './components/AppLayout';
 import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
@@ -31,7 +32,7 @@ import {
   clearSelection
 } from './store/torrentStore';
 import { 
-  openDeleteModal, openAddModal, setDroppedFile, openSettingsModal,
+  openDeleteModal, openAddModal, setDroppedFiles, openSettingsModal,
   showSettingsModal, showDeleteModal, showHistoryModal, showStatsModal, showAddModal
 } from './store/modalStore';
 import { t } from './utils/i18n';
@@ -44,6 +45,10 @@ const App: Component = () => {
 
   // Label dialog state
   const [showLabelDialog, setShowLabelDialog] = createSignal(false);
+
+  // Drag-and-drop visual feedback
+  const [dragOver, setDragOver] = createSignal(false);
+  let dragCounter = 0;
 
   // Prompt modal state
   type PromptCfg = {
@@ -65,7 +70,7 @@ const App: Component = () => {
   };
 
   onMount(() => {
-    geoip.init(() => {});
+    geoip.init((success) => { if (!success) console.warn('GeoIP initialization failed'); });
     startPolling(2000, () => detailOpen()); // Polling every 2s, full fields when detail open
 
     // Global keyboard shortcuts
@@ -101,6 +106,8 @@ const App: Component = () => {
     const handleDragEnter = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      dragCounter++;
+      setDragOver(true);
     };
 
     const handleDragOver = (e: DragEvent) => {
@@ -111,13 +118,17 @@ const App: Component = () => {
     const handleDragLeave = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      dragCounter--;
+      if (dragCounter === 0) setDragOver(false);
     };
 
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      dragCounter = 0;
+      setDragOver(false);
 
-      // Check if any modal is open to prevent drop zone conflicts
+      // Reject drop when any modal is open
       if (showSettingsModal() || showDeleteModal() || showHistoryModal() || showStatsModal() || showAddModal() || showLabelDialog() || promptConfig().open) {
         return;
       }
@@ -125,18 +136,17 @@ const App: Component = () => {
       const files = e.dataTransfer?.files;
       if (!files || files.length === 0) return;
 
-      let torrentFile: File | null = null;
+      const torrentFiles: File[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (file.name.endsWith('.torrent')) {
-          torrentFile = file;
-          break;
+        if (file.name.toLowerCase().endsWith('.torrent')) {
+          torrentFiles.push(file);
         }
       }
 
-      if (torrentFile) {
-        setDroppedFile(torrentFile);
-        openAddModal();
+      if (torrentFiles.length > 0) {
+        setDroppedFiles(torrentFiles);
+        if (!showAddModal()) openAddModal();
       } else {
         showToast(t('dialog.add.no_torrent_file'), 'warning');
       }
@@ -170,6 +180,15 @@ const App: Component = () => {
 
   return (
     <div class="flex flex-col h-screen w-screen overflow-hidden bg-background">
+      {/* Drag-and-drop visual overlay */}
+      <Show when={dragOver()}>
+        <div class="fixed inset-0 z-[9999] pointer-events-none bg-primary/10 border-4 border-dashed border-primary/40 flex items-center justify-center backdrop-blur-sm">
+          <div class="bg-primary text-primary-foreground px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl">
+            <UploadCloud size={32} class="inline-block mr-3 -mt-1" />
+            {t('dialog.add.title')}
+          </div>
+        </div>
+      </Show>
       <ErrorBoundary fallback={(err) => (
         <div class="flex items-center justify-center h-full">
           <div class="text-center p-8">
@@ -181,11 +200,8 @@ const App: Component = () => {
       )}>
       {/* App Skeleton Layout */}
       <AppLayout
-        sidebar={
-          <Show when={sidebarOpen()}>
-            <Sidebar />
-          </Show>
-        }
+        sidebarOpen={sidebarOpen()}
+        sidebar={<Sidebar />}
         toolbar={
           <Toolbar
             sidebarOpen={sidebarOpen()}

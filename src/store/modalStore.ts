@@ -24,5 +24,5 @@ export const openStatsModal = () => setShowStatsModal(true);
 export const closeStatsModal = () => setShowStatsModal(false);
 
 // Global drag and drop file state
-export const [droppedFile, setDroppedFile] = createSignal<File | null>(null);
+export const [droppedFiles, setDroppedFiles] = createSignal<File[]>([]);
 

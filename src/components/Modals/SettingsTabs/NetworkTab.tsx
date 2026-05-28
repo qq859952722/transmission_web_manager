@@ -2,7 +2,7 @@ import { Component, Show } from 'solid-js';
 import { t } from '../../../utils/i18n';
 import { SettingsSection, SettingsRow, SettingsInput, SettingsSwitch, SettingsSelect } from './SettingsUI';
 
-interface NetworkTabProps { peerPort: () => number; setPeerPort: (v: number) => void; peerPortRandomOnStart: () => boolean; setPeerPortRandomOnStart: (v: boolean) => void; portForwardingEnabled: () => boolean; setPortForwardingEnabled: (v: boolean) => void; dhtEnabled: () => boolean; setDhtEnabled: (v: boolean) => void; pexEnabled: () => boolean; setPexEnabled: (v: boolean) => void; lpdEnabled: () => boolean; setLpdEnabled: (v: boolean) => void; utpEnabled: () => boolean; setUtpEnabled: (v: boolean) => void; encryption: () => string; setEncryption: (v: string) => void; antiBruteForceEnabled: () => boolean; setAntiBruteForceEnabled: (v: boolean) => void; antiBruteForceThreshold: () => number; setAntiBruteForceThreshold: (v: number) => void; preferredTransports: () => string; setPreferredTransports: (v: string) => void; sequentialDownload: () => boolean; setSequentialDownload: (v: boolean) => void; }
+interface NetworkTabProps { peerPort: () => number; setPeerPort: (v: number) => void; peerPortRandomOnStart: () => boolean; setPeerPortRandomOnStart: (v: boolean) => void; portForwardingEnabled: () => boolean; setPortForwardingEnabled: (v: boolean) => void; dhtEnabled: () => boolean; setDhtEnabled: (v: boolean) => void; pexEnabled: () => boolean; setPexEnabled: (v: boolean) => void; lpdEnabled: () => boolean; setLpdEnabled: (v: boolean) => void; utpEnabled: () => boolean; setUtpEnabled: (v: boolean) => void; tcpEnabled: () => boolean; setTcpEnabled: (v: boolean) => void; encryption: () => string; setEncryption: (v: string) => void; antiBruteForceEnabled: () => boolean; setAntiBruteForceEnabled: (v: boolean) => void; antiBruteForceThreshold: () => number; setAntiBruteForceThreshold: (v: number) => void; preferredTransports: () => string; setPreferredTransports: (v: string) => void; sequentialDownload: () => boolean; setSequentialDownload: (v: boolean) => void; }
 
 export const NetworkTab: Component<NetworkTabProps> = (props) => {
   return (
@@ -29,8 +29,11 @@ export const NetworkTab: Component<NetworkTabProps> = (props) => {
         <SettingsRow label={t('dialog.settings.lpd')} desc={t('dialog.settings.lpd_desc')}>
           <SettingsSwitch checked={props.lpdEnabled()} onCheckedChange={props.setLpdEnabled} />
         </SettingsRow>
-        <SettingsRow label={t('dialog.settings.utp')} desc="Enable Micro Transport Protocol (uTP)">
+        <SettingsRow label={t('dialog.settings.utp')} desc={t('dialog.settings.utp_desc')}>
           <SettingsSwitch checked={props.utpEnabled()} onCheckedChange={props.setUtpEnabled} />
+        </SettingsRow>
+        <SettingsRow label={t('dialog.settings.tcp_enabled')} desc={t('dialog.settings.tcp_desc')}>
+          <SettingsSwitch checked={props.tcpEnabled()} onCheckedChange={props.setTcpEnabled} />
         </SettingsRow>
         
         <SettingsRow label={t('detail.peers.encryption')}>

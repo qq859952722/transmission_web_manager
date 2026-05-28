@@ -1,12 +1,22 @@
-import { Component, For, Show, createSignal } from 'solid-js';
+import { Component, For, Show, createSignal, JSX } from 'solid-js';
 import { Torrent, TrackerStat } from '../../types/transmission';
 import { formatTimestamp } from '../../utils/format';
 import { rpcCall } from '../../api/rpc';
 import { fetchTorrents } from '../../store/torrentStore';
 import { t } from '../../utils/i18n';
 import { cn } from '../../lib/utils';
-import { Server, Plus, Trash2, Info, Activity, Clock, BarChart3, Database } from 'lucide-solid';
+import { Server, Plus, Trash2, Info, Activity, Clock, BarChart3, Database, Replace, AlertTriangle } from 'lucide-solid';
 import { Checkbox } from '../ui/checkbox';
+
+interface StatusDotProps {
+  state: number;
+}
+
+const StatusDot: Component<StatusDotProps> = (props) => {
+  const colorClass = props.state === 3 ? "bg-success" : props.state === 1 || props.state === 2 ? "bg-warning" : "bg-muted-foreground";
+  const pulseClass = props.state === 3 ? "animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "";
+  return <div class={cn("w-2 h-2 rounded-full", colorClass, pulseClass)} />;
+};
 
 function announceStateText(state: number): string {
   switch (state) {
@@ -40,9 +50,28 @@ import { createResizableColumns } from '../../hooks/createResizableColumns';
 export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
   const [showAddForm, setShowAddForm] = createSignal(false);
   const [newTrackerUrls, setNewTrackerUrls] = createSignal('');
+  const [showReplaceForm, setShowReplaceForm] = createSignal(false);
+  const [replaceTrackerUrls, setReplaceTrackerUrls] = createSignal('');
   const [updating, setUpdating] = createSignal(false);
   const [selectedTrackerIds, setSelectedTrackerIds] = createSignal<number[]>([]);
   const [detailTracker, setDetailTracker] = createSignal<TrackerStat | null>(null);
+  const [showConfirmReplace, setShowConfirmReplace] = createSignal(false);
+
+  /** Build tracker_list string from tracker_stats: one URL per line, blank line between tiers */
+  const buildTrackerList = (stats: TrackerStat[]): string => {
+    if (stats.length === 0) return '';
+    const sorted = [...stats].sort((a, b) => a.tier - b.tier || a.id - b.id);
+    const tiers: string[][] = [];
+    let currentTier = -1;
+    for (const s of sorted) {
+      if (s.tier !== currentTier) {
+        tiers.push([]);
+        currentTier = s.tier;
+      }
+      tiers[tiers.length - 1].push(s.announce);
+    }
+    return tiers.map((tier) => tier.join('\n')).join('\n\n');
+  };
 
   const { widths: colWidths, handleMouseDown } = createResizableColumns('trwm-trackers-widths', [
     { id: 'select', width: 36 },
@@ -61,7 +90,10 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
     if (urls.length === 0) return;
     setUpdating(true);
     try {
-      await rpcCall('torrent_set', { ids: [props.torrent.id], tracker_add: urls });
+      const existingStats = props.torrent.tracker_stats ?? [];
+      const existingList = buildTrackerList(existingStats);
+      const newList = existingList ? existingList + '\n\n' + urls.join('\n') : urls.join('\n');
+      await rpcCall('torrent_set', { ids: [props.torrent.id], tracker_list: newList });
       setNewTrackerUrls('');
       setShowAddForm(false);
       await fetchTorrents(true);
@@ -77,8 +109,29 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
     if (ids.length === 0) return;
     setUpdating(true);
     try {
-      await rpcCall('torrent_set', { ids: [props.torrent.id], tracker_remove: ids });
+      const existingStats = props.torrent.tracker_stats ?? [];
+      const remainingStats = existingStats.filter((s) => !ids.includes(s.id));
+      const newList = buildTrackerList(remainingStats);
+      await rpcCall('torrent_set', { ids: [props.torrent.id], tracker_list: newList });
       setSelectedTrackerIds([]);
+      await fetchTorrents(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleReplaceTrackers = async () => {
+    const newUrls = replaceTrackerUrls().split('\n').map((u) => u.trim()).filter((u) => u.length > 0);
+    if (newUrls.length === 0) return;
+    setUpdating(true);
+    try {
+      const newList = newUrls.join('\n');
+      await rpcCall('torrent_set', { ids: [props.torrent.id], tracker_list: newList });
+      setReplaceTrackerUrls('');
+      setShowReplaceForm(false);
+      setShowConfirmReplace(false);
       await fetchTorrents(true);
     } catch (e) {
       console.error(e);
@@ -92,27 +145,11 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
     setSelectedTrackerIds(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
   };
 
-  const StatusDot = (props: { state: number }) => {
-    const colorClass = props.state === 3 ? "bg-success" : props.state === 1 || props.state === 2 ? "bg-warning" : "bg-muted-foreground";
-    const pulseClass = props.state === 3 ? "animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "";
-    return <div class={cn("w-2 h-2 rounded-full", colorClass, pulseClass)} />;
-  };
-
   return (
     <div class="flex flex-col h-full gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div class="flex flex-col sm:flex-row gap-3">
         <Show
           when={showAddForm()}
-          fallback={
-            <div class="flex gap-2">
-              <button class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={updating()} onClick={() => setShowAddForm(true)}>
-                <Plus size={16} /> {t('dialog.tracker.add_title')}
-              </button>
-              <button class="flex items-center gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive font-semibold px-4 py-1.5 rounded-lg border border-destructive/20 transition-colors text-sm disabled:opacity-50" disabled={updating() || selectedTrackerIds().length === 0} onClick={handleRemoveTrackers}>
-                <Trash2 size={16} /> {t('context.remove_tracker')}
-              </button>
-            </div>
-          }
         >
           <div class="flex flex-col gap-2.5 bg-secondary/50 border border-border rounded-xl p-3 w-full backdrop-blur-md shadow-sm">
             <textarea rows="3" class="bg-background border border-border rounded-lg p-2 text-sm outline-none focus:border-primary w-full resize-y font-mono" placeholder={t('dialog.tracker.add_label')} value={newTrackerUrls()} onInput={(e) => setNewTrackerUrls(e.currentTarget.value)} disabled={updating()} />
@@ -121,6 +158,33 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
               <button class="bg-muted hover:bg-muted/80 text-foreground font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm" onClick={() => setShowAddForm(false)} disabled={updating()}>{t('dialog.cancel')}</button>
               <button class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-1.5 rounded-lg transition-colors text-sm" onClick={handleAddTrackers} disabled={updating()}>{t('dialog.ok')}</button>
             </div>
+          </div>
+        </Show>
+        <Show
+          when={showReplaceForm()}
+        >
+          <div class="flex flex-col gap-2.5 bg-secondary/50 border border-border rounded-xl p-3 w-full backdrop-blur-md shadow-sm">
+            <textarea rows="3" class="bg-background border border-border rounded-lg p-2 text-sm outline-none focus:border-primary w-full resize-y font-mono" placeholder={t('dialog.tracker.replace_label')} value={replaceTrackerUrls()} onInput={(e) => setReplaceTrackerUrls(e.currentTarget.value)} disabled={updating()} />
+            <div class="text-xs text-muted-foreground">{t('dialog.tracker.hint')}</div>
+            <div class="flex gap-2 justify-end">
+              <button class="bg-muted hover:bg-muted/80 text-foreground font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm" onClick={() => setShowReplaceForm(false)} disabled={updating()}>{t('dialog.cancel')}</button>
+              <button class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-1.5 rounded-lg transition-colors text-sm" onClick={() => setShowConfirmReplace(true)} disabled={updating()}>{t('dialog.ok')}</button>
+            </div>
+          </div>
+        </Show>
+        <Show
+          when={!showAddForm() && !showReplaceForm()}
+        >
+          <div class="flex gap-2">
+            <button class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={updating()} onClick={() => setShowAddForm(true)}>
+              <Plus size={16} /> {t('dialog.tracker.add_title')}
+            </button>
+            <button class="flex items-center gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive font-semibold px-4 py-1.5 rounded-lg border border-destructive/20 transition-colors text-sm disabled:opacity-50" disabled={updating() || selectedTrackerIds().length === 0} onClick={handleRemoveTrackers}>
+              <Trash2 size={16} /> {t('context.remove_tracker')}
+            </button>
+            <button class="flex items-center gap-2 bg-secondary hover:bg-secondary/80 text-foreground font-semibold px-4 py-1.5 rounded-lg border border-border transition-colors text-sm disabled:opacity-50" disabled={updating()} onClick={() => setShowReplaceForm(true)}>
+              <Replace size={16} /> {t('dialog.tracker.replace_all')}
+            </button>
           </div>
         </Show>
       </div>
@@ -285,6 +349,25 @@ export const TrackersTab: Component<{ torrent: Torrent }> = (props) => {
             </div>
           </div>
         )}
+      </Show>
+
+      {/* Replace trackers confirmation dialog */}
+      <Show when={showConfirmReplace()}>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowConfirmReplace(false)}>
+          <div class="bg-popover/90 backdrop-blur-xl border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-border/50 bg-secondary/50">
+              <AlertTriangle size={20} class="text-warning" />
+              <span class="text-base font-bold text-foreground">{t('dialog.tracker.replace_title')}</span>
+            </div>
+            <div class="px-6 py-4 text-sm text-muted-foreground">
+              {t('dialog.tracker.replace_confirm')}
+            </div>
+            <div class="flex gap-2 justify-end px-6 py-3 border-t border-border/50 bg-secondary/30">
+              <button class="bg-muted hover:bg-muted/80 text-foreground font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm" onClick={() => setShowConfirmReplace(false)}>{t('dialog.cancel')}</button>
+              <button class="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold px-6 py-1.5 rounded-lg transition-colors text-sm" onClick={handleReplaceTrackers} disabled={updating()}>{t('dialog.ok')}</button>
+            </div>
+          </div>
+        </div>
       </Show>
     </div>
   );

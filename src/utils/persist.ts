@@ -5,7 +5,8 @@ import { createSignal, createEffect } from 'solid-js';
  * On init, reads from localStorage; on change, writes back.
  */
 export function createPersistedSignal<T>(key: string, defaultValue: T) {
-  const stored = localStorage.getItem(key);
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(key); } catch { stored = null; }
   let initial = defaultValue;
   if (stored !== null) {
     try {
@@ -18,7 +19,7 @@ export function createPersistedSignal<T>(key: string, defaultValue: T) {
   const [value, setValue] = createSignal<T>(initial);
 
   createEffect(() => {
-    localStorage.setItem(key, JSON.stringify(value()));
+    try { localStorage.setItem(key, JSON.stringify(value())); } catch { /* ignore */ }
   });
 
   return [value, setValue] as const;

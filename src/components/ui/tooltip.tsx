@@ -33,7 +33,7 @@ export const Tooltip: Component<{
 }> = (props) => {
   return (
     <TooltipRoot openDelay={300} closeDelay={150} placement={props.placement || "top"} disabled={props.disabled || !props.text}>
-      <TooltipTrigger as="div" class="contents">
+      <TooltipTrigger as="div" class="inline-flex">
         {props.children}
       </TooltipTrigger>
       <TooltipContent class={props.class}>

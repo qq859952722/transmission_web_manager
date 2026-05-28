@@ -1,8 +1,9 @@
-import { Component, JSX, createSignal, onCleanup } from 'solid-js';
+import { Component, JSX, Show, createSignal, onCleanup } from 'solid-js';
 import { cn } from '../lib/utils';
 
 interface AppLayoutProps {
   sidebar: JSX.Element;
+  sidebarOpen: boolean;
   toolbar: JSX.Element;
   main: JSX.Element;
   bottomPanel?: JSX.Element;
@@ -33,7 +34,7 @@ export const AppLayout: Component<AppLayoutProps> = (props) => {
     const startHeight = panelHeight();
 
     const handleMouseMove = (ev: MouseEvent) => {
-      // Dragging down = panel grows (startY - ev.clientY is negative when moving down)
+      // Dragging up = panel grows (delta = startY - ev.clientY is positive when moving up)
       const delta = startY - ev.clientY;
       const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startHeight + delta));
       setPanelHeight(newHeight);
@@ -60,9 +61,11 @@ export const AppLayout: Component<AppLayoutProps> = (props) => {
 
   return (
     <div class="flex h-screen w-screen overflow-hidden">
-      <aside class="flex flex-col shrink-0 w-[var(--sidebar-width,240px)] bg-secondary/20 border-r border-border/50">
-        {props.sidebar}
-      </aside>
+      <Show when={props.sidebarOpen}>
+        <aside class="flex flex-col shrink-0 w-60 bg-secondary/20 border-r border-border/50">
+          {props.sidebar}
+        </aside>
+      </Show>
       <div class="flex flex-1 flex-col min-w-0">
         <header class="flex shrink-0 items-center h-12 bg-background border-b border-border/50 px-4">
           {props.toolbar}

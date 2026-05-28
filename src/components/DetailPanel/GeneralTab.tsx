@@ -1,4 +1,4 @@
-import { Component, Show, createMemo } from 'solid-js';
+import { Component, Show, createMemo, JSX } from 'solid-js';
 import { Torrent } from '../../types/transmission';
 import {
   formatBytes,
@@ -13,6 +13,34 @@ import {
   getStatusTextColorClass
 } from '../../utils/format';
 import { t } from '../../utils/i18n';
+
+interface SectionProps {
+  title: string;
+  children?: JSX.Element;
+}
+
+const Section: Component<SectionProps> = (props) => (
+  <div class="flex flex-col gap-1.5 bg-secondary/50 border border-border p-2.5 rounded-xl shadow-sm">
+    <h3 class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/50 pb-1.5 mb-0.5 m-0">
+      {props.title}
+    </h3>
+    <div class="flex flex-col gap-0">{props.children}</div>
+  </div>
+);
+
+interface InfoGroupProps {
+  label: string;
+  value: any;
+  class?: string;
+  valueClass?: string;
+}
+
+const InfoGroup: Component<InfoGroupProps> = (props) => (
+  <div class={`flex justify-between items-start text-xs gap-2 py-0.5 ${props.class || ''}`}>
+    <span class="text-muted-foreground font-medium shrink-0">{props.label}:</span>
+    <span class={`text-foreground text-right break-all ${props.valueClass || ''}`}>{props.value}</span>
+  </div>
+);
 
 export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
   const isMulti = () => props.torrents.length > 1;
@@ -42,22 +70,6 @@ export const GeneralTab: Component<{ torrents: Torrent[] }> = (props) => {
       peers_connected,
     };
   });
-
-  const Section = (props: { title: string; children: any }) => (
-    <div class="flex flex-col gap-1.5 bg-secondary/50 border border-border p-2.5 rounded-xl shadow-sm">
-      <h3 class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/50 pb-1.5 mb-0.5 m-0">
-        {props.title}
-      </h3>
-      <div class="flex flex-col gap-0">{props.children}</div>
-    </div>
-  );
-
-  const InfoGroup = (props: { label: string; value: any; class?: string; valueClass?: string }) => (
-    <div class={`flex justify-between items-start text-xs gap-2 py-0.5 ${props.class || ''}`}>
-      <span class="text-muted-foreground font-medium shrink-0">{props.label}:</span>
-      <span class={`text-foreground text-right break-all ${props.valueClass || ''}`}>{props.value}</span>
-    </div>
-  );
 
   return (
     <div class="flex flex-col gap-4 h-full">

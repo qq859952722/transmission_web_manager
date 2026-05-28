@@ -1,4 +1,4 @@
-import { Component, Show, createSignal, createEffect, For } from 'solid-js';
+import { Component, Show, createSignal, createEffect, on, For } from 'solid-js';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { closeSettingsModal, showSettingsModal } from '../../store/modalStore';
 import { useSession } from '../../api/queries';
@@ -57,6 +57,7 @@ export const GlobalConfigModal: Component = () => {
   const [speedLimitUp, setSpeedLimitUp] = createSignal(100);
   const [altSpeedDown, setAltSpeedDown] = createSignal(50);
   const [altSpeedUp, setAltSpeedUp] = createSignal(50);
+  const [altSpeedEnabled, setAltSpeedEnabled] = createSignal(false);
   const [altSpeedTimeEnabled, setAltSpeedTimeEnabled] = createSignal(false);
   const [altSpeedTimeBegin, setAltSpeedTimeBegin] = createSignal('09:00');
   const [altSpeedTimeEnd, setAltSpeedTimeEnd] = createSignal('17:00');
@@ -79,6 +80,7 @@ export const GlobalConfigModal: Component = () => {
   const [pexEnabled, setPexEnabled] = createSignal(true);
   const [lpdEnabled, setLpdEnabled] = createSignal(false);
   const [utpEnabled, setUtpEnabled] = createSignal(true);
+  const [tcpEnabled, setTcpEnabled] = createSignal(true);
   const [encryption, setEncryption] = createSignal('preferred');
   const [antiBruteForceEnabled, setAntiBruteForceEnabled] = createSignal(false);
   const [antiBruteForceThreshold, setAntiBruteForceThreshold] = createSignal(10);
@@ -141,12 +143,13 @@ export const GlobalConfigModal: Component = () => {
     }
   };
 
-  createEffect(() => {
+  createEffect(on(showSettingsModal, (isOpen, prevIsOpen) => {
+    if (!(isOpen && !prevIsOpen)) return;
     const s = session.data;
     if (!s) return;
     setDownloadDir(s.download_dir || ''); setIncompleteDirEnabled(s.incomplete_dir_enabled || false); setIncompleteDir(s.incomplete_dir || ''); setStartAddedTorrents(s.start_added_torrents ?? true); setRenamePartialFiles(s.rename_partial_files ?? true); setTrashOriginalTorrentFiles(s.trash_original_torrent_files || false);
-    setSpeedLimitDownEnabled(s.speed_limit_down_enabled || false); setSpeedLimitDown(s.speed_limit_down || 100); setSpeedLimitUpEnabled(s.speed_limit_up_enabled || false); setSpeedLimitUp(s.speed_limit_up || 100); setAltSpeedDown(s.alt_speed_down || 50); setAltSpeedUp(s.alt_speed_up || 50); setAltSpeedTimeEnabled(s.alt_speed_time_enabled || false); setAltSpeedTimeBegin(minutesToTime(s.alt_speed_time_begin || 540)); setAltSpeedTimeEnd(minutesToTime(s.alt_speed_time_end || 1020)); setAltSpeedTimeDay(s.alt_speed_time_day ?? 127);
-    setPeerPort(s.peer_port || 51413); setPeerPortRandomOnStart(s.peer_port_random_on_start || false); setPortForwardingEnabled(s.port_forwarding_enabled || false); setDhtEnabled(s.dht_enabled ?? true); setPexEnabled(s.pex_enabled ?? true); setLpdEnabled(s.lpd_enabled || false); setUtpEnabled(s.utp_enabled ?? true); setEncryption(s.encryption || 'preferred'); setAntiBruteForceEnabled(s.anti_brute_force_enabled || false); setAntiBruteForceThreshold(s.anti_brute_force_threshold || 10); setPreferredTransports(Array.isArray(s.preferred_transports) ? s.preferred_transports.join(',') : (s.preferred_transports || 'utp,tcp')); setSequentialDownload(s.sequential_download || false);
+    setSpeedLimitDownEnabled(s.speed_limit_down_enabled || false); setSpeedLimitDown(s.speed_limit_down || 100); setSpeedLimitUpEnabled(s.speed_limit_up_enabled || false); setSpeedLimitUp(s.speed_limit_up || 100); setAltSpeedEnabled(s.alt_speed_enabled || false); setAltSpeedDown(s.alt_speed_down || 50); setAltSpeedUp(s.alt_speed_up || 50); setAltSpeedTimeEnabled(s.alt_speed_time_enabled || false); setAltSpeedTimeBegin(minutesToTime(s.alt_speed_time_begin || 540)); setAltSpeedTimeEnd(minutesToTime(s.alt_speed_time_end || 1020)); setAltSpeedTimeDay(s.alt_speed_time_day ?? 127);
+    setPeerPort(s.peer_port || 51413); setPeerPortRandomOnStart(s.peer_port_random_on_start || false); setPortForwardingEnabled(s.port_forwarding_enabled || false); setDhtEnabled(s.dht_enabled ?? true); setPexEnabled(s.pex_enabled ?? true); setLpdEnabled(s.lpd_enabled || false); setUtpEnabled(s.utp_enabled ?? true); setTcpEnabled(s.tcp_enabled ?? true); setEncryption(s.encryption || 'preferred'); setAntiBruteForceEnabled(s.anti_brute_force_enabled || false); setAntiBruteForceThreshold(s.anti_brute_force_threshold || 10); setPreferredTransports(Array.isArray(s.preferred_transports) ? s.preferred_transports.join(',') : (s.preferred_transports || 'utp,tcp')); setSequentialDownload(s.sequential_download || false);
     setPeerLimitGlobal(s.peer_limit_global || 200); setPeerLimitPerTorrent(s.peer_limit_per_torrent || 50);
     setSeedRatioLimited(s.seed_ratio_limited || false); setSeedRatioLimit(s.seed_ratio_limit || 2.0); setIdleSeedingLimitEnabled(s.idle_seeding_limit_enabled || false); setIdleSeedingLimit(s.idle_seeding_limit || 30);
     setDownloadQueueSize(s.download_queue_size || 5); setDownloadQueueEnabled(s.download_queue_enabled ?? true); setSeedQueueSize(s.seed_queue_size || 5); setSeedQueueEnabled(s.seed_queue_enabled ?? true); setQueueStalledEnabled(s.queue_stalled_enabled || false); setQueueStalledMinutes(s.queue_stalled_minutes || 30);
@@ -154,31 +157,26 @@ export const GlobalConfigModal: Component = () => {
     setRpcVersion(s.rpc_version || 0); setRpcVersionSemver(s.rpc_version_semver || ''); setRpcVersionMinimum(s.rpc_version_minimum || 0); setSessionId(s.session_id || '');
     setScriptTorrentAddedEnabled(s.script_torrent_added_enabled || false); setScriptTorrentAddedFilename(s.script_torrent_added_filename || ''); setScriptTorrentDoneEnabled(s.script_torrent_done_enabled || false); setScriptTorrentDoneFilename(s.script_torrent_done_filename || ''); setScriptTorrentDoneSeedingEnabled(s.script_torrent_done_seeding_enabled || false); setScriptTorrentDoneSeedingFilename(s.script_torrent_done_seeding_filename || '');
     setCacheSizeMb(s.cache_size_mb || 4); setCacheSizeMib(s.cache_size_mib || s.cache_size_mb || 4); setDefaultTrackers(s.default_trackers || '');
-  });
-
-  createEffect(() => {
-    if (showSettingsModal()) {
-      if (activeTab() === 'groups') loadBandwidthGroups();
-      if (activeTab() === 'labels') {
-        const list = JSON.parse(localStorage.getItem('trwm-label-library') || '[]');
-        setSavedLabels(list);
-        const tLabels = new Set<string>();
-        for (const t of Object.values(torrentStore.items)) if (t.labels) for (const lbl of t.labels) tLabels.add(lbl);
-        setTorrentLabels([...tLabels].sort());
-      }
+    if (activeTab() === 'groups') loadBandwidthGroups();
+    if (activeTab() === 'labels') {
+      const list = JSON.parse(localStorage.getItem('trwm-label-library') || '[]');
+      setSavedLabels(list);
+      const tLabels = new Set<string>();
+      for (const t of Object.values(torrentStore.items)) if (t.labels) for (const lbl of t.labels) tLabels.add(lbl);
+      setTorrentLabels([...tLabels].sort());
     }
-  });
+  }));
 
   const handleSave = async (e: Event) => {
     e.preventDefault();
     setSaving(true);
     const args: Record<string, any> = {
       download_dir: downloadDir(), incomplete_dir_enabled: incompleteDirEnabled(), incomplete_dir: incompleteDir(), start_added_torrents: startAddedTorrents(), rename_partial_files: renamePartialFiles(), trash_original_torrent_files: trashOriginalTorrentFiles(),
-      speed_limit_down_enabled: speedLimitDownEnabled(), speed_limit_down: Number(speedLimitDown()), speed_limit_up_enabled: speedLimitUpEnabled(), speed_limit_up: Number(speedLimitUp()), alt_speed_enabled: session.data?.alt_speed_enabled ?? false, alt_speed_down: Number(altSpeedDown()), alt_speed_up: Number(altSpeedUp()), alt_speed_time_enabled: altSpeedTimeEnabled(), alt_speed_time_begin: timeToMinutes(altSpeedTimeBegin()), alt_speed_time_end: timeToMinutes(altSpeedTimeEnd()), alt_speed_time_day: Number(altSpeedTimeDay()),
-      peer_port: Number(peerPort()), peer_port_random_on_start: peerPortRandomOnStart(), port_forwarding_enabled: portForwardingEnabled(), dht_enabled: dhtEnabled(), pex_enabled: pexEnabled(), lpd_enabled: lpdEnabled(), utp_enabled: utpEnabled(), encryption: encryption(), anti_brute_force_enabled: antiBruteForceEnabled(), anti_brute_force_threshold: Number(antiBruteForceThreshold()), preferred_transports: preferredTransports().split(','), sequential_download: sequentialDownload(),
+      speed_limit_down_enabled: speedLimitDownEnabled(), speed_limit_down: Number(speedLimitDown()), speed_limit_up_enabled: speedLimitUpEnabled(), speed_limit_up: Number(speedLimitUp()), alt_speed_enabled: altSpeedEnabled(), alt_speed_down: Number(altSpeedDown()), alt_speed_up: Number(altSpeedUp()), alt_speed_time_enabled: altSpeedTimeEnabled(), alt_speed_time_begin: timeToMinutes(altSpeedTimeBegin()), alt_speed_time_end: timeToMinutes(altSpeedTimeEnd()), alt_speed_time_day: Number(altSpeedTimeDay()),
+      peer_port: Number(peerPort()), peer_port_random_on_start: peerPortRandomOnStart(), port_forwarding_enabled: portForwardingEnabled(), dht_enabled: dhtEnabled(), pex_enabled: pexEnabled(), lpd_enabled: lpdEnabled(), utp_enabled: utpEnabled(), tcp_enabled: tcpEnabled(), encryption: encryption(), anti_brute_force_enabled: antiBruteForceEnabled(), anti_brute_force_threshold: Number(antiBruteForceThreshold()), preferred_transports: preferredTransports().split(','), sequential_download: sequentialDownload(),
       peer_limit_global: Number(peerLimitGlobal()), peer_limit_per_torrent: Number(peerLimitPerTorrent()),
       seed_ratio_limited: seedRatioLimited(), seed_ratio_limit: Number(seedRatioLimit()), idle_seeding_limit_enabled: idleSeedingLimitEnabled(), idle_seeding_limit: Number(idleSeedingLimit()),
-      download_queue_size: Number(downloadQueueSize()), download_queue_enabled: downloadQueueEnabled(), seed_queue_size: Number(seedQueueSize()), seed_queue_enabled: seedQueueEnabled(), queue_stalled_enabled: queueStalledEnabled(), queueStalled_minutes: Number(queueStalledMinutes()),
+      download_queue_size: Number(downloadQueueSize()), download_queue_enabled: downloadQueueEnabled(), seed_queue_size: Number(seedQueueSize()), seed_queue_enabled: seedQueueEnabled(), queue_stalled_enabled: queueStalledEnabled(), queue_stalled_minutes: Number(queueStalledMinutes()),
       blocklist_enabled: blocklistEnabled(), blocklist_url: blocklistUrl(),
       ip_protocol: ipProtocol(),
       script_torrent_added_enabled: scriptTorrentAddedEnabled(), script_torrent_added_filename: scriptTorrentAddedFilename(), script_torrent_done_enabled: scriptTorrentDoneEnabled(), script_torrent_done_filename: scriptTorrentDoneFilename(), script_torrent_done_seeding_enabled: scriptTorrentDoneSeedingEnabled(), script_torrent_done_seeding_filename: scriptTorrentDoneSeedingFilename(),
@@ -272,7 +270,7 @@ export const GlobalConfigModal: Component = () => {
           <form class="flex flex-col h-full" onSubmit={handleSave}>
             <div class="flex items-center justify-between px-6 py-4 border-b border-border/50 backdrop-blur-sm">
               <h3 class="text-lg font-bold text-foreground flex items-center gap-2">
-                {tabs.find(t => t.id === activeTab())?.label}
+                {tabs.find(tab => tab.id === activeTab())?.label}
               </h3>
               <div class="flex items-center gap-3">
                 <button type="button" class="px-4 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all" onClick={closeSettingsModal} disabled={saving()}>
@@ -289,9 +287,9 @@ export const GlobalConfigModal: Component = () => {
             <div class="flex-1 overflow-y-auto p-6 relative">
               <div class="max-w-3xl mx-auto pb-10">
                 <Show when={activeTab() === 'download'}><DownloadTab downloadDir={downloadDir} setDownloadDir={setDownloadDir} incompleteDirEnabled={incompleteDirEnabled} setIncompleteDirEnabled={setIncompleteDirEnabled} incompleteDir={incompleteDir} setIncompleteDir={setIncompleteDir} startAddedTorrents={startAddedTorrents} setStartAddedTorrents={setStartAddedTorrents} renamePartialFiles={renamePartialFiles} setRenamePartialFiles={setRenamePartialFiles} trashOriginalTorrentFiles={trashOriginalTorrentFiles} setTrashOriginalTorrentFiles={setTrashOriginalTorrentFiles} /></Show>
-                <Show when={activeTab() === 'speed'}><SpeedTab speedLimitDownEnabled={speedLimitDownEnabled} setSpeedLimitDownEnabled={setSpeedLimitDownEnabled} speedLimitDown={speedLimitDown} setSpeedLimitDown={setSpeedLimitDown} speedLimitUpEnabled={speedLimitUpEnabled} setSpeedLimitUpEnabled={setSpeedLimitUpEnabled} speedLimitUp={speedLimitUp} setSpeedLimitUp={setSpeedLimitUp} altSpeedDown={altSpeedDown} setAltSpeedDown={setAltSpeedDown} altSpeedUp={altSpeedUp} setAltSpeedUp={setAltSpeedUp} altSpeedTimeEnabled={altSpeedTimeEnabled} setAltSpeedTimeEnabled={setAltSpeedTimeEnabled} altSpeedTimeBegin={altSpeedTimeBegin} setAltSpeedTimeBegin={setAltSpeedTimeBegin} altSpeedTimeEnd={altSpeedTimeEnd} setAltSpeedTimeEnd={setAltSpeedTimeEnd} altSpeedTimeDay={altSpeedTimeDay} setAltSpeedTimeDay={setAltSpeedTimeDay} /></Show>
+                <Show when={activeTab() === 'speed'}><SpeedTab speedLimitDownEnabled={speedLimitDownEnabled} setSpeedLimitDownEnabled={setSpeedLimitDownEnabled} speedLimitDown={speedLimitDown} setSpeedLimitDown={setSpeedLimitDown} speedLimitUpEnabled={speedLimitUpEnabled} setSpeedLimitUpEnabled={setSpeedLimitUpEnabled} speedLimitUp={speedLimitUp} setSpeedLimitUp={setSpeedLimitUp} altSpeedEnabled={altSpeedEnabled} setAltSpeedEnabled={setAltSpeedEnabled} altSpeedDown={altSpeedDown} setAltSpeedDown={setAltSpeedDown} altSpeedUp={altSpeedUp} setAltSpeedUp={setAltSpeedUp} altSpeedTimeEnabled={altSpeedTimeEnabled} setAltSpeedTimeEnabled={setAltSpeedTimeEnabled} altSpeedTimeBegin={altSpeedTimeBegin} setAltSpeedTimeBegin={setAltSpeedTimeBegin} altSpeedTimeEnd={altSpeedTimeEnd} setAltSpeedTimeEnd={setAltSpeedTimeEnd} altSpeedTimeDay={altSpeedTimeDay} setAltSpeedTimeDay={setAltSpeedTimeDay} /></Show>
                 <Show when={activeTab() === 'groups'}><GroupsTab bandwidthGroups={bandwidthGroups} loadingGroups={loadingGroups} editingGroup={editingGroup} setEditingGroup={setEditingGroup} groupName={groupName} setGroupName={setGroupName} groupDlEnabled={groupDlEnabled} setGroupDlEnabled={setGroupDlEnabled} groupDlLimit={groupDlLimit} setGroupDlLimit={setGroupDlLimit} groupUlEnabled={groupUlEnabled} setGroupUlEnabled={setGroupUlEnabled} groupUlLimit={groupUlLimit} setGroupUlLimit={setGroupUlLimit} groupHonors={groupHonors} setGroupHonors={setGroupHonors} onCreateGroup={handleCreateGroup} onSaveGroup={handleSaveGroup} onDeleteGroup={handleDeleteGroup} /></Show>
-                <Show when={activeTab() === 'network'}><NetworkTab peerPort={peerPort} setPeerPort={setPeerPort} peerPortRandomOnStart={peerPortRandomOnStart} setPeerPortRandomOnStart={setPeerPortRandomOnStart} portForwardingEnabled={portForwardingEnabled} setPortForwardingEnabled={setPortForwardingEnabled} dhtEnabled={dhtEnabled} setDhtEnabled={setDhtEnabled} pexEnabled={pexEnabled} setPexEnabled={setPexEnabled} lpdEnabled={lpdEnabled} setLpdEnabled={setLpdEnabled} utpEnabled={utpEnabled} setUtpEnabled={setUtpEnabled} encryption={encryption} setEncryption={setEncryption} antiBruteForceEnabled={antiBruteForceEnabled} setAntiBruteForceEnabled={setAntiBruteForceEnabled} antiBruteForceThreshold={antiBruteForceThreshold} setAntiBruteForceThreshold={setAntiBruteForceThreshold} preferredTransports={preferredTransports} setPreferredTransports={setPreferredTransports} sequentialDownload={sequentialDownload} setSequentialDownload={setSequentialDownload} /></Show>
+                <Show when={activeTab() === 'network'}><NetworkTab peerPort={peerPort} setPeerPort={setPeerPort} peerPortRandomOnStart={peerPortRandomOnStart} setPeerPortRandomOnStart={setPeerPortRandomOnStart} portForwardingEnabled={portForwardingEnabled} setPortForwardingEnabled={setPortForwardingEnabled} dhtEnabled={dhtEnabled} setDhtEnabled={setDhtEnabled} pexEnabled={pexEnabled} setPexEnabled={setPexEnabled} lpdEnabled={lpdEnabled} setLpdEnabled={setLpdEnabled} utpEnabled={utpEnabled} setUtpEnabled={setUtpEnabled} tcpEnabled={tcpEnabled} setTcpEnabled={setTcpEnabled} encryption={encryption} setEncryption={setEncryption} antiBruteForceEnabled={antiBruteForceEnabled} setAntiBruteForceEnabled={setAntiBruteForceEnabled} antiBruteForceThreshold={antiBruteForceThreshold} setAntiBruteForceThreshold={setAntiBruteForceThreshold} preferredTransports={preferredTransports} setPreferredTransports={setPreferredTransports} sequentialDownload={sequentialDownload} setSequentialDownload={setSequentialDownload} /></Show>
                 <Show when={activeTab() === 'peer'}><PeerTab peerLimitGlobal={peerLimitGlobal} setPeerLimitGlobal={setPeerLimitGlobal} peerLimitPerTorrent={peerLimitPerTorrent} setPeerLimitPerTorrent={setPeerLimitPerTorrent} /></Show>
                 <Show when={activeTab() === 'seeding'}><SeedingTab seedRatioLimited={seedRatioLimited} setSeedRatioLimited={setSeedRatioLimited} seedRatioLimit={seedRatioLimit} setSeedRatioLimit={setSeedRatioLimit} idleSeedingLimitEnabled={idleSeedingLimitEnabled} setIdleSeedingLimitEnabled={setIdleSeedingLimitEnabled} idleSeedingLimit={idleSeedingLimit} setIdleSeedingLimit={setIdleSeedingLimit} /></Show>
                 <Show when={activeTab() === 'queue'}><QueueTab downloadQueueSize={downloadQueueSize} setDownloadQueueSize={setDownloadQueueSize} downloadQueueEnabled={downloadQueueEnabled} setDownloadQueueEnabled={setDownloadQueueEnabled} seedQueueSize={seedQueueSize} setSeedQueueSize={setSeedQueueSize} seedQueueEnabled={seedQueueEnabled} setSeedQueueEnabled={setSeedQueueEnabled} queueStalledEnabled={queueStalledEnabled} setQueueStalledEnabled={setQueueStalledEnabled} queueStalledMinutes={queueStalledMinutes} setQueueStalledMinutes={setQueueStalledMinutes} /></Show>

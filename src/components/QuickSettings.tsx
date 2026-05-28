@@ -13,7 +13,6 @@ import { cn } from '../lib/utils';
 interface QuickSettingsProps {
   open: boolean;
   onClose: () => void;
-  anchorEl?: HTMLElement;
 }
 
 export const QuickSettings: Component<QuickSettingsProps> = (props) => {

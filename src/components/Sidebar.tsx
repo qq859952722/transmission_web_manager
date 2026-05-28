@@ -1,4 +1,4 @@
-import { type Component, For, Show, createSignal } from 'solid-js';
+import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import {
   Folder,
   ArrowDown,
@@ -38,7 +38,10 @@ export const Sidebar: Component = () => {
   const [showLabels, setShowLabels] = createSignal(true);
   const [showPrivacy, setShowPrivacy] = createSignal(true);
 
-  const applyFilter = (type: 'status' | 'tracker' | 'dir' | 'label' | 'privacy', value: any) => {
+  type FilterType = 'status' | 'tracker' | 'dir' | 'label' | 'privacy';
+  type FilterValue = string;
+
+  const applyFilter = (type: FilterType, value: FilterValue) => {
     setStatusFilter('all');
     setTrackerFilter(null);
     setDirFilter(null);
@@ -50,19 +53,19 @@ export const Sidebar: Component = () => {
     else if (type === 'tracker') setTrackerFilter(value);
     else if (type === 'dir') setDirFilter(value);
     else if (type === 'label') setLabelFilter(value);
-    else if (type === 'privacy') setPrivacyFilter(value);
+    else if (type === 'privacy') setPrivacyFilter(value as 'public' | 'private');
   };
 
-  const statusItems: { id: string; name: string; icon: Component<{ size?: number; class?: string }>; iconClass?: string; activeBgClass?: string; activeTextClass?: string; activeBorderClass?: string }[] = [
+  const statusItems = createMemo(() => [
     { id: 'all', name: t('sidebar.status_all'), icon: Folder },
-    { id: 'downloading', name: t('sidebar.status_downloading'), icon: ArrowDown, iconClass: 'text-blue-500', activeBgClass: 'bg-blue-500/10', activeTextClass: 'text-blue-500', activeBorderClass: 'border-l-blue-500' },
-    { id: 'seeding', name: t('sidebar.status_seeding'), icon: ArrowUp, iconClass: 'text-green-500', activeBgClass: 'bg-green-500/10', activeTextClass: 'text-green-500', activeBorderClass: 'border-l-green-500' },
+    { id: 'downloading', name: t('sidebar.status_downloading'), icon: ArrowDown, iconClass: 'text-blue-500', activeBgClass: 'bg-blue-500/10', activeBadgeBgClass: 'bg-blue-500', activeTextClass: 'text-blue-500', activeBorderClass: 'border-l-blue-500' },
+    { id: 'seeding', name: t('sidebar.status_seeding'), icon: ArrowUp, iconClass: 'text-green-500', activeBgClass: 'bg-green-500/10', activeBadgeBgClass: 'bg-green-500', activeTextClass: 'text-green-500', activeBorderClass: 'border-l-green-500' },
     { id: 'stopped', name: t('sidebar.status_stopped'), icon: Pause, iconClass: 'text-muted-foreground/80' },
-    { id: 'checking', name: t('sidebar.status_checking'), icon: ShieldCheck, iconClass: 'text-amber-500', activeBgClass: 'bg-amber-500/10', activeTextClass: 'text-amber-500', activeBorderClass: 'border-l-amber-500' },
-    { id: 'active', name: t('sidebar.status_active'), icon: Circle, iconClass: 'text-purple-500', activeBgClass: 'bg-purple-500/10', activeTextClass: 'text-purple-500', activeBorderClass: 'border-l-purple-500' },
-    { id: 'error', name: t('sidebar.status_error'), icon: CircleX, iconClass: 'text-red-500', activeBgClass: 'bg-red-500/10', activeTextClass: 'text-red-500', activeBorderClass: 'border-l-red-500' },
-    { id: 'queued', name: t('sidebar.status_queued'), icon: List, iconClass: 'text-amber-500', activeBgClass: 'bg-amber-500/10', activeTextClass: 'text-amber-500', activeBorderClass: 'border-l-amber-500' },
-  ];
+    { id: 'checking', name: t('sidebar.status_checking'), icon: ShieldCheck, iconClass: 'text-amber-500', activeBgClass: 'bg-amber-500/10', activeBadgeBgClass: 'bg-amber-500', activeTextClass: 'text-amber-500', activeBorderClass: 'border-l-amber-500' },
+    { id: 'active', name: t('sidebar.status_active'), icon: Circle, iconClass: 'text-purple-500', activeBgClass: 'bg-purple-500/10', activeBadgeBgClass: 'bg-purple-500', activeTextClass: 'text-purple-500', activeBorderClass: 'border-l-purple-500' },
+    { id: 'error', name: t('sidebar.status_error'), icon: CircleX, iconClass: 'text-red-500', activeBgClass: 'bg-red-500/10', activeBadgeBgClass: 'bg-red-500', activeTextClass: 'text-red-500', activeBorderClass: 'border-l-red-500' },
+    { id: 'queued', name: t('sidebar.status_queued'), icon: List, iconClass: 'text-amber-500', activeBgClass: 'bg-amber-500/10', activeBadgeBgClass: 'bg-amber-500', activeTextClass: 'text-amber-500', activeBorderClass: 'border-l-amber-500' },
+  ]);
 
   const ItemIcon = (props: { icon: Component<any>; class?: string }) => {
     const IconComp = props.icon;
@@ -82,7 +85,7 @@ export const Sidebar: Component = () => {
         {/* Status Filters */}
         <div class="flex flex-col gap-px">
           <div class="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest px-2 py-1">{t('sidebar.status')}</div>
-          <For each={statusItems}>
+          <For each={statusItems()}>
             {(item) => {
               const count = () => {
                 const c = sidebarCounts();
@@ -109,7 +112,7 @@ export const Sidebar: Component = () => {
                   <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{item.name}</span>
                   <span classList={{
                     "tabular-nums text-[10px] leading-none px-1.5 py-0.5 rounded-full font-semibold min-w-[20px] text-center transition-colors": true,
-                    [`${item.activeBgClass ? item.activeBgClass.replace('/10', '') : 'bg-primary'} text-white dark:text-black`]: isActive(),
+                    [`${item.activeBadgeBgClass || 'bg-primary'} text-white dark:text-black`]: isActive(),
                     "bg-muted text-muted-foreground group-hover:text-foreground": !isActive()
                   }}>{count()}</span>
                 </div>

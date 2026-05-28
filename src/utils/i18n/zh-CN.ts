@@ -68,6 +68,7 @@ export const zhCN = {
       "trackers": "Tracker",
       "peers": "Peer",
       "pieces": "分片",
+      "webseeds": "Webseeds",
       "speed": "速度",
       "settings": "设置"
     },
@@ -130,7 +131,13 @@ export const zhCN = {
       "plentiful": "充足(>3)",
       "moderate": "中等(2-3)",
       "rare": "稀缺(1)",
-      "no_copies": "无副本(0)"
+      "no_copies": "无副本 (0)"
+    },
+    "webseeds": {
+      "title": "Webseeds",
+      "active": "活动",
+      "empty": "未找到 Webseeds",
+      "status": "状态"
     },
     "speed": {
       "download": "下载速度",
@@ -369,7 +376,10 @@ export const zhCN = {
       "optional": "选填",
       "or": "或",
       "mutual_exclusive_hint": "URL 和文件只能选择其一，已选择 URL",
-      "empty_source_hint": "请输入磁力链接/种子 URL，或选择本地 .torrent 文件"
+      "empty_source_hint": "请输入磁力链接/种子 URL，或选择本地 .torrent 文件",
+      "cookies": "Cookie",
+      "cookies_hint": "用于需要认证的种子链接（可选）",
+      "clear_all": "清空全部"
     },
     "delete": {
       "title": "确认删除",
@@ -424,7 +434,10 @@ export const zhCN = {
       "remove_success": "Tracker 已移除",
       "remove_failed": "Tracker 移除失败",
       "replace_success": "Tracker 替换成功",
-      "replace_failed": "Tracker 替换失败"
+      "replace_failed": "Tracker 替换失败",
+      "replace_all": "批量替换",
+      "replace_label": "输入新的 Tracker 列表（每行一个），将替换所有现有 Tracker",
+      "replace_confirm": "此操作将替换所有现有 Tracker，确定继续？"
     },
     "trackers": {
       "enter_both": "请输入旧 URL 和新 URL",
@@ -510,6 +523,8 @@ export const zhCN = {
       "lpd_hint": "本地节点发现 (Local Peer Discovery)",
       "utp": "uTP",
       "utp_hint": "微传输协议 (Micro Transport Protocol)",
+      "tcp_enabled": "TCP",
+      "tcp_desc": "启用 TCP 对等连接",
       "enc_required": "强制加密",
       "enc_preferred": "首选加密",
       "enc_tolerated": "允许明文",
@@ -599,11 +614,16 @@ export const zhCN = {
       "dl_limit_enabled_desc": "启用全局下载限速",
       "ul_limit_enabled_desc": "启用全局上传限速",
       "alt_speed_time_desc": "计划启用备用速度限制的时间",
+      "alt_speed_enabled": "启用备用限速",
+      "alt_speed_enabled_desc": "立即启用备用速度限制，覆盖常规限速设置",
       "download_dir_desc": "所有下载文件的默认目录",
       "incomplete_enabled_desc": "将未完成的种子保存在单独目录",
       "start_added_desc": "添加后自动开始下载",
       "rename_partial_desc": "未完成文件添加 .part 后缀",
-      "trash_torrent_desc": "添加后删除 .torrent 文件"
+      "trash_torrent_desc": "添加后删除 .torrent 文件",
+      "shutdown_daemon": "关闭 Transmission 守护进程",
+      "shutdown_confirm": "确定要关闭 Transmission 守护进程吗？此操作不可撤销。",
+      "shutdown_success": "已发送关闭指令"
     },
     "about": {
       "title": "关于",
@@ -646,6 +666,12 @@ export const zhCN = {
     "downloading": "下载中",
     "seed_wait": "等待做种",
     "seeding": "做种中",
+    "ratio_default": "默认",
+    "ratio_unlimited": "无限",
+    "ratio_custom": "自定义",
+    "idle_default": "默认",
+    "idle_unlimited": "无限",
+    "idle_custom": "自定义",
     "torrents": "种子: {n}",
     "downloading_count": "下载: {n}",
     "seeding_count": "做种: {n}",
@@ -703,6 +729,11 @@ export const zhCN = {
     "sec": "秒",
     "unknown": "未知",
     "line": "第"
+  },
+  "error": {
+    "failed_session_id": "获取会话 ID 失败",
+    "max_retry": "获取会话 ID 重试次数已达上限",
+    "unknown_rpc": "未知 RPC 错误"
   },
   "days": {
     "sun": "周日",

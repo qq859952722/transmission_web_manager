@@ -1,12 +1,17 @@
 import { createQuery } from '@tanstack/solid-query';
 import { rpcCall } from './rpc';
 import { Session, SessionStats, BandwidthGroup } from '../types/transmission';
+import { setUnitBase } from '../utils/format';
 
 export function useSession() {
   return createQuery(() => ({
     queryKey: ['session'],
     queryFn: async () => {
       const data = await rpcCall<Session>('session_get');
+      // Update unit base when session provides units.size_bytes (e.g. 1000 for decimal)
+      if (data.units?.size_bytes) {
+        setUnitBase(data.units.size_bytes);
+      }
       return data;
     },
     refetchInterval: 30000, // Poll session every 30s

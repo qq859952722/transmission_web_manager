@@ -8,6 +8,7 @@ import {
 import { t } from '../utils/i18n';
 import { showToast } from '../utils/toast';
 import { cn } from '../lib/utils';
+import { fallbackCopy } from '../utils/clipboard';
 import {
   selectedIds, torrentStore, startTorrents, startNowTorrents, pauseTorrents,
   reannounceTorrents, verifyTorrents, moveQueueUp, moveQueueDown, moveQueueTop,
@@ -22,6 +23,23 @@ interface ContextMenuProps {
   onPrompt: (cfg: { title: string; inputType?: 'text' | 'number'; placeholder?: string; defaultValue?: string; onConfirm: (value: string) => void }) => void;
 }
 
+interface ContextMenuItemProps {
+  class?: string;
+  onClick?: (e: MouseEvent) => void;
+  children?: JSX.Element;
+}
+
+const Item: Component<ContextMenuItemProps> = (props) => (
+  <KContextMenu.Item
+    class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed", props.class)}
+    onClick={props.onClick}
+  >
+    {props.children}
+  </KContextMenu.Item>
+);
+
+const Divider: Component = () => <KContextMenu.Separator class="h-px bg-border my-1 mx-1" />;
+
 export const ContextMenu: Component<ContextMenuProps> = (props) => {
   const copyToClipboard = (text: string) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -29,17 +47,6 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     } else {
       fallbackCopy(text);
     }
-  };
-
-  const fallbackCopy = (text: string) => {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch {}
-    document.body.removeChild(ta);
   };
 
   const copyHash = () => {
@@ -56,7 +63,9 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     const magnets = selectedIds()
       .map((id) => {
         const torrent = torrentStore.items[id];
-        return torrent ? `magnet:?xt=urn:btih:${torrent.hash_string}&dn=${encodeURIComponent(torrent.name)}` : '';
+        if (!torrent) return '';
+        if (torrent.magnet_link) return torrent.magnet_link;
+        return `magnet:?xt=urn:btih:${torrent.hash_string}&dn=${encodeURIComponent(torrent.name)}`;
       })
       .filter(Boolean) as string[];
     if (magnets.length > 0) {
@@ -165,29 +174,9 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
     }
   };
 
-  const handleRemoveWithData = async () => {
-    await removeTorrents(selectedIds(), true);
+  const handleRemoveWithData = () => {
+    openDeleteModal();
   };
-
-  const Item = (props: any) => (
-    <KContextMenu.Item
-      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed", props.class)}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </KContextMenu.Item>
-  );
-
-  const SubItem = (props: any) => (
-    <KContextMenu.Item
-      class={cn("flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm cursor-pointer text-xs font-medium transition-colors hover:bg-muted text-foreground outline-none focus:bg-muted data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed", props.class)}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </KContextMenu.Item>
-  );
-
-  const Divider = () => <KContextMenu.Separator class="h-px bg-border my-1 mx-1" />;
 
   return (
     <KContextMenu>
@@ -263,18 +252,18 @@ export const ContextMenu: Component<ContextMenuProps> = (props) => {
             </KContextMenu.SubTrigger>
             <KContextMenu.Portal>
               <KContextMenu.SubContent class="z-[99999] bg-popover/90 backdrop-blur-xl border border-border rounded-lg shadow-xl py-1 min-w-[160px] animate-in fade-in slide-in-from-left-1 duration-150 outline-none p-1">
-                <SubItem onClick={() => setBandwidthPriority(1)}>
+                <Item onClick={() => setBandwidthPriority(1)}>
                   <ChevronUp size={14} class="text-success" />
                   <span>{t('context.priority_high')}</span>
-                </SubItem>
-                <SubItem onClick={() => setBandwidthPriority(0)}>
+                </Item>
+                <Item onClick={() => setBandwidthPriority(0)}>
                   <Circle size={10} class="text-muted-foreground ml-0.5 mr-[2px]" />
                   <span>{t('context.priority_normal')}</span>
-                </SubItem>
-                <SubItem onClick={() => setBandwidthPriority(-1)}>
+                </Item>
+                <Item onClick={() => setBandwidthPriority(-1)}>
                   <ChevronDown size={14} class="text-danger" />
                   <span>{t('context.priority_low')}</span>
-                </SubItem>
+                </Item>
               </KContextMenu.SubContent>
             </KContextMenu.Portal>
           </KContextMenu.Sub>

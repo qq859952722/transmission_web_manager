@@ -1,20 +1,37 @@
 import { Component, createSignal, createEffect, Show, For } from 'solid-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
-import { closeAddModal, showAddModal, droppedFile, setDroppedFile } from '../../store/modalStore';
+import { closeAddModal, showAddModal, droppedFiles, setDroppedFiles } from '../../store/modalStore';
 import { rpcCall } from '../../api/rpc';
 import { fetchTorrents, torrentList } from '../../store/torrentStore';
 import { useGroups, useSession } from '../../api/queries';
 import { t } from '../../utils/i18n';
 import { showToast } from '../../utils/toast';
 import { cn } from '../../lib/utils';
-import { UploadCloud, Link as LinkIcon, HardDrive, Settings2, ShieldCheck } from 'lucide-solid';
+import { UploadCloud, Link as LinkIcon, HardDrive, Settings2, ShieldCheck, X, Trash2 } from 'lucide-solid';
 import { Select } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        resolve(result.substring(result.indexOf(',') + 1));
+      } else {
+        reject(new Error('Failed to read file'));
+      }
+    };
+    reader.onerror = () => reject(new Error('FileReader error'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export const AddTorrentModal: Component = () => {
   const [urls, setUrls] = createSignal('');
-  const [fileBase64, setFileBase64] = createSignal<string | null>(null);
-  const [fileName, setFileName] = createSignal<string>('');
+  const [fileBase64List, setFileBase64List] = createSignal<string[]>([]);
+  const [fileNames, setFileNames] = createSignal<string[]>([]);
+  const [modalDragOver, setModalDragOver] = createSignal(false);
   const [downloadDir, setDownloadDir] = createSignal('');
   const [paused, setPaused] = createSignal(false);
   const [sequential, setSequential] = createSignal(false);
@@ -24,6 +41,7 @@ export const AddTorrentModal: Component = () => {
   const [downloadLimit, setDownloadLimit] = createSignal('');
   const [uploadLimit, setUploadLimit] = createSignal('');
   const [group, setGroup] = createSignal('');
+  const [cookies, setCookies] = createSignal('');
   const [adding, setAdding] = createSignal(false);
 
   const groupsData = useGroups();
@@ -49,17 +67,19 @@ export const AddTorrentModal: Component = () => {
     if (showAddModal() && session.data?.download_dir && !downloadDir()) {
       setDownloadDir(session.data.download_dir);
     }
-    const file = droppedFile();
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        const base64 = result.substring(result.indexOf(',') + 1);
-        setFileBase64(base64);
-      };
-      reader.readAsDataURL(file);
-      setDroppedFile(null);
+    const files = droppedFiles();
+    if (files.length > 0) {
+      const newNames: string[] = [];
+      const readPromises: Promise<string>[] = [];
+      for (const file of files) {
+        newNames.push(file.name);
+        readPromises.push(readFileAsBase64(file));
+      }
+      setFileNames(prev => [...prev, ...newNames]);
+      Promise.all(readPromises).then(base64Arr => {
+        setFileBase64List(prev => [...prev, ...base64Arr]);
+        setDroppedFiles([]);
+      });
     }
   });
 
@@ -67,17 +87,31 @@ export const AddTorrentModal: Component = () => {
 
   const handleFileChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (!file) return;
+    const files = target.files;
+    if (!files || files.length === 0) return;
 
-    setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      const base64 = result.substring(result.indexOf(',') + 1);
-      setFileBase64(base64);
-    };
-    reader.readAsDataURL(file);
+    const newNames: string[] = [];
+    const readPromises: Promise<string>[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      newNames.push(file.name);
+      readPromises.push(readFileAsBase64(file));
+    }
+    setFileNames(prev => [...prev, ...newNames]);
+    Promise.all(readPromises).then(base64Arr => {
+      setFileBase64List(prev => [...prev, ...base64Arr]);
+    });
+    target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFileNames(prev => prev.filter((_, i) => i !== index));
+    setFileBase64List(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearFiles = () => {
+    setFileNames([]);
+    setFileBase64List([]);
   };
 
   const toggleLabel = (l: string) => {
@@ -91,7 +125,7 @@ export const AddTorrentModal: Component = () => {
 
   const handleAdd = async (e: Event) => {
     e.preventDefault();
-    if (!urls().trim() && !fileBase64()) {
+    if (!urls().trim() && fileBase64List().length === 0) {
       showToast(t('dialog.add.empty_warn'), 'warning');
       return;
     }
@@ -111,6 +145,7 @@ export const AddTorrentModal: Component = () => {
       const pLimit = parseInt(peerLimit(), 10);
       if (!isNaN(pLimit) && pLimit > 0) commonArgs['peer_limit'] = pLimit;
       if (group().trim()) commonArgs.group = group().trim();
+      if (cookies().trim()) commonArgs['cookies'] = cookies().trim();
 
       const dlLimit = parseInt(downloadLimit(), 10);
       const ulLimit = parseInt(uploadLimit(), 10);
@@ -118,18 +153,28 @@ export const AddTorrentModal: Component = () => {
 
       if (urls().trim()) {
         const list = urls().split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        for (const url of list) {
-          const res = await rpcCall<any>('torrent_add', { ...commonArgs, filename: url });
-          const id = res.torrent_added?.id || res.torrent_duplicate?.id;
-          if (id) addedIds.push(id);
-        }
+        const results = await Promise.all(list.map(url =>
+          rpcCall<any>('torrent_add', { ...commonArgs, filename: url }).catch(err => {
+            console.error('Failed to add:', url, err);
+            return null;
+          })
+        ));
+        const urlAddedIds = results
+          .filter(r => r && (r.torrent_added?.id || r.torrent_duplicate?.id))
+          .map(r => r.torrent_added?.id || r.torrent_duplicate?.id);
+        addedIds.push(...urlAddedIds);
       }
 
-      if (fileBase64()) {
-        const res = await rpcCall<any>('torrent_add', { ...commonArgs, metainfo: fileBase64() });
-        const id = res.torrent_added?.id || res.torrent_duplicate?.id;
-        if (id) addedIds.push(id);
-      }
+      const fileResults = await Promise.all(fileBase64List().map(base64 =>
+        rpcCall<any>('torrent_add', { ...commonArgs, metainfo: base64 }).catch(err => {
+          console.error('Failed to add torrent file:', err);
+          return null;
+        })
+      ));
+      const fileAddedIds = fileResults
+        .filter(r => r && (r.torrent_added?.id || r.torrent_duplicate?.id))
+        .map(r => r.torrent_added?.id || r.torrent_duplicate?.id);
+      addedIds.push(...fileAddedIds);
 
       if (addedIds.length > 0) {
         const setArgs: Record<string, any> = {};
@@ -141,7 +186,7 @@ export const AddTorrentModal: Component = () => {
 
       showToast(t('dialog.add.add_success'), 'success');
       closeAddModal();
-      setUrls(''); setFileBase64(null); setFileName(''); setDownloadDir(session.data?.download_dir || '');
+      setUrls(''); setFileBase64List([]); setFileNames([]); setDownloadDir(session.data?.download_dir || '');
       setPaused(false); setSequential(false); setPriority(0); setLabels('');
       setPeerLimit(''); setDownloadLimit(''); setUploadLimit(''); setGroup('');
       await fetchTorrents(true);
@@ -168,7 +213,7 @@ export const AddTorrentModal: Component = () => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleAdd} class="flex flex-col flex-1 overflow-y-auto max-h-[75vh] p-4 gap-4">
+        <form id="add-torrent-form" onSubmit={handleAdd} class="flex flex-col flex-1 overflow-y-auto max-h-[75vh] p-4 gap-4">
           
           {/* SOURCE SECTION */}
           <div class="space-y-3">
@@ -185,7 +230,7 @@ export const AddTorrentModal: Component = () => {
                 placeholder={t('dialog.add.url_placeholder')}
                 value={urls()}
                 onInput={(e) => setUrls(e.currentTarget.value)}
-                disabled={adding() || !!fileBase64()}
+                disabled={adding() || fileBase64List().length > 0}
                 class={cn(inputClass, "resize-y min-h-[60px] h-auto py-1.5")}
               />
             </div>
@@ -200,20 +245,90 @@ export const AddTorrentModal: Component = () => {
               <label class="block text-xs font-semibold text-muted-foreground">
                 {t('dialog.add.file_label')}
               </label>
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef?.click()}
-                  disabled={adding() || !!urls().trim()}
-                  class="flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-semibold bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/50 px-3 py-1.5 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-primary/20 disabled:opacity-50"
-                >
-                  <HardDrive size={14} />
-                  {fileName() ? t('mobile.select_file') : t('dialog.add.file_label')}
-                </button>
-                <div class="flex-1 truncate rounded-md bg-muted/40 border border-dashed border-border/80 px-2.5 py-1.5 text-xs font-mono text-muted-foreground">
-                  {fileName() || t('dialog.add.url_placeholder')}
+              <div
+                class={cn(
+                  "relative flex flex-col gap-3 rounded-lg border-2 border-dashed p-4 transition-all",
+                  modalDragOver()
+                    ? "border-primary bg-primary/5"
+                    : "border-border/60 hover:border-primary/40"
+                )}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setModalDragOver(true); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setModalDragOver(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setModalDragOver(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setModalDragOver(false);
+                  const files = e.dataTransfer?.files;
+                  if (!files || files.length === 0) return;
+                  const newNames: string[] = [];
+                  const readPromises: Promise<string>[] = [];
+                  for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.name.toLowerCase().endsWith('.torrent')) {
+                      newNames.push(file.name);
+                      readPromises.push(readFileAsBase64(file));
+                    }
+                  }
+                  if (newNames.length > 0) {
+                    setFileNames(prev => [...prev, ...newNames]);
+                    Promise.all(readPromises).then(base64Arr => {
+                      setFileBase64List(prev => [...prev, ...base64Arr]);
+                    });
+                  }
+                }}
+              >
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef?.click()}
+                    disabled={adding() || !!urls().trim()}
+                    class="flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs font-semibold bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/50 px-3 py-1.5 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-primary/20 disabled:opacity-50"
+                  >
+                    <HardDrive size={14} />
+                    {fileNames().length > 0 ? t('mobile.select_file') : t('dialog.add.file_label')}
+                  </button>
+                  <Show when={fileNames().length === 0}>
+                    <div class="flex-1 truncate rounded-md bg-muted/40 border border-dashed border-border/80 px-2.5 py-1.5 text-xs font-mono text-muted-foreground">
+                      {t('dialog.add.url_placeholder')}
+                    </div>
+                  </Show>
+                  <Show when={fileNames().length > 0}>
+                    <button
+                      type="button"
+                      onClick={clearFiles}
+                      class="flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-xs font-semibold bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 px-3 py-1.5 transition-all"
+                    >
+                      <Trash2 size={14} />
+                      {t('dialog.add.clear_all')}
+                    </button>
+                  </Show>
+                  <input ref={fileInputRef} type="file" accept=".torrent" multiple class="hidden" onChange={handleFileChange} />
                 </div>
-                <input ref={fileInputRef} type="file" accept=".torrent" class="hidden" onChange={handleFileChange} />
+                
+                <Show when={fileNames().length > 0}>
+                  <div class="mt-2 flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    <For each={fileNames()}>
+                      {(name, index) => (
+                        <div class="flex items-center justify-between gap-2 rounded-md bg-muted/40 border border-border/60 px-2.5 py-1.5 text-xs font-mono group hover:border-primary/30 transition-colors">
+                          <span class="truncate flex-1 text-muted-foreground group-hover:text-foreground transition-colors" title={name}>{name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index())}
+                            class="text-muted-foreground hover:text-destructive p-0.5 rounded-sm hover:bg-destructive/10 transition-colors"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+                <Show when={modalDragOver()}>
+                  <div class="text-center text-xs font-semibold text-primary py-1">
+                    {t('dialog.add.file_label')}...
+                  </div>
+                </Show>
               </div>
             </div>
           </div>
@@ -314,6 +429,11 @@ export const AddTorrentModal: Component = () => {
               </Show>
             </div>
 
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-muted-foreground">{t('dialog.add.cookies')}</label>
+              <input type="text" placeholder={t('dialog.add.cookies_hint')} value={cookies()} onInput={(e) => setCookies(e.currentTarget.value)} disabled={adding()} class={inputClass} />
+            </div>
+
             <div class="flex items-center gap-6 pt-2">
               <Checkbox class="text-primary border-primary/50 focus-visible:ring-primary/20" checked={paused()} onChange={(checked) => setPaused(checked)} disabled={adding()}>
                 <span class="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{t('dialog.add.paused')}</span>
@@ -331,7 +451,7 @@ export const AddTorrentModal: Component = () => {
           <button type="button" onClick={closeAddModal} disabled={adding()} class="inline-flex items-center justify-center rounded-md text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-primary/20 disabled:opacity-50 border border-border/60 bg-background hover:bg-muted hover:text-foreground px-4 py-1.5 shadow-sm">
             {t('dialog.cancel')}
           </button>
-          <button type="submit" onClick={handleAdd} disabled={adding()} class="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-primary/20 disabled:opacity-50 border border-transparent bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md px-4 py-1.5 shadow-sm active:scale-[0.98]">
+          <button type="submit" form="add-torrent-form" disabled={adding()} class="inline-flex items-center justify-center rounded-md text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-primary/20 disabled:opacity-50 border border-transparent bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md px-4 py-1.5 shadow-sm active:scale-[0.98]">
             {adding() ? t('common.loading') : t('dialog.add.submit')}
           </button>
         </DialogFooter>

@@ -1,4 +1,4 @@
-import { createStore, reconcile } from 'solid-js/store';
+import { createStore, reconcile, produce } from 'solid-js/store';
 import { createSignal, createMemo } from 'solid-js';
 import type { Torrent } from '../types/transmission';
 import { rpcCall, torrentGet } from '../api/rpc';
@@ -9,8 +9,54 @@ function toPlain<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-// Minimal fields for list view
-const TORRENT_FIELDS_MINIMAL = [
+async function archiveTorrentToHistory(torrent: Torrent, deletedDate: number = 0) {
+  const plain = toPlain(torrent);
+  const filesSummary = plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined;
+  try {
+    const existing = await db.history.where('hash_string').equals(plain.hash_string).first();
+    const baseData = {
+      name: plain.name,
+      total_size: plain.total_size,
+      download_dir: plain.download_dir,
+      labels: plain.labels ?? [],
+      added_date: plain.added_date,
+      done_date: plain.done_date,
+      deleted_date: deletedDate,
+      upload_ratio: plain.upload_ratio,
+      downloaded_ever: plain.downloaded_ever,
+      uploaded_ever: plain.uploaded_ever,
+      status: plain.status,
+      error: plain.error,
+      magnet_link: plain.magnet_link,
+      comment: plain.comment,
+      creator: plain.creator,
+      files: filesSummary
+    };
+    if (existing?.id) {
+      await db.history.update(existing.id, baseData);
+    } else {
+      await db.history.add({
+        ...baseData,
+        hash_string: plain.hash_string,
+        avg_rate_download: 0,
+        avg_rate_upload: 0
+      });
+    }
+  } catch (e) {
+    console.warn('Failed to archive torrent history', e);
+  }
+}
+
+// Torrent status code constants
+const STATUS_STOPPED = 0;
+const STATUS_QUEUED_TO_CHECK = 1;
+const STATUS_CHECKING = 2;
+const STATUS_QUEUED_TO_DOWNLOAD = 3;
+const STATUS_DOWNLOADING = 4;
+const STATUS_QUEUED_TO_SEED = 5;
+const STATUS_SEEDING = 6;
+
+const TORRENT_FIELDS = [
   'id', 'name', 'hash_string', 'status', 'total_size', 'left_until_done',
   'percent_done', 'rate_download', 'rate_upload', 'peers_connected',
   'peers_sending_to_us', 'peers_getting_from_us', 'eta', 'added_date', 'done_date',
@@ -20,12 +66,7 @@ const TORRENT_FIELDS_MINIMAL = [
   'upload_limited', 'peer_limit', 'seed_ratio_limit', 'seed_ratio_mode',
   'seed_idle_limit', 'seed_idle_mode', 'activity_date',
   'downloaded_ever', 'uploaded_ever', 'size_when_done',
-  'recheck_progress', 'file_count', 'start_date'
-];
-
-// Full fields for detail view
-const TORRENT_FIELDS_DETAIL = [
-  ...TORRENT_FIELDS_MINIMAL,
+  'recheck_progress', 'file_count', 'start_date',
   'creator', 'comment', 'is_private', 'piece_count', 'piece_size',
   'corrupt_ever', 'peers_known', 'tracker_stats', 'files', 'file_stats', 'peers',
   'seconds_downloading', 'seconds_seeding', 'source', 'torrent_file',
@@ -33,10 +74,10 @@ const TORRENT_FIELDS_DETAIL = [
   'peers_from', 'magnet_link', 'pieces', 'availability',
   'desired_available', 'have_valid', 'have_unchecked',
   'webseeds_sending_to_us', 'edit_date', 'date_created',
-  'tracker_list', 'metadata_percent_complete'
+  'tracker_list', 'metadata_percent_complete',
+  'percent_complete', 'eta_idle', 'max_connected_peers', 'honors_session_limits',
+  'webseeds'
 ];
-
-export const TORRENT_FIELDS = TORRENT_FIELDS_DETAIL;
 
 interface TorrentState {
   items: Record<number, Torrent>;
@@ -151,11 +192,11 @@ export const filteredTorrents = createMemo(() => {
   // Status filter
   const stat = statusFilter();
   if (stat !== 'all') {
-    if (stat === 'downloading') list = list.filter(t => t.status === 4);
-    else if (stat === 'seeding') list = list.filter(t => t.status === 6);
-    else if (stat === 'stopped') list = list.filter(t => t.status === 0);
-    else if (stat === 'checking') list = list.filter(t => t.status === 2 || t.status === 1);
-    else if (stat === 'queued') list = list.filter(t => t.status === 3 || t.status === 5);
+    if (stat === 'downloading') list = list.filter(t => t.status === STATUS_DOWNLOADING);
+    else if (stat === 'seeding') list = list.filter(t => t.status === STATUS_SEEDING);
+    else if (stat === 'stopped') list = list.filter(t => t.status === STATUS_STOPPED);
+    else if (stat === 'checking') list = list.filter(t => t.status === STATUS_CHECKING || t.status === STATUS_QUEUED_TO_CHECK);
+    else if (stat === 'queued') list = list.filter(t => t.status === STATUS_QUEUED_TO_DOWNLOAD || t.status === STATUS_QUEUED_TO_SEED);
     else if (stat === 'active') list = list.filter(t => t.rate_download > 0 || t.rate_upload > 0);
     else if (stat === 'error') list = list.filter(t => t.error > 0);
   }
@@ -255,12 +296,14 @@ let lastSnapshotTime = 0;
 export async function fetchTorrents(forceFull = false) {
   if (isFetching) return;
   isFetching = true;
-  const fetchTimeout = setTimeout(() => { isFetching = false; }, 10000);
+  let stale = false;
+  const fetchTimeout = setTimeout(() => { stale = true; isFetching = false; }, 10000);
 
   try {
     // Always fetch all torrents from backend (full data)
-    const fields = forceFull ? TORRENT_FIELDS_DETAIL : TORRENT_FIELDS_MINIMAL;
+    const fields = TORRENT_FIELDS;
     const data = await torrentGet(fields);
+    if (stale) return;
     setTorrentStore('error', null);
 
     if (!torrentStore.isInitialized) {
@@ -293,53 +336,8 @@ export async function fetchTorrents(forceFull = false) {
         for (const id of removedIds) {
           const existing = torrentStore.items[id];
           if (existing) {
-            const plain = toPlain(existing);
-            db.history.where('hash_string').equals(plain.hash_string).first().then(record => {
-              if (record && record.id) {
-                db.history.update(record.id!, {
-                  name: plain.name,
-                  total_size: plain.total_size,
-                  download_dir: plain.download_dir,
-                  labels: plain.labels || [],
-                  added_date: plain.added_date,
-                  done_date: plain.done_date,
-                  deleted_date: nowTime,
-                  upload_ratio: plain.upload_ratio,
-                  downloaded_ever: plain.downloaded_ever,
-                  uploaded_ever: plain.uploaded_ever,
-                  status: plain.status,
-                  error: plain.error,
-                  magnet_link: plain.magnet_link,
-                  comment: plain.comment,
-                  creator: plain.creator,
-                  files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
-                }).catch(e => console.warn('Failed to update deleted torrent history', e));
-              } else {
-                db.history.add({
-                  hash_string: plain.hash_string,
-                  name: plain.name,
-                  total_size: plain.total_size,
-                  download_dir: plain.download_dir,
-                  labels: plain.labels || [],
-                  added_date: plain.added_date,
-                  done_date: plain.done_date,
-                  deleted_date: nowTime,
-                  upload_ratio: plain.upload_ratio,
-                  downloaded_ever: plain.downloaded_ever,
-                  uploaded_ever: plain.uploaded_ever,
-                  avg_rate_download: 0,
-                  avg_rate_upload: 0,
-                  status: plain.status,
-                  error: plain.error,
-                  magnet_link: plain.magnet_link,
-                  comment: plain.comment,
-                  creator: plain.creator,
-                  files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
-                }).catch(e => console.warn('Failed to archive torrent history', e));
-              }
-            });
+            archiveTorrentToHistory(existing, nowTime);
           }
-          // Delete from store by setting to undefined
           setTorrentStore('items', id, undefined as any);
         }
       }
@@ -357,9 +355,11 @@ export async function fetchTorrents(forceFull = false) {
       upload: [...prev.upload, currentUl].slice(-60)
     }));
 
-    // Periodic throttled syncing to history (every 15s)
+    // Periodic throttled syncing to history (every 60s)
+    // History data changes infrequently, so 60s is sufficient to avoid
+    // excessive IndexedDB reads while still keeping records reasonably fresh
     const now = Math.floor(Date.now() / 1000);
-    if (now - lastSnapshotTime >= 15) {
+    if (now - lastSnapshotTime >= 60) {
       lastSnapshotTime = now;
       const allItems = Object.values(torrentStore.items);
       const hashMap = new Map<string, any>();
@@ -367,15 +367,26 @@ export async function fetchTorrents(forceFull = false) {
         hashMap.set(t.hash_string, toPlain(t));
       }
       
-      db.history.toArray().then(records => {
+      const hashes = [...hashMap.keys()];
+      db.history.where('hash_string').anyOf(hashes).toArray().then(records => {
         const toPut: any[] = [];
         for (const record of records) {
           const plain = hashMap.get(record.hash_string);
           if (plain) {
             let dlAvg = record.avg_rate_download || 0;
             let ulAvg = record.avg_rate_upload || 0;
-            if (plain.rate_download > 0) dlAvg = dlAvg === 0 ? plain.rate_download : (dlAvg * 0.8 + plain.rate_download * 0.2);
-            if (plain.rate_upload > 0) ulAvg = ulAvg === 0 ? plain.rate_upload : (ulAvg * 0.8 + plain.rate_upload * 0.2);
+            if (plain.rate_download > 0) {
+              dlAvg = dlAvg === 0 ? plain.rate_download : (dlAvg * 0.8 + plain.rate_download * 0.2);
+            } else if (dlAvg > 0) {
+              dlAvg = dlAvg * 0.9;
+              if (dlAvg < 1) dlAvg = 0;
+            }
+            if (plain.rate_upload > 0) {
+              ulAvg = ulAvg === 0 ? plain.rate_upload : (ulAvg * 0.8 + plain.rate_upload * 0.2);
+            } else if (ulAvg > 0) {
+              ulAvg = ulAvg * 0.9;
+              if (ulAvg < 1) ulAvg = 0;
+            }
 
             toPut.push({
               ...record,
@@ -385,14 +396,14 @@ export async function fetchTorrents(forceFull = false) {
               downloaded_ever: plain.downloaded_ever !== undefined ? plain.downloaded_ever : record.downloaded_ever,
               uploaded_ever: plain.uploaded_ever !== undefined ? plain.uploaded_ever : record.uploaded_ever,
               done_date: plain.done_date !== undefined ? plain.done_date : record.done_date,
-              name: plain.name || record.name,
-              magnet_link: plain.magnet_link || record.magnet_link,
-              comment: plain.comment || record.comment,
-              creator: plain.creator || record.creator,
+              name: plain.name ?? record.name,
+              magnet_link: plain.magnet_link ?? record.magnet_link,
+              comment: plain.comment ?? record.comment,
+              creator: plain.creator ?? record.creator,
               files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : record.files,
-              total_size: plain.total_size || record.total_size,
-              download_dir: plain.download_dir || record.download_dir,
-              labels: plain.labels || record.labels,
+              total_size: plain.total_size ?? record.total_size,
+              download_dir: plain.download_dir ?? record.download_dir,
+              labels: plain.labels ?? record.labels,
               deleted_date: 0 // Reset deleted_date if it somehow came back
             });
             hashMap.delete(plain.hash_string);
@@ -402,20 +413,20 @@ export async function fetchTorrents(forceFull = false) {
         for (const plain of hashMap.values()) {
           toPut.push({
             hash_string: plain.hash_string,
-            name: plain.name || 'Unknown',
-            total_size: plain.total_size || 0,
-            download_dir: plain.download_dir || '',
-            labels: plain.labels || [],
-            added_date: plain.added_date || now,
-            done_date: plain.done_date || 0,
+            name: plain.name ?? 'Unknown',
+            total_size: plain.total_size ?? 0,
+            download_dir: plain.download_dir ?? '',
+            labels: plain.labels ?? [],
+            added_date: plain.added_date ?? now,
+            done_date: plain.done_date ?? 0,
             deleted_date: 0,
-            upload_ratio: plain.upload_ratio || 0,
-            downloaded_ever: plain.downloaded_ever || 0,
-            uploaded_ever: plain.uploaded_ever || 0,
-            avg_rate_download: plain.rate_download || 0,
-            avg_rate_upload: plain.rate_upload || 0,
-            status: plain.status || 0,
-            error: plain.error || 0,
+            upload_ratio: plain.upload_ratio ?? 0,
+            downloaded_ever: plain.downloaded_ever ?? 0,
+            uploaded_ever: plain.uploaded_ever ?? 0,
+            avg_rate_download: plain.rate_download ?? 0,
+            avg_rate_upload: plain.rate_upload ?? 0,
+            status: plain.status ?? 0,
+            error: plain.error ?? 0,
             magnet_link: plain.magnet_link,
             comment: plain.comment,
             creator: plain.creator,
@@ -461,59 +472,11 @@ export const reannounceTorrents = (ids?: number[]) => torrentOp('torrent_reannou
 export async function removeTorrents(ids?: number[], deleteData = false) {
   const targetIds = ids || selectedIds();
 
-  // Archive torrents to history BEFORE removing them
   const nowTime = Math.floor(Date.now() / 1000);
   for (const id of targetIds) {
     const torrent = torrentStore.items[id];
     if (torrent) {
-      const plain = toPlain(torrent);
-      try {
-        const existing = await db.history.where('hash_string').equals(plain.hash_string).first();
-        if (existing && existing.id) {
-          await db.history.update(existing.id, {
-            name: plain.name,
-            total_size: plain.total_size,
-            download_dir: plain.download_dir,
-            labels: plain.labels || [],
-            added_date: plain.added_date,
-            done_date: plain.done_date,
-            deleted_date: nowTime,
-            upload_ratio: plain.upload_ratio,
-            downloaded_ever: plain.downloaded_ever,
-            uploaded_ever: plain.uploaded_ever,
-            status: plain.status,
-            error: plain.error,
-            magnet_link: plain.magnet_link,
-            comment: plain.comment,
-            creator: plain.creator,
-            files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
-          });
-        } else {
-          await db.history.add({
-            hash_string: plain.hash_string,
-            name: plain.name,
-            total_size: plain.total_size,
-            download_dir: plain.download_dir,
-            labels: plain.labels || [],
-            added_date: plain.added_date,
-            done_date: plain.done_date,
-            deleted_date: nowTime,
-            upload_ratio: plain.upload_ratio,
-            downloaded_ever: plain.downloaded_ever,
-            uploaded_ever: plain.uploaded_ever,
-            avg_rate_download: 0,
-            avg_rate_upload: 0,
-            status: plain.status,
-            error: plain.error,
-            magnet_link: plain.magnet_link,
-            comment: plain.comment,
-            creator: plain.creator,
-            files: plain.files ? plain.files.map((f: any) => ({ name: f.name, length: f.length })) : undefined
-          });
-        }
-      } catch (e) {
-        console.warn('Failed to archive removed torrent', e);
-      }
+      await archiveTorrentToHistory(torrent, nowTime);
     }
   }
 
@@ -527,7 +490,7 @@ export const moveQueueTop = (ids?: number[]) => torrentOp('queue_move_top', ids)
 export const moveQueueBottom = (ids?: number[]) => torrentOp('queue_move_bottom', ids);
 
 // Polling Lifecycle
-let pollInterval: any;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startPolling(intervalMs = 2000, getForceFull?: () => boolean) {
   if (pollInterval) clearInterval(pollInterval);

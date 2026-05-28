@@ -15,8 +15,8 @@ export interface Torrent {
   added_date: number;
   done_date: number;
   upload_ratio: number;
-  labels: string[];
-  group: string;
+  labels?: string[];
+  group?: string;
   queue_position: number;
   is_finished: boolean;
   is_stalled: boolean;
@@ -65,11 +65,16 @@ export interface Torrent {
   have_unchecked?: number;
   recheck_progress?: number;
   webseeds_sending_to_us?: number;
+  webseeds?: string[];
   edit_date?: number;
   start_date?: number;
   date_created?: number;
   tracker_list?: string;
   metadata_percent_complete?: number;
+  percent_complete?: number;
+  eta_idle?: number;
+  max_connected_peers?: number;
+  honors_session_limits?: boolean;
 }
 
 export interface PeerSources {
@@ -169,7 +174,6 @@ export interface Session {
   blocklist_enabled: boolean;
   blocklist_size: number;
   blocklist_url: string;
-  ip_protocol?: string;
   cache_size_mb: number;
   cache_size_mib?: number;
   config_dir: string;
@@ -214,12 +218,20 @@ export interface Session {
   start_added_torrents: boolean;
   trash_original_torrent_files: boolean;
   utp_enabled: boolean;
+  tcp_enabled?: boolean;
   version: string;
   anti_brute_force_enabled?: boolean;
   anti_brute_force_threshold?: number;
   preferred_transports?: string;
   scrape_paused_torrents_enabled?: boolean;
   sequential_download?: boolean;
+  ip_protocol?: string;
+  units?: {
+    speed_units: string[];
+    speed_bytes: number;
+    size_units: string[];
+    size_bytes: number;
+  };
 }
 
 export interface SessionStats {

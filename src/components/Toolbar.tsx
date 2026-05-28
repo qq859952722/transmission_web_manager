@@ -22,7 +22,7 @@ import {
   openStatsModal
 } from '../store/modalStore';
 import { t, currentLang, setLanguage, type LanguageType } from '../utils/i18n';
-import { Button } from './ui/button';
+import { Button, type ButtonProps } from './ui/button';
 import { cn } from '../lib/utils';
 import {
   Plus,
@@ -48,6 +48,26 @@ import {
   Settings
 } from 'lucide-solid';
 
+const ToolBtn: Component<ButtonProps> = (props) => (
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    class={cn("h-8 px-2 text-muted-foreground hover:text-foreground", props.class)} 
+    {...props} 
+  />
+);
+
+const IconBtn: Component<ButtonProps> = (props) => (
+  <Button 
+    variant="ghost" 
+    size="icon" 
+    class={cn("h-8 w-8 text-muted-foreground hover:text-foreground", props.class)} 
+    {...props} 
+  />
+);
+
+const Separator: Component = () => <div class="w-px h-[18px] bg-border mx-1 opacity-60" />;
+
 export const Toolbar: Component<{
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -56,10 +76,12 @@ export const Toolbar: Component<{
 }> = (props) => {
   const hasSelection = () => selectedIds().length > 0;
 
-  const [theme, setTheme] = createSignal(
-    localStorage.getItem('trwm-theme') ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-  );
+  const getInitialTheme = (): 'light' | 'dark' => {
+    const stored = localStorage.getItem('trwm-theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+  const [theme, setTheme] = createSignal<'light' | 'dark'>(getInitialTheme());
 
   document.documentElement.setAttribute('data-theme', theme());
 
@@ -74,26 +96,6 @@ export const Toolbar: Component<{
     const next: LanguageType = currentLang() === 'zh-CN' ? 'en' : 'zh-CN';
     setLanguage(next);
   };
-
-  const ToolBtn = (btnProps: any) => (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      class={cn("h-8 px-2 text-muted-foreground hover:text-foreground", btnProps.class)} 
-      {...btnProps} 
-    />
-  );
-  
-  const IconBtn = (btnProps: any) => (
-    <Button 
-      variant="ghost" 
-      size="icon" 
-      class={cn("h-8 w-8 text-muted-foreground hover:text-foreground", btnProps.class)} 
-      {...btnProps} 
-    />
-  );
-
-  const Separator = () => <div class="w-px h-[18px] bg-border mx-1 opacity-60" />;
 
   return (
     <div class="flex items-center gap-0.5 w-full h-full bg-background border-b border-border select-none px-1.5 overflow-x-auto no-scrollbar">

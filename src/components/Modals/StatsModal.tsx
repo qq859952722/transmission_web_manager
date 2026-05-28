@@ -26,22 +26,30 @@ export const StatsModal: Component = () => {
         return;
       }
 
-      canvas.width = container.clientWidth;
-      canvas.height = 180;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = container.clientWidth * dpr;
+      canvas.height = 180 * dpr;
+      canvas.style.width = container.clientWidth + 'px';
+      canvas.style.height = '180px';
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+      ctx.scale(dpr, dpr);
 
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = container.clientWidth;
+      const h = 180;
       const padding = { top: 10, right: 10, bottom: 24, left: 60 };
       const chartW = w - padding.left - padding.right;
       const chartH = h - padding.top - padding.bottom;
 
       ctx.clearRect(0, 0, w, h);
 
+      // NOTE: Canvas colors are determined by reading data-theme at draw time. This is not
+      // reactively tracked, so a theme change won't immediately redraw the chart. However,
+      // since the data updates every 2s (polling), the chart will reflect the new theme
+      // within one polling cycle. This is an acceptable trade-off for Canvas-based rendering.
       // Assume theme by checking a known dark mode property (like a body class or just generic fallback)
-      const isDark = document.body.classList.contains('dark') || document.documentElement.classList.contains('dark');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const textColor = isDark ? '#a0a0b8' : '#6b7280';
       const gridColor = isDark ? '#353550' : '#e5e7eb';
       const downloadColor = isDark ? '#5b8def' : '#3b82f6';

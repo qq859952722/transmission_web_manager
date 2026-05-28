@@ -1,7 +1,7 @@
-import { Component, Show, createSignal, onMount } from 'solid-js';
+import { Component, Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { useSession, useSessionStats, useFreeSpace } from '../api/queries';
 import { rpcCall } from '../api/rpc';
-import { torrentList, sidebarCounts } from '../store/torrentStore';
+import { torrentList, sidebarCounts, torrentStore } from '../store/torrentStore';
 import { formatSpeed, formatBytes } from '../utils/format';
 import { t } from '../utils/i18n';
 import { QuickSettings } from './QuickSettings';
@@ -14,7 +14,7 @@ export const StatusBar: Component = () => {
 
   const [portStatus, setPortStatus] = createSignal<'testing' | 'open' | 'closed' | 'unknown'>('unknown');
   const [altSpeedLoading, setAltSpeedLoading] = createSignal(false);
-  const [connected, setConnected] = createSignal(true);
+  const connected = () => !torrentStore.error;
   const [showQuickSettings, setShowQuickSettings] = createSignal(false);
   const freeSpace = useFreeSpace(() => session.data?.download_dir);
 
@@ -29,7 +29,8 @@ export const StatusBar: Component = () => {
   };
 
   onMount(() => {
-    setTimeout(checkPort, 3000);
+    const portCheckTimer = setTimeout(checkPort, 3000);
+    onCleanup(() => clearTimeout(portCheckTimer));
   });
 
   const toggleAltSpeed = async () => {

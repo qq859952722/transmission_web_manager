@@ -10,30 +10,14 @@ import { Copy, Link, CheckSquare, Square, Trash2, Download, Info, FileJson, File
 import { Select } from '../ui/select';
 import { Tooltip } from '../ui/tooltip';
 import { cn } from '../../lib/utils';
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-const fallbackCopy = (text: string) => {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-};
+import { hexToRgba } from '../../utils/canvas';
+import { fallbackCopy } from '../../utils/clipboard';
 
 export const HistoryModal: Component = () => {
   const [records, setRecords] = createSignal<HistoryRecord[]>([]);
   const [search, setSearch] = createSignal('');
   const [selectedRecord, setSelectedRecord] = createSignal<HistoryRecord | null>(null);
-  const [selectedIds, setSelectedIds] = createSignal<Set<number>>(new Set());
+  const [selectedHistoryIds, setSelectedHistoryIds] = createSignal<Set<number>>(new Set());
 
   const { widths: colWidths, handleMouseDown } = createResizableColumns('trwm-history-widths', [
     { id: 'select', width: 36 },
@@ -78,11 +62,11 @@ export const HistoryModal: Component = () => {
     });
   });
 
-  const selectedCount = createMemo(() => selectedIds().size);
-  const allSelected = createMemo(() => filteredRecords().length > 0 && selectedIds().size === filteredRecords().length);
+  const selectedCount = createMemo(() => selectedHistoryIds().size);
+  const allSelected = createMemo(() => filteredRecords().length > 0 && selectedHistoryIds().size === filteredRecords().length);
 
   const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
+    setSelectedHistoryIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -92,9 +76,9 @@ export const HistoryModal: Component = () => {
 
   const toggleSelectAll = () => {
     if (allSelected()) {
-      setSelectedIds(new Set<number>());
+      setSelectedHistoryIds(new Set<number>());
     } else {
-      setSelectedIds(new Set(filteredRecords().map((r) => r.id!)));
+      setSelectedHistoryIds(new Set(filteredRecords().map((r) => r.id!)));
     }
   };
 
@@ -116,7 +100,7 @@ export const HistoryModal: Component = () => {
   };
 
   const copySelectedMagnetLinks = () => {
-    const recs = filteredRecords().filter((r) => selectedIds().has(r.id!));
+    const recs = filteredRecords().filter((r) => selectedHistoryIds().has(r.id!));
     copyMagnetLinks(recs);
   };
 
@@ -142,15 +126,15 @@ export const HistoryModal: Component = () => {
   };
 
   const exportSelectedTorrents = () => {
-    const recs = filteredRecords().filter((r) => selectedIds().has(r.id!));
+    const recs = filteredRecords().filter((r) => selectedHistoryIds().has(r.id!));
     exportTorrents(recs);
   };
 
   const batchDeleteSelected = async () => {
-    const ids = [...selectedIds()];
+    const ids = [...selectedHistoryIds()];
     if (ids.length === 0) return;
     await db.history.bulkDelete(ids);
-    setSelectedIds(new Set<number>());
+    setSelectedHistoryIds(new Set<number>());
     loadRecords();
     if (selectedRecord() && ids.includes(selectedRecord()!.id!)) {
       setSelectedRecord(null);
@@ -172,7 +156,7 @@ export const HistoryModal: Component = () => {
   createEffect(() => {
     if (showHistoryModal()) {
       loadRecords();
-      setSelectedIds(new Set<number>());
+      setSelectedHistoryIds(new Set<number>());
     }
   });
 
@@ -347,7 +331,7 @@ export const HistoryModal: Component = () => {
                   {/* Items */}
                   <For each={filteredRecords()}>
                     {(rec) => {
-                      const isSelected = createMemo(() => selectedIds().has(rec.id!));
+                      const isSelected = createMemo(() => selectedHistoryIds().has(rec.id!));
                       const isActive = createMemo(() => selectedRecord()?.id === rec.id);
                       return (
                         <div

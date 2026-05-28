@@ -1,12 +1,31 @@
 import { t } from './i18n';
 
+// Dynamic unit base: defaults to 1024 (binary), can be set to 1000 (decimal)
+// based on session's units.size_bytes field.
+// NOTE: unitBase is a module-level mutable variable, not a SolidJS signal. This means
+// changing it via setUnitBase() will not trigger reactive updates on its own. However,
+// since formatBytes/formatSpeed are called inside component templates that re-render on
+// each polling cycle (every 2s), the new value is naturally picked up on the next render.
+// This is an acceptable trade-off: a full signal-based approach would require every consumer
+// to be in a reactive context, which is impractical for utility functions.
+let unitBase = 1024;
+
+export function setUnitBase(base: number) {
+  if (base === 1000 || base === 1024) {
+    unitBase = base;
+  }
+}
+
 export function formatBytes(bytes: number, decimals = 2): string {
   if (bytes === undefined || bytes === null || isNaN(bytes) || bytes < 0) return '0 B';
   if (bytes === 0) return '0 B';
-  const k = 1024;
+  const k = unitBase;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const sizes = unitBase === 1000
+    ? ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+    : ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB'];
+  let i = Math.floor(Math.log(bytes) / Math.log(k));
+  i = Math.min(i, sizes.length - 1);
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
@@ -16,10 +35,10 @@ export function formatSpeed(bytesPerSec: number, decimals = 2): string {
 }
 
 export function formatETA(seconds: number): string {
-  if (typeof seconds !== 'number' || seconds < 0) return '∞';
-  if (seconds === 0) return '0' + t('times.sec');
   if (seconds === -1) return '∞';
   if (seconds === -2) return t('times.unknown');
+  if (typeof seconds !== 'number' || seconds < 0) return '∞';
+  if (seconds === 0) return '0' + t('times.sec');
   
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
@@ -41,7 +60,8 @@ export function formatPercent(value: number): string {
 }
 
 export function formatRatio(ratio: number): string {
-  if (ratio === -1 || ratio === -2) return '∞';
+  if (ratio === -2) return t('common.none') || 'N/A';
+  if (ratio === -1) return '∞';
   if (ratio < 0) return t('common.none');
   return ratio.toFixed(2);
 }
@@ -59,15 +79,12 @@ export function getRatioClass(ratio: number): string {
 }
 
 export function formatTimestamp(timestamp: number): string {
-  if (!timestamp || timestamp === 0) return '-';
-  const d = new Date(timestamp * 1000);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hour = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  const sec = String(d.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hour}:${min}:${sec}`;
+  if (!timestamp || timestamp === 0) return t('common.unknown');
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  }).format(new Date(timestamp * 1000));
 }
 
 export function formatTime(timestamp: number): string {
@@ -155,18 +172,18 @@ export function getPriorityText(priority: number): string {
 
 export function getSeedRatioModeText(mode: number): string {
   const map: Record<number, string> = {
-    0: t('dialog.add.default'),
-    1: t('dialog.label.source_custom'),
-    2: t('dialog.add.unlimited'),
+    0: t('status.ratio_default'),
+    1: t('status.ratio_custom'),
+    2: t('status.ratio_unlimited'),
   };
   return map[mode] || t('common.unknown');
 }
 
 export function getSeedIdleModeText(mode: number): string {
   const map: Record<number, string> = {
-    0: t('dialog.add.default'),
-    1: t('dialog.label.source_custom'),
-    2: t('dialog.add.unlimited'),
+    0: t('status.idle_default'),
+    1: t('status.idle_custom'),
+    2: t('status.idle_unlimited'),
   };
   return map[mode] || t('common.unknown');
 }
